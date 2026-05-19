@@ -1,0 +1,158 @@
+"use server";
+
+import { promises as fs } from "fs";
+import path from "path";
+import { revalidatePath } from "next/cache";
+import { redirect } from "next/navigation";
+import { requireAdmin } from "@/lib/admin-auth";
+import { deleteProduct, saveProduct } from "@/lib/admin-store";
+import { Product, ProductCategory, ProductPriceOption } from "@/lib/types";
+
+const categoryAr: Record<ProductCategory, string> = {
+  AI: "الذكاء الاصطناعي",
+  Architecture: "الهندسة والعمارة",
+  VPN: "الحماية و VPN",
+  "Video Editing": "المونتاج",
+  Design: "التصميم",
+  Education: "التعليم",
+  Software: "البرامج",
+};
+
+function text(formData: FormData, key: string) {
+  return String(formData.get(key) ?? "").trim();
+}
+
+function numberValue(formData: FormData, key: string) {
+  const value = Number(formData.get(key));
+  return Number.isFinite(value) && value > 0 ? value : undefined;
+}
+
+function fileExtension(file: File) {
+  const byType: Record<string, string> = {
+    "image/png": "png",
+    "image/jpeg": "jpg",
+    "image/webp": "webp",
+    "image/avif": "avif",
+  };
+
+  const extension = byType[file.type];
+  if (extension) return extension;
+
+  const nameExtension = file.name.split(".").pop()?.toLowerCase();
+  return nameExtension && ["png", "jpg", "jpeg", "webp", "avif"].includes(nameExtension) ? nameExtension : null;
+}
+
+function safeFileBase(value: string) {
+  return value
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .slice(0, 80) || "product";
+}
+
+async function saveUploadedProductImage(formData: FormData, slug: string) {
+  const uploaded = formData.get("imageUpload");
+  if (!(uploaded instanceof File) || uploaded.size === 0) return null;
+
+  const maxSize = 4 * 1024 * 1024;
+  if (uploaded.size > maxSize) {
+    throw new Error("Product image is too large. Please upload an image under 4 MB.");
+  }
+
+  const extension = fileExtension(uploaded);
+  if (!extension) {
+    throw new Error("Unsupported image type. Use PNG, JPG, WEBP, or AVIF.");
+  }
+
+  const bytes = Buffer.from(await uploaded.arrayBuffer());
+  const directory = path.join(process.cwd(), "public", "products", "uploads");
+  const filename = `${safeFileBase(slug)}-${Date.now()}.${extension}`;
+  await fs.mkdir(directory, { recursive: true });
+  await fs.writeFile(path.join(directory, filename), bytes);
+
+  return `/products/uploads/${filename}`;
+}
+
+function lines(value: string) {
+  return value
+    .split("\n")
+    .map((line) => line.trim())
+    .filter(Boolean);
+}
+
+function parseVariants(value: string): ProductPriceOption[] | undefined {
+  try {
+    const parsed = JSON.parse(value) as ProductPriceOption[];
+    const variants = parsed
+      .map((variant) => ({
+        label: String(variant.label ?? "").trim(),
+        labelAr: String(variant.labelAr || variant.label || "").trim(),
+        price: Number(variant.price),
+        duration: String(variant.duration || variant.label || "").trim(),
+        durationAr: String(variant.durationAr || variant.labelAr || variant.duration || "").trim(),
+        oldPrice: variant.oldPrice ? Number(variant.oldPrice) : undefined,
+        available: variant.available !== false,
+      }))
+      .filter((variant) => variant.label && variant.duration && Number.isFinite(variant.price) && variant.price > 0);
+
+    return variants.length ? variants : undefined;
+  } catch {
+    return undefined;
+  }
+}
+
+export async function saveProductAction(formData: FormData) {
+  await requireAdmin();
+
+  const category = text(formData, "category") as ProductCategory;
+  const id = text(formData, "id") || text(formData, "slug") || crypto.randomUUID();
+  const slug = text(formData, "slug");
+  const price = numberValue(formData, "price") ?? 0;
+  const oldPrice = numberValue(formData, "oldPrice");
+  const uploadedImagePath = await saveUploadedProductImage(formData, slug);
+  const image = uploadedImagePath ?? text(formData, "image");
+
+  if (!image) {
+    throw new Error("Please upload a product image or enter an image path.");
+  }
+
+  const product: Product = {
+    id,
+    slug,
+    name: text(formData, "name"),
+    nameAr: text(formData, "nameAr") || text(formData, "name"),
+    category,
+    categoryAr: categoryAr[category],
+    price,
+    oldPrice,
+    currency: "DZD",
+    duration: text(formData, "duration"),
+    durationAr: text(formData, "durationAr") || text(formData, "duration"),
+    shortDescriptionAr: text(formData, "shortDescriptionAr"),
+    shortDescriptionEn: text(formData, "shortDescriptionEn"),
+    featuresAr: lines(text(formData, "featuresAr")),
+    featuresEn: lines(text(formData, "featuresEn")),
+    activationTypeAr: text(formData, "activationTypeAr"),
+    activationTypeEn: text(formData, "activationTypeEn"),
+    image,
+    available: formData.get("available") === "on",
+    featured: formData.get("featured") === "on",
+    priceOptions: parseVariants(text(formData, "priceOptions")),
+  };
+
+  await saveProduct(product);
+  revalidatePath("/");
+  revalidatePath("/shop");
+  revalidatePath("/admin/products");
+  revalidatePath(`/products/${product.slug}`);
+  redirect("/admin/products");
+}
+
+export async function deleteProductAction(formData: FormData) {
+  await requireAdmin();
+  const id = text(formData, "id");
+  await deleteProduct(id);
+  revalidatePath("/");
+  revalidatePath("/shop");
+  revalidatePath("/admin/products");
+}

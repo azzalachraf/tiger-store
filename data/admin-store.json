@@ -1,0 +1,413 @@
+{
+  "products": [
+    {
+      "id": "gemini-pro",
+      "slug": "gemini-pro",
+      "name": "Gemini Pro",
+      "nameAr": "Gemini Pro",
+      "category": "AI",
+      "categoryAr": "الذكاء الاصطناعي",
+      "price": 1900,
+      "currency": "DZD",
+      "duration": "4 months",
+      "durationAr": "4 أشهر",
+      "shortDescriptionAr": "ذكاء اصطناعي للبحث والكتابة والإنتاجية.",
+      "shortDescriptionEn": "AI subscription for research, writing, and productivity.",
+      "featuresAr": [
+        "تفعيل رقمي",
+        "طرق دفع جزائرية",
+        "دعم بعد البيع"
+      ],
+      "featuresEn": [
+        "Digital activation",
+        "Algerian payment methods",
+        "After-sale support"
+      ],
+      "activationTypeAr": "تفعيل رقمي",
+      "activationTypeEn": "Digital activation",
+      "image": "/products/11_Gemini_Pro.webp",
+      "available": true,
+      "featured": true,
+      "priceOptions": [
+        {
+          "label": "4 months",
+          "labelAr": "4 أشهر",
+          "price": 1900,
+          "duration": "4 months",
+          "durationAr": "4 أشهر",
+          "available": true
+        },
+        {
+          "label": "1 year",
+          "labelAr": "سنة واحدة",
+          "price": 2500,
+          "duration": "1 year",
+          "durationAr": "سنة واحدة",
+          "available": true
+        }
+      ]
+    },
+    {
+      "id": "revit-2026",
+      "slug": "revit-2026",
+      "name": "Revit 2026",
+      "nameAr": "Revit 2026",
+      "category": "Architecture",
+      "categoryAr": "الهندسة والعمارة",
+      "price": 1900,
+      "currency": "DZD",
+      "duration": "Depends on offer",
+      "durationAr": "حسب العرض",
+      "shortDescriptionAr": "حل احترافي للنمذجة المعمارية وBIM.",
+      "shortDescriptionEn": "Professional architecture and BIM modeling solution.",
+      "featuresAr": [
+        "تفعيل رقمي",
+        "طرق دفع جزائرية",
+        "دعم بعد البيع"
+      ],
+      "featuresEn": [
+        "Digital activation",
+        "Algerian payment methods",
+        "After-sale support"
+      ],
+      "activationTypeAr": "تفعيل رقمي",
+      "activationTypeEn": "Digital activation",
+      "image": "/products/09_Revit_2026.webp",
+      "available": true,
+      "featured": false
+    },
+    {
+      "id": "autocad",
+      "slug": "autocad",
+      "name": "AutoCAD",
+      "nameAr": "AutoCAD",
+      "category": "Architecture",
+      "categoryAr": "الهندسة والعمارة",
+      "price": 1900,
+      "currency": "DZD",
+      "duration": "Depends on offer",
+      "durationAr": "حسب العرض",
+      "shortDescriptionAr": "للرسم الهندسي والتصميم ثنائي وثلاثي الأبعاد.",
+      "shortDescriptionEn": "For technical 2D and 3D design workflows.",
+      "featuresAr": [
+        "تفعيل رقمي",
+        "طرق دفع جزائرية",
+        "دعم بعد البيع"
+      ],
+      "featuresEn": [
+        "Digital activation",
+        "Algerian payment methods",
+        "After-sale support"
+      ],
+      "activationTypeAr": "تفعيل رقمي",
+      "activationTypeEn": "Digital activation",
+      "image": "/products/01_AutoCAD.webp",
+      "available": true,
+      "featured": false
+    },
+    {
+      "id": "hma-vpn",
+      "slug": "hma-vpn",
+      "name": "HMA VPN",
+      "nameAr": "HMA VPN",
+      "category": "VPN",
+      "categoryAr": "الحماية و VPN",
+      "price": 4500,
+      "currency": "DZD",
+      "duration": "Depends on offer",
+      "durationAr": "حسب العرض",
+      "shortDescriptionAr": "تصفح أكثر خصوصية وحماية للاتصال.",
+      "shortDescriptionEn": "Private browsing and connection protection.",
+      "featuresAr": [
+        "تفعيل رقمي",
+        "طرق دفع جزائرية",
+        "دعم بعد البيع"
+      ],
+      "featuresEn": [
+        "Digital activation",
+        "Algerian payment methods",
+        "After-sale support"
+      ],
+      "activationTypeAr": "بيانات تفعيل رقمية",
+      "activationTypeEn": "Digital activation details",
+      "image": "/products/10_HMA_VPN.webp",
+      "available": true,
+      "featured": false
+    },
+    {
+      "id": "capcut-pro",
+      "slug": "capcut-pro",
+      "name": "CapCut Pro",
+      "nameAr": "CapCut Pro",
+      "category": "Video Editing",
+      "categoryAr": "المونتاج",
+      "price": 950,
+      "currency": "DZD",
+      "duration": "Depends on offer",
+      "durationAr": "حسب العرض",
+      "shortDescriptionAr": "مزايا Pro لصناع المحتوى والمونتاج السريع.",
+      "shortDescriptionEn": "Pro features for creators and fast editing.",
+      "featuresAr": [
+        "تفعيل رقمي",
+        "طرق دفع جزائرية",
+        "دعم بعد البيع"
+      ],
+      "featuresEn": [
+        "Digital activation",
+        "Algerian payment methods",
+        "After-sale support"
+      ],
+      "activationTypeAr": "تفعيل حسب العرض",
+      "activationTypeEn": "Activation depends on offer",
+      "image": "/products/06_CapCut_Pro.webp",
+      "available": true,
+      "featured": true
+    },
+    {
+      "id": "adobe-creative-cloud",
+      "slug": "adobe-creative-cloud",
+      "name": "Adobe Creative Cloud",
+      "nameAr": "Adobe Creative Cloud",
+      "category": "Design",
+      "categoryAr": "التصميم",
+      "price": 1500,
+      "currency": "DZD",
+      "duration": "Depends on offer",
+      "durationAr": "حسب العرض",
+      "shortDescriptionAr": "حزمة Adobe للتصميم والصور والفيديو.",
+      "shortDescriptionEn": "Adobe suite for design, photos, and video.",
+      "featuresAr": [
+        "تفعيل رقمي",
+        "طرق دفع جزائرية",
+        "دعم بعد البيع"
+      ],
+      "featuresEn": [
+        "Digital activation",
+        "Algerian payment methods",
+        "After-sale support"
+      ],
+      "activationTypeAr": "تفعيل رقمي",
+      "activationTypeEn": "Digital activation",
+      "image": "/products/05_Adobe_Creative_Cloud.webp",
+      "available": true,
+      "featured": true
+    },
+    {
+      "id": "duolingo-premium",
+      "slug": "duolingo-premium",
+      "name": "Duolingo Premium",
+      "nameAr": "Duolingo Premium",
+      "category": "Education",
+      "categoryAr": "التعليم",
+      "price": 800,
+      "currency": "DZD",
+      "duration": "Depends on offer",
+      "durationAr": "حسب العرض",
+      "shortDescriptionAr": "تعلم اللغات بمزايا إضافية.",
+      "shortDescriptionEn": "Language learning with premium features.",
+      "featuresAr": [
+        "تفعيل رقمي",
+        "طرق دفع جزائرية",
+        "دعم بعد البيع"
+      ],
+      "featuresEn": [
+        "Digital activation",
+        "Algerian payment methods",
+        "After-sale support"
+      ],
+      "activationTypeAr": "تفعيل رقمي",
+      "activationTypeEn": "Digital activation",
+      "image": "/products/07_Duolingo_Premium.webp",
+      "available": true,
+      "featured": false
+    },
+    {
+      "id": "canva-pro",
+      "slug": "canva-pro",
+      "name": "Canva Pro",
+      "nameAr": "Canva Pro",
+      "category": "Design",
+      "categoryAr": "التصميم",
+      "price": 500,
+      "currency": "DZD",
+      "duration": "1 year",
+      "durationAr": "سنة واحدة",
+      "shortDescriptionAr": "تصميم سريع وقوالب احترافية للسوشيال ميديا.",
+      "shortDescriptionEn": "Fast design and professional social media templates.",
+      "featuresAr": [
+        "تفعيل رقمي",
+        "طرق دفع جزائرية",
+        "دعم بعد البيع"
+      ],
+      "featuresEn": [
+        "Digital activation",
+        "Algerian payment methods",
+        "After-sale support"
+      ],
+      "activationTypeAr": "تفعيل حسب العرض",
+      "activationTypeEn": "Activation depends on offer",
+      "image": "/products/04_Canva_Pro.webp",
+      "available": true,
+      "featured": true,
+      "priceOptions": [
+        {
+          "label": "1 year",
+          "labelAr": "سنة واحدة",
+          "price": 500,
+          "duration": "1 year",
+          "durationAr": "سنة واحدة",
+          "available": true
+        },
+        {
+          "label": "2 years",
+          "labelAr": "سنتان",
+          "price": 700,
+          "duration": "2 years",
+          "durationAr": "سنتان",
+          "available": true
+        },
+        {
+          "label": "3 years",
+          "labelAr": "3 سنوات",
+          "price": 800,
+          "duration": "3 years",
+          "durationAr": "3 سنوات",
+          "available": true
+        }
+      ]
+    },
+    {
+      "id": "lovable-pro",
+      "slug": "lovable-pro",
+      "name": "Lovable Pro",
+      "nameAr": "Lovable Pro",
+      "category": "AI",
+      "categoryAr": "الذكاء الاصطناعي",
+      "price": 2200,
+      "currency": "DZD",
+      "duration": "Depends on offer",
+      "durationAr": "حسب العرض",
+      "shortDescriptionAr": "بناء تطبيقات ومواقع بمساعدة الذكاء الاصطناعي.",
+      "shortDescriptionEn": "Build apps and websites with AI assistance.",
+      "featuresAr": [
+        "تفعيل رقمي",
+        "طرق دفع جزائرية",
+        "دعم بعد البيع"
+      ],
+      "featuresEn": [
+        "Digital activation",
+        "Algerian payment methods",
+        "After-sale support"
+      ],
+      "activationTypeAr": "تفعيل رقمي",
+      "activationTypeEn": "Digital activation",
+      "image": "/products/08_Lovable_Pro.webp",
+      "available": true,
+      "featured": false
+    },
+    {
+      "id": "chatgpt-plus",
+      "slug": "chatgpt-plus",
+      "name": "ChatGPT Plus",
+      "nameAr": "ChatGPT Plus",
+      "category": "AI",
+      "categoryAr": "الذكاء الاصطناعي",
+      "price": 1500,
+      "currency": "DZD",
+      "duration": "Depends on offer",
+      "durationAr": "حسب العرض",
+      "shortDescriptionAr": "للكتابة والبرمجة والدراسة والإنتاجية.",
+      "shortDescriptionEn": "For writing, coding, study, and productivity.",
+      "featuresAr": [
+        "تفعيل رقمي",
+        "طرق دفع جزائرية",
+        "دعم بعد البيع"
+      ],
+      "featuresEn": [
+        "Digital activation",
+        "Algerian payment methods",
+        "After-sale support"
+      ],
+      "activationTypeAr": "تفعيل حسب العرض",
+      "activationTypeEn": "Activation depends on offer",
+      "image": "/products/12_ChatGPT_Plus.webp",
+      "available": true,
+      "featured": true
+    },
+    {
+      "id": "claude-pro",
+      "slug": "claude-pro",
+      "name": "Claude Pro",
+      "nameAr": "Claude Pro",
+      "category": "AI",
+      "categoryAr": "الذكاء الاصطناعي",
+      "price": 5900,
+      "currency": "DZD",
+      "duration": "Depends on offer",
+      "durationAr": "حسب العرض",
+      "shortDescriptionAr": "للتحليل والكتابة والبرمجة ومعالجة الملفات.",
+      "shortDescriptionEn": "For analysis, writing, coding, and file work.",
+      "featuresAr": [
+        "تفعيل رقمي",
+        "طرق دفع جزائرية",
+        "دعم بعد البيع"
+      ],
+      "featuresEn": [
+        "Digital activation",
+        "Algerian payment methods",
+        "After-sale support"
+      ],
+      "activationTypeAr": "تفعيل حسب العرض",
+      "activationTypeEn": "Activation depends on offer",
+      "image": "/products/03_Claude_Pro.webp",
+      "available": true,
+      "featured": false
+    },
+    {
+      "id": "grok-ai",
+      "slug": "grok-ai",
+      "name": "Grok AI",
+      "nameAr": "Grok AI",
+      "category": "AI",
+      "categoryAr": "الذكاء الاصطناعي",
+      "price": 2900,
+      "currency": "DZD",
+      "duration": "Depends on offer",
+      "durationAr": "حسب العرض",
+      "shortDescriptionAr": "للمحادثة والبحث السريع والإنتاجية.",
+      "shortDescriptionEn": "For chat, quick research, and productivity.",
+      "featuresAr": [
+        "تفعيل رقمي",
+        "طرق دفع جزائرية",
+        "دعم بعد البيع"
+      ],
+      "featuresEn": [
+        "Digital activation",
+        "Algerian payment methods",
+        "After-sale support"
+      ],
+      "activationTypeAr": "تفعيل حسب العرض",
+      "activationTypeEn": "Activation depends on offer",
+      "image": "/products/02_Grok_AI.webp",
+      "available": true,
+      "featured": false
+    }
+  ],
+  "orders": [],
+  "settings": {
+    "whatsappNumber": "+213 556 97 45 93",
+    "instagramUrl": "https://www.instagram.com/tigerr_store_dz/",
+    "facebookUrl": "https://www.facebook.com/people/Tiger-Store/61589903873726/",
+    "domainText": "digitaldz.shop",
+    "baridiMobRip": "00799999004414930471",
+    "ccpDetails": "Payment details will be confirmed after order submission.",
+    "redotPayDetails": "Payment details will be confirmed after order submission.",
+    "promoHeadings": [
+      "كل ما تحتاجه من اشتراكات رقمية في مكان واحد",
+      "أفضل الأسعار في السوق بطرق دفع مختلفة",
+      "خدمة سريعة واستجابة فورية ودعم بعد البيع",
+      "تابعنا على حساباتنا الرسمية في منصات التواصل الاجتماعي"
+    ],
+    "footerDisclaimer": "Tiger Store is an independent digital subscription provider and is not officially affiliated with the brands listed."
+  }
+}
