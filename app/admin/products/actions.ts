@@ -1,11 +1,10 @@
 "use server";
 
-import { promises as fs } from "fs";
-import path from "path";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { requireAdmin } from "@/lib/admin-auth";
 import { deleteProduct, saveProduct } from "@/lib/admin-store";
+import { supabase } from "@/lib/supabase";
 import { Product, ProductCategory, ProductPriceOption } from "@/lib/types";
 
 const categoryAr: Record<ProductCategory, string> = {
@@ -65,12 +64,21 @@ async function saveUploadedProductImage(formData: FormData, slug: string) {
   }
 
   const bytes = Buffer.from(await uploaded.arrayBuffer());
-  const directory = path.join(process.cwd(), "public", "products", "uploads");
   const filename = `${safeFileBase(slug)}-${Date.now()}.${extension}`;
-  await fs.mkdir(directory, { recursive: true });
-  await fs.writeFile(path.join(directory, filename), bytes);
 
-  return `/products/uploads/${filename}`;
+  const { error } = await supabase.storage
+    .from("product-images")
+    .upload(filename, bytes, { contentType: uploaded.type, upsert: true });
+
+  if (error) {
+    throw new Error(`Image upload failed: ${error.message}`);
+  }
+
+  const { data: urlData } = supabase.storage
+    .from("product-images")
+    .getPublicUrl(filename);
+
+  return urlData.publicUrl;
 }
 
 function lines(value: string) {

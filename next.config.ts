@@ -24,6 +24,13 @@ const nextConfig: NextConfig = {
         pathname: "/logos/**",
       },
     ],
+    remotePatterns: [
+      {
+        protocol: "https",
+        hostname: "oredqraaneamlduupxmt.supabase.co",
+        pathname: "/storage/v1/object/public/**",
+      },
+    ],
   },
 };
 

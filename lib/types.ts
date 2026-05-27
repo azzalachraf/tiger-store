@@ -112,6 +112,20 @@ export type AdminOrder = {
   adminNotes?: string;
 };
 
+export type AdminAccountStatus = "Available" | "Sold" | "Expired" | "Problem";
+
+export type AdminAccount = {
+  id: string;
+  email: string;
+  emailPassword: string;
+  chatgptPassword: string;
+  dateCreated: string;
+  price: number;
+  notes?: string;
+  status: AdminAccountStatus;
+  updatedAt: string;
+};
+
 export type SiteSettings = {
   whatsappNumber: string;
   instagramUrl: string;

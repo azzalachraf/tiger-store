@@ -1,12 +1,14 @@
 import Link from "next/link";
 import { ReactNode } from "react";
-import { BarChart3, Boxes, CreditCard, ImageIcon, LayoutDashboard, LogOut, PackagePlus, Settings, ShoppingBag } from "lucide-react";
+import { BarChart3, Boxes, CreditCard, ImageIcon, KeyRound, LayoutDashboard, LogOut, PackagePlus, Settings, ShoppingBag, TrendingUp } from "lucide-react";
 import { logoutAction } from "@/app/admin/login/actions";
 import { requireAdmin } from "@/lib/admin-auth";
 import { Button } from "@/components/ui/button";
 
 const adminNav = [
+  { href: "/admin/accounts", label: "Accounts", icon: KeyRound },
   { href: "/admin", label: "الرئيسية", icon: LayoutDashboard },
+  { href: "/admin/statistics", label: "Statistics", icon: TrendingUp },
   { href: "/admin/products", label: "المنتجات", icon: Boxes },
   { href: "/admin/products/new", label: "منتج جديد", icon: PackagePlus },
   { href: "/admin/orders", label: "الطلبات", icon: ShoppingBag },
