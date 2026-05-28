@@ -16,6 +16,7 @@ import {
 import { formatPriceDZD } from "@/lib/utils";
 import { useCurrency } from "@/lib/useCurrency";
 import { useLocale } from "@/lib/useLocale";
+import { submitOrderAction } from "@/app/checkout/actions";
 
 const paymentMethods: PaymentMethodId[] = ["BaridiMob", "CCP", "RedotPay"];
 
@@ -112,7 +113,7 @@ export function CheckoutView({ products, directProductSlug, directOption, direct
     }
   }
 
-  function handleSubmit(event: FormEvent<HTMLFormElement>) {
+  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (!items.length) return;
 
@@ -128,6 +129,20 @@ export function CheckoutView({ products, directProductSlug, directOption, direct
     };
 
     saveLocalOrder(order);
+
+    try {
+      await submitOrderAction({
+        customerName: name,
+        phone,
+        email,
+        products: items,
+        paymentMethod,
+        total,
+        notes: notes || undefined,
+      });
+    } catch (error) {
+      console.error("Failed to save order to Supabase:", error);
+    }
 
     const productLines = items
       .map(
