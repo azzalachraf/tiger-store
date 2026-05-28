@@ -1,5 +1,6 @@
 import { getOrders } from "@/lib/admin-store";
-import { saveOrderStatusAction } from "@/app/admin/orders/actions";
+import { saveOrderStatusAction, deleteOrderAction, addManualOrderAction } from "@/app/admin/orders/actions";
+import { Trash2, Plus } from "lucide-react";
 import { AdminShell } from "@/components/admin/AdminShell";
 import { formatPriceDZD } from "@/lib/utils";
 
@@ -13,12 +14,40 @@ export default async function AdminOrdersPage() {
   const orders = await getOrders();
 
   return (
-    <AdminShell title="Orders" description="Order management is ready for future backend storage.">
+    <AdminShell title="Orders" description="Order management and manual statistics adjustments.">
+      <section className="mb-8 rounded-2xl border border-white/10 bg-black/25 p-5">
+        <div className="mb-4">
+          <h2 className="text-lg font-black text-white">Add Manual Sale</h2>
+          <p className="text-sm text-white/55">Quickly add a manual sale to your statistics.</p>
+        </div>
+        <form action={addManualOrderAction} className="flex flex-wrap items-end gap-3">
+          <label className="grid gap-1 text-sm font-bold text-white">
+            Description
+            <input name="customerName" placeholder="e.g. WhatsApp Sale" required className="min-h-11 rounded-xl border border-white/10 bg-black px-3 text-white" />
+          </label>
+          <label className="grid gap-1 text-sm font-bold text-white">
+            Amount (DA)
+            <input name="total" type="number" required className="min-h-11 w-32 rounded-xl border border-white/10 bg-black px-3 text-white" />
+          </label>
+          <label className="grid gap-1 text-sm font-bold text-white">
+            Status
+            <select name="status" className="min-h-11 rounded-xl border border-white/10 bg-black px-3 text-white">
+              <option value="paid">paid</option>
+              <option value="delivered">delivered</option>
+            </select>
+          </label>
+          <button type="submit" className="flex min-h-11 items-center gap-2 rounded-xl bg-tiger-ember px-4 font-black text-black transition-colors hover:bg-tiger-gold">
+            <Plus className="h-4 w-4" /> Add Sale
+          </button>
+        </form>
+      </section>
+
       {orders.length ? (
         <div className="grid gap-4">
           {orders.map((order) => (
             <form key={order.id} action={saveOrderStatusAction} className="rounded-2xl border border-white/10 bg-white/[0.045] p-5">
               <input type="hidden" name="order" value={JSON.stringify(order)} />
+              <input type="hidden" name="id" value={order.id} />
               <div className="grid gap-3 md:grid-cols-2">
                 <Info label="Customer" value={order.customerName} />
                 <Info label="Phone" value={order.phone} />
@@ -42,7 +71,12 @@ export default async function AdminOrdersPage() {
                   <input name="adminNotes" defaultValue={order.adminNotes ?? ""} className="min-h-11 rounded-xl border border-white/10 bg-black px-3 text-white" />
                 </label>
               </div>
-              <button type="submit" className="mt-4 min-h-11 rounded-xl bg-tiger-ember px-5 font-black text-black">Save Order</button>
+              <div className="mt-4 flex items-center justify-between gap-3">
+                <button type="submit" className="min-h-11 rounded-xl bg-tiger-ember px-5 font-black text-black">Save Order</button>
+                <button formAction={deleteOrderAction} className="flex min-h-11 items-center justify-center rounded-xl border border-red-500/20 bg-red-500/10 px-5 font-bold text-red-400 transition-colors hover:bg-red-500/20">
+                  <Trash2 className="mr-2 h-4 w-4" /> Delete Order
+                </button>
+              </div>
             </form>
           ))}
         </div>

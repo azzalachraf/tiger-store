@@ -135,6 +135,11 @@ export async function saveOrder(order: AdminOrder) {
   if (error) throw new Error(`saveOrder failed: ${error.message}`);
 }
 
+export async function deleteOrder(id: string) {
+  const { error } = await supabase.from("orders").delete().eq("id", id);
+  if (error) throw new Error(`deleteOrder failed: ${error.message}`);
+}
+
 /* ------------------------------------------------------------------ */
 /*  Settings                                                          */
 /* ------------------------------------------------------------------ */
