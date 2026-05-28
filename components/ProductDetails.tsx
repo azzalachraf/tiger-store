@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { ArrowRight, Heart, ShoppingCart, Star } from "lucide-react";
+import { ArrowRight, Heart, ShoppingCart, Star, Check } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { CurrencyPrice } from "@/components/CurrencyPrice";
 import { Button } from "@/components/ui/button";
@@ -195,32 +195,36 @@ export function ProductDetails({ product }: ProductDetailsProps) {
 
         {/* Product Details Section */}
         <div className="mt-8">
-          <h2 className="text-xl font-black text-white">
+          <h2 className="mb-4 text-xl font-black text-white">
             {locale === "ar" ? "تفاصيل المنتج" : "Product Details"}
           </h2>
-          <p className="mt-3 leading-7 text-white/70 whitespace-pre-line">
-            {locale === "ar" ? (product.shortDescriptionAr || product.shortDescriptionEn) : product.shortDescriptionEn}
-          </p>
+          <div className="rounded-xl border border-white/10 bg-white/[0.02] p-5">
+            <p className="whitespace-pre-line text-base font-bold leading-8 text-white/90">
+              {locale === "ar" ? (product.shortDescriptionAr || product.shortDescriptionEn) : product.shortDescriptionEn}
+            </p>
 
-          {(() => {
-            const features = locale === "ar" && product.featuresAr?.length > 0 ? product.featuresAr : product.featuresEn;
-            if (!features || features.length === 0) return null;
-            return (
-              <div className="mt-6">
-                <h3 className="mb-3 text-lg font-black text-white">
-                  {locale === "ar" ? "المميزات" : "Features"}
-                </h3>
-                <ul className="grid gap-2">
-                  {features.map((feature, i) => (
-                    <li key={i} className="flex items-start gap-3 text-sm leading-6 text-white/70">
-                      <span className="mt-2.5 h-1.5 w-1.5 shrink-0 rounded-full bg-tiger-gold" />
-                      <span>{feature}</span>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            );
-          })()}
+            {(() => {
+              const features = locale === "ar" && product.featuresAr?.length > 0 ? product.featuresAr : product.featuresEn;
+              if (!features || features.length === 0) return null;
+              return (
+                <div className="mt-6 border-t border-white/10 pt-5">
+                  <h3 className="mb-4 text-sm font-black uppercase tracking-wider text-white/50">
+                    {locale === "ar" ? "المميزات" : "Features"}
+                  </h3>
+                  <ul className="grid gap-3 sm:grid-cols-2">
+                    {features.map((feature, i) => (
+                      <li key={i} className="flex items-center gap-3 font-bold text-white/80">
+                        <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-tiger-ember/20 text-tiger-gold">
+                          <Check className="h-3 w-3" />
+                        </span>
+                        <span>{feature}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              );
+            })()}
+          </div>
         </div>
       </div>
 
