@@ -192,6 +192,36 @@ export function ProductDetails({ product }: ProductDetailsProps) {
             </div>
           </div>
         ) : null}
+
+        {/* Product Details Section */}
+        <div className="mt-8">
+          <h2 className="text-xl font-black text-white">
+            {locale === "ar" ? "تفاصيل المنتج" : "Product Details"}
+          </h2>
+          <p className="mt-3 leading-7 text-white/70 whitespace-pre-line">
+            {locale === "ar" ? (product.shortDescriptionAr || product.shortDescriptionEn) : product.shortDescriptionEn}
+          </p>
+
+          {(() => {
+            const features = locale === "ar" && product.featuresAr?.length > 0 ? product.featuresAr : product.featuresEn;
+            if (!features || features.length === 0) return null;
+            return (
+              <div className="mt-6">
+                <h3 className="mb-3 text-lg font-black text-white">
+                  {locale === "ar" ? "المميزات" : "Features"}
+                </h3>
+                <ul className="grid gap-2">
+                  {features.map((feature, i) => (
+                    <li key={i} className="flex items-start gap-3 text-sm leading-6 text-white/70">
+                      <span className="mt-2.5 h-1.5 w-1.5 shrink-0 rounded-full bg-tiger-gold" />
+                      <span>{feature}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            );
+          })()}
+        </div>
       </div>
 
       <aside className="store-panel rounded-md p-5 lg:sticky lg:top-24">
