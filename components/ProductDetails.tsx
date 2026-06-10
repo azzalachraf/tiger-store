@@ -149,11 +149,9 @@ export function ProductDetails({ product }: ProductDetailsProps) {
 
   return (
     <section className="space-y-12">
-      <div
-        className="grid gap-6 lg:grid-cols-[440px_minmax(0,1fr)_350px] lg:items-start xl:grid-cols-[520px_minmax(0,1fr)_360px]"
-        dir="ltr"
-      >
-        <div className="overflow-hidden rounded-md bg-[#2b2b2b] shadow-[0_24px_70px_rgba(0,0,0,0.35)]">
+      <div className="flex flex-col gap-6 xl:flex-row xl:items-start" dir="ltr">
+        <div className="order-1 w-full xl:w-[520px]">
+          <div className="overflow-hidden rounded-md bg-[#2b2b2b] shadow-[0_24px_70px_rgba(0,0,0,0.35)]">
           <div className="relative aspect-square overflow-hidden bg-[#202020]">
             <Image
               src={product.image}
@@ -173,9 +171,10 @@ export function ProductDetails({ product }: ProductDetailsProps) {
               </span>
             ) : null}
           </div>
+          </div>
         </div>
 
-        <div className="min-w-0 py-1" dir={direction}>
+        <div className="order-2 min-w-0 flex-1 py-1" dir={direction}>
           <div className="text-sm font-bold text-white/55">
             <Link href="/" className="hover:text-tiger-gold">{labels.home}</Link>
             <span className="mx-2">/</span>
@@ -245,7 +244,7 @@ export function ProductDetails({ product }: ProductDetailsProps) {
           ) : null}
         </div>
 
-        <aside className="rounded-md bg-[#303030] p-6 shadow-[0_24px_70px_rgba(0,0,0,0.35)] lg:sticky lg:top-24" dir={direction}>
+        <aside className="order-3 w-full rounded-md bg-[#303030] p-6 shadow-[0_24px_70px_rgba(0,0,0,0.35)] xl:w-[360px] xl:sticky xl:top-24" dir={direction}>
           <div className="flex flex-wrap items-end gap-3">
             {selectedOffer.oldPrice && selectedOffer.oldPrice > selectedOffer.price ? (
               <p className="pb-1 text-base font-bold text-white/40 line-through">
