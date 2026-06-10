@@ -200,10 +200,6 @@ export function ProductDetails({ product }: ProductDetailsProps) {
             <span className="text-xs font-black text-white/50">5.0</span>
           </div>
 
-          <p className="mt-7 max-w-2xl text-sm font-bold leading-7 text-white/78 sm:text-base">
-            {description}
-          </p>
-
           <div className="mt-8 grid gap-x-10 gap-y-6 border-b border-white/10 pb-8 sm:grid-cols-2 xl:grid-cols-3">
             <InfoItem label={labels.duration} value={locale === "ar" ? selectedOffer.durationAr : selectedOffer.duration} />
             <InfoItem label={labels.activation} value={locale === "ar" ? product.activationTypeAr : product.activationTypeEn} />
