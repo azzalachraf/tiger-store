@@ -391,6 +391,79 @@
       "image": "/products/02_Grok_AI.webp",
       "available": true,
       "featured": false
+    },
+    {
+      "id": "snap-plus",
+      "slug": "snap+",
+      "name": "Snap Plus",
+      "nameAr": "Snap Plus",
+      "category": "AI",
+      "categoryAr": "الذكاء الاصطناعي",
+      "price": 599,
+      "oldPrice": 800,
+      "currency": "DZD",
+      "duration": "1 month",
+      "durationAr": "شهر واحد",
+      "shortDescriptionAr": "استمتع بمميزات سناب بلس الحصرية مع أدوات إضافية، وصول مبكر للمزايا الجديدة، وخيارات تخصيص أكثر.",
+      "shortDescriptionEn": "Unlock premium Snapchat features with Snap Plus, including exclusive tools, early access features, and more personalization.",
+      "featuresAr": [
+        "مميزات Snapchat+ حصرية",
+        "وصول مبكر للمزايا الجديدة",
+        "خيارات تخصيص أكثر للحساب",
+        "أيقونات تطبيق مخصصة",
+        "معرفة إعادة مشاهدة الستوري",
+        "تثبيت صديق مقرّب دائم",
+        "Ghost Trails على الخريطة",
+        "أولوية في الرد على الستوري",
+        "يعمل على iPhone و Android",
+        "بدون كلمة سر"
+      ],
+      "featuresEn": [
+        "Exclusive Snapchat+ features",
+        "Early access to new features",
+        "More profile customization options",
+        "Custom app icons",
+        "Story rewatch indicator",
+        "Best Friends Forever pin",
+        "Ghost Trails on the map",
+        "Priority story replies",
+        "Works on iPhone and Android",
+        "No password required"
+      ],
+      "activationTypeAr": "هدية",
+      "activationTypeEn": "Gift",
+      "image": "/products/13_Snap_Plus.png",
+      "available": true,
+      "featured": true,
+      "priceOptions": [
+        {
+          "label": "3 months",
+          "labelAr": "3 أشهر",
+          "price": 1699,
+          "oldPrice": 1800,
+          "duration": "3 months",
+          "durationAr": "3 أشهر",
+          "available": true
+        },
+        {
+          "label": "6 months",
+          "labelAr": "6 أشهر",
+          "price": 2299,
+          "oldPrice": 2800,
+          "duration": "6 months",
+          "durationAr": "6 أشهر",
+          "available": true
+        },
+        {
+          "label": "1 year",
+          "labelAr": "سنة كاملة",
+          "price": 2499,
+          "oldPrice": 3800,
+          "duration": "1 year",
+          "durationAr": "سنة كاملة",
+          "available": true
+        }
+      ]
     }
   ],
   "orders": [],
