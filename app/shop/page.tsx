@@ -1,9 +1,8 @@
-import categories from "@/data/categories.json";
 import { getProducts } from "@/lib/admin-store";
 import { Footer } from "@/components/Footer";
 import { Header } from "@/components/Header";
 import { ShopCatalog } from "@/components/ShopCatalog";
-import { Category } from "@/lib/types";
+import { getSiteCategories } from "@/lib/categories";
 
 export const metadata = {
   title: "Shop",
@@ -16,6 +15,7 @@ type ShopPageProps = {
 export default async function ShopPage({ searchParams }: ShopPageProps) {
   const { category, featured, sale, q } = await searchParams;
   const products = await getProducts();
+  const categories = getSiteCategories(products);
 
   return (
     <>
@@ -23,7 +23,7 @@ export default async function ShopPage({ searchParams }: ShopPageProps) {
       <main className="min-h-screen">
         <ShopCatalog
           products={products}
-          categories={categories as Category[]}
+          categories={categories}
           initialCategory={category ?? "all"}
           initialFeatured={featured === "true"}
           initialSale={sale === "true"}

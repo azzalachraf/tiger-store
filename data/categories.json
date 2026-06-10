@@ -5,6 +5,7 @@
   { "id": "Architecture", "name": { "ar": "الهندسة والعمارة", "en": "Architecture" } },
   { "id": "Video Editing", "name": { "ar": "المونتاج", "en": "Video Editing" } },
   { "id": "Education", "name": { "ar": "التعليم", "en": "Education" } },
+  { "id": "Social Media", "name": { "ar": "التواصل الاجتماعي", "en": "Social Media" } },
   { "id": "VPN", "name": { "ar": "الحماية و VPN", "en": "VPN" } },
   { "id": "Software", "name": { "ar": "البرامج", "en": "Software" } }
 ]

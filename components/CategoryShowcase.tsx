@@ -33,6 +33,12 @@ const showcaseGroups = [
     productNames: ["Duolingo Premium", "Gemini Pro", "Canva Pro"],
   },
   {
+    title: "Social Media",
+    href: "/categories/social-media",
+    categoryIds: ["Social Media"],
+    productNames: ["Snap Plus"],
+  },
+  {
     title: "Premium Access",
     href: "/shop?featured=true",
     categoryIds: ["AI", "Design"],

@@ -4,18 +4,9 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { requireAdmin } from "@/lib/admin-auth";
 import { deleteProduct, saveProduct } from "@/lib/admin-store";
+import { getSiteCategories } from "@/lib/categories";
 import { supabase } from "@/lib/supabase";
-import { Product, ProductCategory, ProductPriceOption } from "@/lib/types";
-
-const categoryAr: Record<ProductCategory, string> = {
-  AI: "الذكاء الاصطناعي",
-  Architecture: "الهندسة والعمارة",
-  VPN: "الحماية و VPN",
-  "Video Editing": "المونتاج",
-  Design: "التصميم",
-  Education: "التعليم",
-  Software: "البرامج",
-};
+import { Product, ProductPriceOption } from "@/lib/types";
 
 function text(formData: FormData, key: string) {
   return String(formData.get(key) ?? "").trim();
@@ -112,7 +103,16 @@ function parseVariants(value: string): ProductPriceOption[] | undefined {
 export async function saveProductAction(formData: FormData) {
   await requireAdmin();
 
-  const category = text(formData, "category") as ProductCategory;
+  const selectedCategory = text(formData, "category");
+  const customCategory = text(formData, "customCategory");
+  const category = selectedCategory === "__custom" ? customCategory : selectedCategory;
+  if (!category) {
+    throw new Error("Please choose or enter a product category.");
+  }
+  const categoryConfig = getSiteCategories().find((entry) => entry.id === category);
+  const categoryAr = selectedCategory === "__custom"
+    ? text(formData, "customCategoryAr") || category
+    : categoryConfig?.name.ar || category;
   const id = text(formData, "id") || text(formData, "slug") || crypto.randomUUID();
   const slug = text(formData, "slug");
   const price = numberValue(formData, "price") ?? 0;
@@ -129,8 +129,8 @@ export async function saveProductAction(formData: FormData) {
     slug,
     name: text(formData, "name"),
     nameAr: text(formData, "nameAr") || text(formData, "name"),
-    category,
-    categoryAr: categoryAr[category],
+    category: category as Product["category"],
+    categoryAr,
     price,
     oldPrice,
     currency: "DZD",

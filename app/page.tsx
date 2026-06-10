@@ -1,6 +1,5 @@
 import Link from "next/link";
 import Image from "next/image";
-import categories from "@/data/categories.json";
 import { CategoryShowcase } from "@/components/CategoryShowcase";
 import { Footer } from "@/components/Footer";
 import { FaqPreview } from "@/components/FaqPreview";
@@ -10,7 +9,8 @@ import { LocalizedText } from "@/components/LocalizedText";
 import { ProductCard } from "@/components/ProductCard";
 import { Button } from "@/components/ui/button";
 import { getProducts, getSettings } from "@/lib/admin-store";
-import { Category, Product } from "@/lib/types";
+import { getSiteCategories } from "@/lib/categories";
+import { Product } from "@/lib/types";
 import type { ReactNode } from "react";
 import { BadgeCheck, CreditCard, Headphones, ShieldCheck, Zap } from "lucide-react";
 
@@ -24,7 +24,7 @@ const trustItems = [
 export default async function Home() {
   const products = await getProducts();
   const settings = await getSettings();
-  const siteCategories = categories as Category[];
+  const siteCategories = getSiteCategories(products);
   const saleProducts = products.filter((product) => product.oldPrice && product.oldPrice > product.price).slice(0, 8);
   const featuredProducts = products.filter((product) => product.featured).slice(0, 8);
   const mostRequested = [...products].sort((a, b) => Number(b.featured) - Number(a.featured) || a.price - b.price).slice(0, 8);

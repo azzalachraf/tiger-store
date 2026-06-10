@@ -1,11 +1,10 @@
 import Link from "next/link";
-import categories from "@/data/categories.json";
 import { CategoryShowcase } from "@/components/CategoryShowcase";
 import { Footer } from "@/components/Footer";
 import { Header } from "@/components/Header";
 import { LocalizedText } from "@/components/LocalizedText";
 import { getProducts } from "@/lib/admin-store";
-import { Category } from "@/lib/types";
+import { getSiteCategories } from "@/lib/categories";
 
 export const metadata = {
   title: "Categories",
@@ -13,6 +12,7 @@ export const metadata = {
 
 export default async function CategoriesPage() {
   const products = await getProducts();
+  const categories = getSiteCategories(products);
 
   return (
     <>
@@ -41,7 +41,7 @@ export default async function CategoriesPage() {
           </section>
         </div>
 
-        <CategoryShowcase categories={categories as Category[]} products={products} className="px-0 sm:px-0 lg:px-0" />
+        <CategoryShowcase categories={categories} products={products} className="px-0 sm:px-0 lg:px-0" />
       </main>
       <Footer />
     </>

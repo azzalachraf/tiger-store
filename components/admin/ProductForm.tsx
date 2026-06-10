@@ -3,10 +3,12 @@
 import { useEffect, useMemo, useState } from "react";
 import { ArrowDown, ArrowUp, ImageUp, Plus, Trash2 } from "lucide-react";
 import { saveProductAction } from "@/app/admin/products/actions";
-import { Product, ProductCategory, ProductPriceOption } from "@/lib/types";
+import defaultCategories from "@/data/categories.json";
+import { Product, Category, ProductPriceOption } from "@/lib/types";
 import { calculateDiscount } from "@/lib/utils";
 
-const categories: ProductCategory[] = ["AI", "Design", "Architecture", "Video Editing", "Education", "VPN", "Software"];
+const categories = (defaultCategories as Category[]).filter((category) => category.id !== "all");
+const customCategoryValue = "__custom";
 
 type ProductFormProps = {
   product?: Product;
@@ -17,6 +19,8 @@ type EditableVariant = ProductPriceOption & {
 };
 
 export function ProductForm({ product }: ProductFormProps) {
+  const existingCategory = categories.some((category) => category.id === product?.category);
+  const [categoryMode, setCategoryMode] = useState(existingCategory || !product ? product?.category ?? "AI" : customCategoryValue);
   const [imagePath, setImagePath] = useState(product?.image ?? "/products/");
   const [uploadPreview, setUploadPreview] = useState<string | null>(null);
   const [variants, setVariants] = useState<EditableVariant[]>(
@@ -97,12 +101,24 @@ export function ProductForm({ product }: ProductFormProps) {
         <AdminField name="slug" label="Slug" defaultValue={product?.slug ?? ""} required />
         <label className="grid gap-2 text-sm font-bold text-white">
           Category
-          <select name="category" defaultValue={product?.category ?? "AI"} className="min-h-12 rounded-xl border border-white/10 bg-black px-4 text-white outline-none">
+          <select
+            name="category"
+            value={categoryMode}
+            onChange={(event) => setCategoryMode(event.target.value)}
+            className="min-h-12 rounded-xl border border-white/10 bg-black px-4 text-white outline-none"
+          >
             {categories.map((category) => (
-              <option key={category} value={category}>{category}</option>
+              <option key={category.id} value={category.id}>{category.name.en}</option>
             ))}
+            <option value={customCategoryValue}>+ New category</option>
           </select>
         </label>
+        {categoryMode === customCategoryValue ? (
+          <>
+            <AdminField name="customCategory" label="New category name" defaultValue={existingCategory ? "" : product?.category ?? ""} required />
+            <AdminField name="customCategoryAr" label="New Arabic category name" defaultValue={existingCategory ? "" : product?.categoryAr ?? ""} />
+          </>
+        ) : null}
         <AdminField name="price" label="Base price" defaultValue={product ? String(product.price) : ""} type="number" required />
         <AdminField name="oldPrice" label="Old price for discount" defaultValue={product?.oldPrice ? String(product.oldPrice) : ""} type="number" />
         <AdminField name="duration" label="Base duration" defaultValue={product?.duration ?? ""} required />

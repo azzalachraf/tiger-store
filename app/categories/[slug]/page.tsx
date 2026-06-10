@@ -1,30 +1,28 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import categories from "@/data/categories.json";
 import { Footer } from "@/components/Footer";
 import { Header } from "@/components/Header";
 import { LocalizedText } from "@/components/LocalizedText";
 import { ProductCard } from "@/components/ProductCard";
 import { getProducts } from "@/lib/admin-store";
-import { Category } from "@/lib/types";
+import { categorySlug, getSiteCategories } from "@/lib/categories";
 
 type CategoryPageProps = {
   params: Promise<{ slug: string }>;
 };
 
-function categorySlug(id: string) {
-  return id.toLowerCase().replace(/\s+/g, "-");
-}
+export const dynamic = "force-dynamic";
 
 export function generateStaticParams() {
-  return (categories as Category[])
+  return getSiteCategories()
     .filter((category) => category.id !== "all")
     .map((category) => ({ slug: categorySlug(category.id) }));
 }
 
 export async function generateMetadata({ params }: CategoryPageProps) {
   const { slug } = await params;
-  const category = (categories as Category[]).find((item) => categorySlug(item.id) === slug);
+  const products = await getProducts();
+  const category = getSiteCategories(products).find((item) => categorySlug(item.id) === slug);
 
   return {
     title: category ? category.name.en : "Category",
@@ -33,13 +31,13 @@ export async function generateMetadata({ params }: CategoryPageProps) {
 
 export default async function CategoryDetailPage({ params }: CategoryPageProps) {
   const { slug } = await params;
-  const category = (categories as Category[]).find((item) => categorySlug(item.id) === slug);
+  const products = await getProducts();
+  const category = getSiteCategories(products).find((item) => categorySlug(item.id) === slug);
 
   if (!category || category.id === "all") {
     notFound();
   }
 
-  const products = await getProducts();
   const categoryProducts = products.filter((product) => product.category === category.id);
 
   return (

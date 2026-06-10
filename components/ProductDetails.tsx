@@ -7,6 +7,7 @@ import { useEffect, useMemo, useState } from "react";
 import { CurrencyPrice } from "@/components/CurrencyPrice";
 import { Button } from "@/components/ui/button";
 import { addCartItem, createCartItem } from "@/lib/cart";
+import { categorySlug } from "@/lib/categories";
 import { Product, ProductPriceOption } from "@/lib/types";
 import { calculateDiscount, cn } from "@/lib/utils";
 import { useLocale } from "@/lib/useLocale";
@@ -182,7 +183,7 @@ export function ProductDetails({ product }: ProductDetailsProps) {
           <div className="text-sm font-bold text-white/55">
             <Link href="/" className="hover:text-tiger-gold">{labels.home}</Link>
             <span className="mx-2">/</span>
-            <Link href={`/categories/${product.category.toLowerCase().replace(/\s+/g, "-")}`} className="hover:text-tiger-gold">
+            <Link href={`/categories/${categorySlug(product.category)}`} className="hover:text-tiger-gold">
               {product.category}
             </Link>
             <span className="mx-2">/</span>
