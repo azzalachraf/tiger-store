@@ -149,16 +149,20 @@ export function ProductDetails({ product }: ProductDetailsProps) {
 
   return (
     <section className="space-y-12">
-      <div className="flex flex-col gap-6 xl:flex-row xl:items-start" dir="ltr">
-        <div className="order-1 w-full xl:w-[520px]">
+      <div
+        className="grid gap-6 xl:grid-cols-[480px_minmax(0,1fr)_360px] xl:items-start"
+        dir="ltr"
+        style={{ direction: "ltr" }}
+      >
+        <div className="xl:col-start-1">
           <div className="overflow-hidden rounded-md bg-[#2b2b2b] shadow-[0_24px_70px_rgba(0,0,0,0.35)]">
-          <div className="relative aspect-square overflow-hidden bg-[#202020]">
+          <div className="relative aspect-[4/5] overflow-hidden bg-[#202020]">
             <Image
               src={product.image}
               alt={`${product.name} product card`}
               fill
-              sizes="(min-width: 1280px) 520px, (min-width: 1024px) 440px, 100vw"
-              className="object-cover"
+              sizes="(min-width: 1280px) 480px, (min-width: 1024px) 440px, 100vw"
+              className="object-contain p-3"
               priority
             />
             {!product.available ? (
@@ -174,7 +178,7 @@ export function ProductDetails({ product }: ProductDetailsProps) {
           </div>
         </div>
 
-        <div className="order-2 min-w-0 flex-1 py-1" dir={direction}>
+        <div className="min-w-0 py-1 xl:col-start-2" dir={direction}>
           <div className="text-sm font-bold text-white/55">
             <Link href="/" className="hover:text-tiger-gold">{labels.home}</Link>
             <span className="mx-2">/</span>
@@ -244,7 +248,7 @@ export function ProductDetails({ product }: ProductDetailsProps) {
           ) : null}
         </div>
 
-        <aside className="order-3 w-full rounded-md bg-[#303030] p-6 shadow-[0_24px_70px_rgba(0,0,0,0.35)] xl:w-[360px] xl:sticky xl:top-24" dir={direction}>
+        <aside className="w-full rounded-md bg-[#303030] p-6 shadow-[0_24px_70px_rgba(0,0,0,0.35)] xl:col-start-3 xl:sticky xl:top-24" dir={direction}>
           <div className="flex flex-wrap items-end gap-3">
             {selectedOffer.oldPrice && selectedOffer.oldPrice > selectedOffer.price ? (
               <p className="pb-1 text-base font-bold text-white/40 line-through">
