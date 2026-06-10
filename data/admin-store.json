@@ -432,7 +432,7 @@
       ],
       "activationTypeAr": "هدية",
       "activationTypeEn": "Gift",
-      "image": "/products/13_Snap_Plus.png",
+      "image": "https://oredqraaneamlduupxmt.supabase.co/storage/v1/object/public/product-images/snap-plus.png",
       "available": true,
       "featured": true,
       "priceOptions": [
