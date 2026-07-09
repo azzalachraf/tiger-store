@@ -7,7 +7,7 @@ import { CurrencyPrice } from "@/components/CurrencyPrice";
 import { Product } from "@/lib/types";
 import { useLocale } from "@/lib/useLocale";
 
-const mainHeroImage = "/hero/Hero section image.png?v=20260518-1923";
+const mainHeroImage = "/hero/Hero section image.png?v=20260709";
 
 const promoImages = [
   {
@@ -50,7 +50,7 @@ export function Hero({ products }: HeroProps) {
             className="group relative block overflow-hidden rounded-md border border-white/10 bg-[#161616] shadow-[0_20px_55px_rgba(0,0,0,0.38)]"
             aria-label="Shop Tiger Store"
           >
-            <div className="relative aspect-[1672/941]">
+            <div className="relative aspect-[16/9]">
               <Image
                 src={mainHeroImage}
                 alt="Tiger Store main hero banner"
