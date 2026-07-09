@@ -96,7 +96,7 @@ export type LocalOrder = {
   source: "localStorage";
 };
 
-export type AdminOrderStatus = "pending" | "paid" | "delivered" | "cancelled";
+export type AdminOrderStatus = "pending" | "paid" | "delivered" | "cancelled" | "refunded";
 
 export type AdminOrder = {
   id: string;
@@ -110,6 +110,10 @@ export type AdminOrder = {
   status: AdminOrderStatus;
   createdAt: string;
   adminNotes?: string;
+  utm_source?: string;
+  utm_medium?: string;
+  utm_campaign?: string;
+  referrer?: string;
 };
 
 export type AdminAccountStatus = "Available" | "Sold" | "Expired" | "Problem";
@@ -136,4 +140,58 @@ export type SiteSettings = {
   redotPayDetails: string;
   promoHeadings: string[];
   footerDisclaimer: string;
+};
+
+/* ------------------------------------------------------------------ */
+/*  Analytics & Marketing Types                                       */
+/* ------------------------------------------------------------------ */
+
+export type AnalyticsDateRange =
+  | "today"
+  | "7d"
+  | "30d"
+  | "90d"
+  | "year"
+  | "all";
+
+export type MarketingConfig = {
+  id: string;
+  meta_pixel_id: string;
+  meta_pixel_enabled: boolean;
+  meta_capi_token: string;
+  meta_capi_enabled: boolean;
+  updated_at: string;
+};
+
+export type PageEvent = {
+  id: string;
+  event_type: string;
+  page_url: string;
+  product_id?: string;
+  session_id?: string;
+  utm_source?: string;
+  utm_medium?: string;
+  utm_campaign?: string;
+  utm_content?: string;
+  utm_term?: string;
+  referrer?: string;
+  created_at: string;
+};
+
+export type CustomerProfile = {
+  email: string;
+  name: string;
+  totalSpent: number;
+  orderCount: number;
+  firstOrder: string;
+  lastOrder: string;
+  averageOrderValue: number;
+  isReturning: boolean;
+};
+
+export type FunnelStep = {
+  label: string;
+  count: number;
+  percentage: number;
+  dropOff: number;
 };

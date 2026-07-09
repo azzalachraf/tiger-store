@@ -9,8 +9,14 @@ import {
   XCircle,
   Package,
   Key,
+  Users,
+  UserPlus,
   UserCheck,
   AlertTriangle,
+  BarChart3,
+  Repeat,
+  Banknote,
+  RotateCcw,
 } from "lucide-react";
 import {
   StatCard,
@@ -34,8 +40,8 @@ export default async function AdminDashboardPage() {
 
   return (
     <AdminShell title="Dashboard" description="Business overview and key metrics at a glance.">
-      {/* ── Overview Stat Cards ── */}
-      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
+      {/* ── Revenue Cards ── */}
+      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <StatCard
           icon={<DollarSign className="h-5 w-5" />}
           label="Total Revenue"
@@ -49,68 +55,68 @@ export default async function AdminDashboardPage() {
           value={formatCurrency(a.monthlyRevenue)}
         />
         <StatCard
+          icon={<Banknote className="h-5 w-5" />}
+          label="Today"
+          value={formatCurrency(a.todayRevenue)}
+        />
+        <StatCard
+          icon={<BarChart3 className="h-5 w-5" />}
+          label="Avg. Order Value"
+          value={formatCurrency(a.averageOrderValue)}
+        />
+      </div>
+
+      {/* ── Order & Customer Cards ── */}
+      <div className="mt-4 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        <StatCard
           icon={<ShoppingBag className="h-5 w-5" />}
           label="Total Orders"
           value={a.totalOrders}
-        />
-        <StatCard
-          icon={<Clock className="h-5 w-5" />}
-          label="Pending Orders"
-          value={a.pendingOrders}
         />
         <StatCard
           icon={<CheckCircle2 className="h-5 w-5" />}
           label="Completed"
           value={a.completedOrders}
         />
-      </div>
-
-      <div className="mt-4 grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
         <StatCard
-          icon={<XCircle className="h-5 w-5" />}
-          label="Cancelled"
-          value={a.cancelledOrders}
+          icon={<Clock className="h-5 w-5" />}
+          label="Pending"
+          value={a.pendingOrders}
         />
         <StatCard
-          icon={<Package className="h-5 w-5" />}
-          label="Total Products"
-          value={a.totalProducts}
-        />
-        <StatCard
-          icon={<Key className="h-5 w-5" />}
-          label="Available Accounts"
-          value={a.availableAccounts}
-        />
-        <StatCard
-          icon={<UserCheck className="h-5 w-5" />}
-          label="Sold Accounts"
-          value={a.soldAccounts}
-        />
-        <StatCard
-          icon={<AlertTriangle className="h-5 w-5" />}
-          label="Low Stock Warnings"
-          value={a.lowStockWarnings}
+          icon={<Users className="h-5 w-5" />}
+          label="Total Customers"
+          value={a.customerCount}
         />
       </div>
 
-      {/* ── Smart Insights Row ── */}
+      {/* ── Business Intelligence Row ── */}
       <div className="mt-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <div className="rounded-2xl border border-white/10 bg-white/[0.045] p-5">
-          <p className="text-xs font-bold uppercase tracking-wider text-white/40">Avg. Order Value</p>
-          <p className="mt-2 text-2xl font-extrabold text-tiger-gold">{formatCurrency(a.averageOrderValue)}</p>
+          <p className="text-xs font-bold uppercase tracking-wider text-white/40">Products Sold</p>
+          <p className="mt-2 text-2xl font-extrabold text-tiger-gold">{a.productsSold}</p>
         </div>
         <div className="rounded-2xl border border-white/10 bg-white/[0.045] p-5">
-          <p className="text-xs font-bold uppercase tracking-wider text-white/40">Conversion Rate</p>
-          <p className="mt-2 text-2xl font-extrabold text-tiger-gold">{a.conversionRate}%</p>
+          <p className="text-xs font-bold uppercase tracking-wider text-white/40">Returning Customers</p>
+          <p className="mt-2 text-2xl font-extrabold text-tiger-gold">{a.returningCustomers}</p>
         </div>
         <div className="rounded-2xl border border-white/10 bg-white/[0.045] p-5">
-          <p className="text-xs font-bold uppercase tracking-wider text-white/40">Best Category</p>
-          <p className="mt-2 text-2xl font-extrabold text-tiger-gold">{a.bestSellingCategory}</p>
+          <p className="text-xs font-bold uppercase tracking-wider text-white/40">Repeat Purchase Rate</p>
+          <p className="mt-2 text-2xl font-extrabold text-tiger-gold">{a.repeatPurchaseRate.toFixed(1)}%</p>
         </div>
         <div className="rounded-2xl border border-white/10 bg-white/[0.045] p-5">
-          <p className="text-xs font-bold uppercase tracking-wider text-white/40">Stock Value</p>
-          <p className="mt-2 text-2xl font-extrabold text-tiger-gold">{formatCurrency(a.totalStockValue)}</p>
+          <p className="text-xs font-bold uppercase tracking-wider text-white/40">Customer Lifetime Value</p>
+          <p className="mt-2 text-2xl font-extrabold text-tiger-gold">{formatCurrency(a.customerLifetimeValue)}</p>
         </div>
+      </div>
+
+      {/* ── More Insights ── */}
+      <div className="mt-4 grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
+        <StatCard icon={<XCircle className="h-5 w-5" />} label="Cancelled" value={a.cancelledOrders} />
+        <StatCard icon={<RotateCcw className="h-5 w-5" />} label="Refunded" value={a.refundedOrders} />
+        <StatCard icon={<Package className="h-5 w-5" />} label="Total Products" value={a.totalProducts} />
+        <StatCard icon={<Key className="h-5 w-5" />} label="Available Accounts" value={a.availableAccounts} />
+        <StatCard icon={<AlertTriangle className="h-5 w-5" />} label="Low Stock" value={a.lowStockWarnings} />
       </div>
 
       {/* ── Revenue Chart + Payment Methods ── */}

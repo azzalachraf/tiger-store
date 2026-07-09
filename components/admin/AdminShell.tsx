@@ -1,17 +1,21 @@
 import Link from "next/link";
 import { ReactNode } from "react";
-import { BarChart3, Boxes, CreditCard, ImageIcon, KeyRound, LayoutDashboard, LogOut, PackagePlus, Settings, ShoppingBag, TrendingUp } from "lucide-react";
+import { BarChart3, Boxes, CreditCard, ImageIcon, KeyRound, LayoutDashboard, LogOut, Megaphone, PackagePlus, Settings, ShoppingBag, TrendingUp, Users, Target, GitBranch } from "lucide-react";
 import { logoutAction } from "@/app/admin/login/actions";
 import { requireAdmin } from "@/lib/admin-auth";
 import { Button } from "@/components/ui/button";
 
 const adminNav = [
-  { href: "/admin/accounts", label: "Accounts", icon: KeyRound },
-  { href: "/admin", label: "الرئيسية", icon: LayoutDashboard },
+  { href: "/admin", label: "Dashboard", icon: LayoutDashboard },
   { href: "/admin/statistics", label: "Statistics", icon: TrendingUp },
+  { href: "/admin/customers", label: "Customers", icon: Users },
+  { href: "/admin/orders", label: "الطلبات", icon: ShoppingBag },
   { href: "/admin/products", label: "المنتجات", icon: Boxes },
   { href: "/admin/products/new", label: "منتج جديد", icon: PackagePlus },
-  { href: "/admin/orders", label: "الطلبات", icon: ShoppingBag },
+  { href: "/admin/accounts", label: "Accounts", icon: KeyRound },
+  { href: "/admin/marketing/meta", label: "Meta Pixel", icon: Megaphone },
+  { href: "/admin/marketing/funnel", label: "Sales Funnel", icon: GitBranch },
+  { href: "/admin/marketing/attribution", label: "Attribution", icon: Target },
   { href: "/admin/payment-methods", label: "طرق الدفع", icon: CreditCard },
   { href: "/admin/banners", label: "البنرات", icon: ImageIcon },
   { href: "/admin/settings", label: "الإعدادات", icon: Settings },

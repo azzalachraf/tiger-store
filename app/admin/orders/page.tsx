@@ -64,6 +64,7 @@ export default async function AdminOrdersPage() {
                     <option value="paid">paid</option>
                     <option value="delivered">delivered</option>
                     <option value="cancelled">cancelled</option>
+                    <option value="refunded">refunded</option>
                   </select>
                 </label>
                 <label className="grid gap-2 text-sm font-bold text-white">

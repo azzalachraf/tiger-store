@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
 import type { ReactNode } from "react";
+import { MetaPixelProvider } from "@/components/MetaPixelProvider";
+import { PageTracker } from "@/components/PageTracker";
 import "./globals.css";
 
 const description =
@@ -63,7 +65,12 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: Readonly<{ children: ReactNode }>) {
   return (
     <html lang="ar-DZ" dir="rtl" className="dark">
-      <body>{children}</body>
+      <body>
+        {children}
+        <MetaPixelProvider />
+        <PageTracker />
+      </body>
     </html>
   );
 }
+

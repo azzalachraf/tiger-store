@@ -17,6 +17,8 @@ import { formatPriceDZD } from "@/lib/utils";
 import { useCurrency } from "@/lib/useCurrency";
 import { useLocale } from "@/lib/useLocale";
 import { submitOrderAction } from "@/app/checkout/actions";
+import { trackInitiateCheckout, trackPurchase } from "@/lib/meta-pixel";
+import { readStoredUtm } from "@/components/PageTracker";
 
 const paymentMethods: PaymentMethodId[] = ["BaridiMob", "CCP", "RedotPay"];
 
@@ -103,6 +105,19 @@ export function CheckoutView({ products, directProductSlug, directOption, direct
 
   const total = useMemo(() => getCartSubtotal(items), [items]);
 
+  // Fire InitiateCheckout pixel event when items are loaded
+  useEffect(() => {
+    if (items.length > 0) {
+      trackInitiateCheckout(getCartSubtotal(items), items.length);
+      // Track funnel event
+      fetch("/api/track", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ event_type: "checkout_started", ...readStoredUtm() }),
+      }).catch(() => {});
+    }
+  }, [items]);
+
   function saveLocalOrder(order: LocalOrder) {
     try {
       const raw = window.localStorage.getItem(ORDERS_STORAGE_KEY);
@@ -130,6 +145,12 @@ export function CheckoutView({ products, directProductSlug, directOption, direct
 
     saveLocalOrder(order);
 
+    // Fire pixel Purchase event
+    const purchaseEventId = trackPurchase(order.id, total, items.map((i) => ({ id: i.productId })));
+
+    // Get UTM data from storage
+    const utm = readStoredUtm();
+
     try {
       await submitOrderAction({
         customerName: name,
@@ -139,6 +160,11 @@ export function CheckoutView({ products, directProductSlug, directOption, direct
         paymentMethod,
         total,
         notes: notes || undefined,
+        utm_source: utm.utm_source,
+        utm_medium: utm.utm_medium,
+        utm_campaign: utm.utm_campaign,
+        referrer: typeof document !== "undefined" ? document.referrer : undefined,
+        eventId: purchaseEventId,
       });
     } catch (error) {
       console.error("Failed to save order to Supabase:", error);

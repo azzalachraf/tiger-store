@@ -104,3 +104,54 @@ CREATE POLICY "Service role update product images"
 CREATE POLICY "Service role delete product images"
   ON storage.objects FOR DELETE
   USING (bucket_id = 'product-images');
+
+-- ============================================================
+-- 5. Page Events (funnel tracking, visitor analytics)
+-- ============================================================
+CREATE TABLE IF NOT EXISTS page_events (
+  id             TEXT PRIMARY KEY,
+  event_type     TEXT NOT NULL,
+  page_url       TEXT,
+  product_id     TEXT,
+  session_id     TEXT,
+  utm_source     TEXT,
+  utm_medium     TEXT,
+  utm_campaign   TEXT,
+  utm_content    TEXT,
+  utm_term       TEXT,
+  referrer       TEXT,
+  created_at     TIMESTAMPTZ DEFAULT now()
+);
+
+ALTER TABLE page_events ENABLE ROW LEVEL SECURITY;
+
+-- 6. Marketing Configuration
+CREATE TABLE IF NOT EXISTS marketing_config (
+  id                   TEXT PRIMARY KEY DEFAULT 'main',
+  meta_pixel_id        TEXT DEFAULT '',
+  meta_pixel_enabled   BOOLEAN DEFAULT false,
+  meta_capi_token      TEXT DEFAULT '',
+  meta_capi_enabled    BOOLEAN DEFAULT false,
+  updated_at           TIMESTAMPTZ DEFAULT now()
+);
+
+ALTER TABLE marketing_config ENABLE ROW LEVEL SECURITY;
+
+-- ============================================================
+-- Add UTM columns to orders (safe IF NOT EXISTS)
+-- ============================================================
+DO $$
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='orders' AND column_name='utm_source') THEN
+    ALTER TABLE orders ADD COLUMN utm_source TEXT;
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='orders' AND column_name='utm_medium') THEN
+    ALTER TABLE orders ADD COLUMN utm_medium TEXT;
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='orders' AND column_name='utm_campaign') THEN
+    ALTER TABLE orders ADD COLUMN utm_campaign TEXT;
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='orders' AND column_name='referrer') THEN
+    ALTER TABLE orders ADD COLUMN referrer TEXT;
+  END IF;
+END $$;

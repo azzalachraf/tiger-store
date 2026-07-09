@@ -4,15 +4,17 @@ import {
   DollarSign,
   TrendingUp,
   ShoppingBag,
-  Clock,
   CheckCircle2,
+  Clock,
   XCircle,
   Package,
   Key,
+  Users,
+  UserPlus,
   UserCheck,
-  AlertTriangle,
-  Calendar,
-  CreditCard,
+  Repeat,
+  Banknote,
+  RotateCcw,
   BarChart3,
   Target,
 } from "lucide-react";
@@ -28,28 +30,24 @@ import {
   ActivityFeed,
   ExportButton,
 } from "@/components/admin/DashboardCharts";
-import { formatPriceDZD } from "@/lib/utils";
 
 export const dynamic = "force-dynamic";
 
 export const metadata = {
-  title: "Statistics - Admin",
+  title: "Statistics",
 };
 
 export default async function AdminStatisticsPage() {
   const a = await getAnalytics();
 
   return (
-    <AdminShell title="Statistics" description="Detailed analytics, charts, and business intelligence.">
+    <AdminShell title="Statistics & Analytics" description="Comprehensive business intelligence dashboard.">
 
-      {/* ════════════════════════════════════════════════════════════
-          SECTION 1: Revenue Overview
-          ════════════════════════════════════════════════════════════ */}
-      <div className="mb-8">
-        <h2 className="mb-4 flex items-center gap-2 text-xl font-extrabold text-white">
-          <DollarSign className="h-5 w-5 text-tiger-ember" />
-          Revenue Overview
-        </h2>
+      {/* ════════════════════════════════════════════════
+          1. Revenue Overview
+          ════════════════════════════════════════════════ */}
+      <section>
+        <h2 className="mb-4 text-xl font-extrabold text-white">Revenue Overview</h2>
         <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
           <StatCard
             icon={<DollarSign className="h-5 w-5" />}
@@ -59,283 +57,143 @@ export default async function AdminStatisticsPage() {
             trendLabel="vs last month"
           />
           <StatCard
-            icon={<Calendar className="h-5 w-5" />}
-            label="Monthly Revenue"
+            icon={<TrendingUp className="h-5 w-5" />}
+            label="Monthly"
             value={formatCurrency(a.monthlyRevenue)}
           />
           <StatCard
-            icon={<TrendingUp className="h-5 w-5" />}
-            label="Weekly Revenue"
+            icon={<Banknote className="h-5 w-5" />}
+            label="Weekly"
             value={formatCurrency(a.weeklyRevenue)}
           />
           <StatCard
-            icon={<Clock className="h-5 w-5" />}
-            label="Today Revenue"
+            icon={<Banknote className="h-5 w-5" />}
+            label="Today"
             value={formatCurrency(a.todayRevenue)}
           />
         </div>
 
-        {/* Revenue Charts */}
         <div className="mt-4 grid gap-4 lg:grid-cols-2">
           <RevenueLineChart data={a.revenueByDay} />
           <MonthlyRevenueBarChart data={a.revenueByMonth} />
         </div>
-      </div>
+      </section>
 
-      {/* ════════════════════════════════════════════════════════════
-          SECTION 2: Order Analytics
-          ════════════════════════════════════════════════════════════ */}
-      <div className="mb-8">
-        <h2 className="mb-4 flex items-center gap-2 text-xl font-extrabold text-white">
-          <ShoppingBag className="h-5 w-5 text-tiger-ember" />
-          Order Analytics
-        </h2>
-        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-          <StatCard
-            icon={<ShoppingBag className="h-5 w-5" />}
-            label="Total Orders"
-            value={a.totalOrders}
-          />
-          <StatCard
-            icon={<CheckCircle2 className="h-5 w-5" />}
-            label="Completed"
-            value={a.completedOrders}
-          />
-          <StatCard
-            icon={<Clock className="h-5 w-5" />}
-            label="Pending"
-            value={a.pendingOrders}
-          />
-          <StatCard
-            icon={<XCircle className="h-5 w-5" />}
-            label="Cancelled"
-            value={a.cancelledOrders}
-          />
+      {/* ════════════════════════════════════════════════
+          2. Order Analytics
+          ════════════════════════════════════════════════ */}
+      <section className="mt-10">
+        <h2 className="mb-4 text-xl font-extrabold text-white">Order Analytics</h2>
+        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
+          <StatCard icon={<ShoppingBag className="h-5 w-5" />} label="Total Orders" value={a.totalOrders} />
+          <StatCard icon={<CheckCircle2 className="h-5 w-5" />} label="Completed" value={a.completedOrders} />
+          <StatCard icon={<Clock className="h-5 w-5" />} label="Pending" value={a.pendingOrders} />
+          <StatCard icon={<XCircle className="h-5 w-5" />} label="Cancelled" value={a.cancelledOrders} />
+          <StatCard icon={<RotateCcw className="h-5 w-5" />} label="Refunded" value={a.refundedOrders} />
         </div>
 
         <div className="mt-4 grid gap-4 lg:grid-cols-2">
           <OrderStatusChart data={a.ordersByStatus} />
-
-          {/* Recent Orders Table */}
           <div className="rounded-2xl border border-white/10 bg-white/[0.045] p-5">
-            <h3 className="mb-4 text-lg font-extrabold text-white">Recent Orders</h3>
-            {a.recentOrders.length === 0 ? (
-              <p className="text-sm text-white/40">No orders yet.</p>
-            ) : (
-              <div className="overflow-x-auto">
-                <table className="w-full text-left text-sm">
-                  <thead>
-                    <tr className="border-b border-white/10 text-xs font-bold uppercase tracking-wider text-white/40">
-                      <th className="pb-3 pr-3">Customer</th>
-                      <th className="pb-3 pr-3">Payment</th>
-                      <th className="pb-3 pr-3 text-right">Total</th>
-                      <th className="pb-3 pr-3">Status</th>
-                      <th className="pb-3">Date</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {a.recentOrders.map((order) => {
-                      const statusColor: Record<string, string> = {
-                        pending: "text-yellow-400 bg-yellow-400/15",
-                        paid: "text-emerald-400 bg-emerald-400/15",
-                        delivered: "text-blue-400 bg-blue-400/15",
-                        cancelled: "text-red-400 bg-red-400/15",
-                      };
-                      const cls = statusColor[order.status] ?? "text-white/60 bg-white/10";
-                      return (
-                        <tr
-                          key={order.id}
-                          className="border-b border-white/5 transition-colors hover:bg-white/[0.04]"
-                        >
-                          <td className="py-3 pr-3">
-                            <p className="font-bold text-white">{order.customerName}</p>
-                            <p className="text-xs text-white/40">{order.email}</p>
-                          </td>
-                          <td className="py-3 pr-3 text-xs font-bold text-white/60">
-                            {order.paymentMethod}
-                          </td>
-                          <td className="py-3 pr-3 text-right font-bold text-tiger-gold">
-                            {formatPriceDZD(order.total, "en")}
-                          </td>
-                          <td className="py-3 pr-3">
-                            <span className={`rounded-full px-2.5 py-1 text-xs font-bold capitalize ${cls}`}>
-                              {order.status}
-                            </span>
-                          </td>
-                          <td className="py-3 text-xs text-white/40">
-                            {new Date(order.createdAt).toLocaleDateString("en-US", {
-                              month: "short",
-                              day: "numeric",
-                              year: "numeric",
-                            })}
-                          </td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
-              </div>
-            )}
+            <h3 className="mb-4 font-extrabold text-white">Recent Orders</h3>
+            <div className="grid gap-2">
+              {a.recentOrders.slice(0, 8).map((order) => (
+                <div key={order.id} className="flex items-center justify-between rounded-xl border border-white/10 bg-black/25 p-3">
+                  <div className="min-w-0">
+                    <p className="truncate font-bold text-white">{order.customerName || "—"}</p>
+                    <p className="text-xs text-white/45">{order.paymentMethod} · {new Date(order.createdAt).toLocaleDateString("en-US")}</p>
+                  </div>
+                  <div className="text-right">
+                    <p className="font-bold text-tiger-gold">{formatCurrency(order.total)}</p>
+                    <span className={`text-xs font-bold ${order.status === "paid" || order.status === "delivered" ? "text-emerald-400" : order.status === "cancelled" || order.status === "refunded" ? "text-red-400" : "text-yellow-400"}`}>
+                      {order.status}
+                    </span>
+                  </div>
+                </div>
+              ))}
+            </div>
           </div>
         </div>
-      </div>
+      </section>
 
-      {/* ════════════════════════════════════════════════════════════
-          SECTION 3: Product Performance
-          ════════════════════════════════════════════════════════════ */}
-      <div className="mb-8">
-        <h2 className="mb-4 flex items-center gap-2 text-xl font-extrabold text-white">
-          <Package className="h-5 w-5 text-tiger-ember" />
-          Product Performance
-        </h2>
-        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-          <StatCard
-            icon={<Package className="h-5 w-5" />}
-            label="Total Products"
-            value={a.totalProducts}
-          />
-          <StatCard
-            icon={<BarChart3 className="h-5 w-5" />}
-            label="Best Category"
-            value={a.bestSellingCategory}
-          />
-          <StatCard
-            icon={<Target className="h-5 w-5" />}
-            label="Top Seller"
-            value={a.topProducts[0]?.name ?? "N/A"}
-          />
+      {/* ════════════════════════════════════════════════
+          3. Customer Analytics
+          ════════════════════════════════════════════════ */}
+      <section className="mt-10">
+        <h2 className="mb-4 text-xl font-extrabold text-white">Customer Analytics</h2>
+        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+          <StatCard icon={<Users className="h-5 w-5" />} label="Total Customers" value={a.customerCount} />
+          <StatCard icon={<UserPlus className="h-5 w-5" />} label="New Customers" value={a.newCustomers} />
+          <StatCard icon={<UserCheck className="h-5 w-5" />} label="Returning" value={a.returningCustomers} />
+          <StatCard icon={<Repeat className="h-5 w-5" />} label="Repeat Rate" value={`${a.repeatPurchaseRate.toFixed(1)}%`} />
+        </div>
+        <div className="mt-4 grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+          <div className="rounded-2xl border border-white/10 bg-white/[0.045] p-5">
+            <p className="text-xs font-bold uppercase tracking-wider text-white/40">Avg. Order Value</p>
+            <p className="mt-2 text-2xl font-extrabold text-tiger-gold">{formatCurrency(a.averageOrderValue)}</p>
+          </div>
+          <div className="rounded-2xl border border-white/10 bg-white/[0.045] p-5">
+            <p className="text-xs font-bold uppercase tracking-wider text-white/40">Customer Lifetime Value</p>
+            <p className="mt-2 text-2xl font-extrabold text-tiger-gold">{formatCurrency(a.customerLifetimeValue)}</p>
+          </div>
+          <div className="rounded-2xl border border-white/10 bg-white/[0.045] p-5">
+            <p className="text-xs font-bold uppercase tracking-wider text-white/40">Products Sold</p>
+            <p className="mt-2 text-2xl font-extrabold text-tiger-gold">{a.productsSold}</p>
+          </div>
+        </div>
+      </section>
+
+      {/* ════════════════════════════════════════════════
+          4. Product Performance
+          ════════════════════════════════════════════════ */}
+      <section className="mt-10">
+        <h2 className="mb-4 text-xl font-extrabold text-white">Product Performance</h2>
+        <div className="grid gap-4 sm:grid-cols-3">
+          <StatCard icon={<Package className="h-5 w-5" />} label="Total Products" value={a.totalProducts} />
+          <StatCard icon={<Target className="h-5 w-5" />} label="Best Category" value={a.bestSellingCategory || "—"} />
+          <StatCard icon={<BarChart3 className="h-5 w-5" />} label="Conversion Rate" value={`${a.conversionRate.toFixed(1)}%`} />
         </div>
         <div className="mt-4 grid gap-4 lg:grid-cols-2">
           <TopProductsTable products={a.topProducts} />
           <CategoryRevenueChart data={a.productsByCategory} />
         </div>
-      </div>
+      </section>
 
-      {/* ════════════════════════════════════════════════════════════
-          SECTION 4: Account Stock
-          ════════════════════════════════════════════════════════════ */}
-      <div className="mb-8">
-        <h2 className="mb-4 flex items-center gap-2 text-xl font-extrabold text-white">
-          <Key className="h-5 w-5 text-tiger-ember" />
-          Account Stock
-        </h2>
+      {/* ════════════════════════════════════════════════
+          5. Account Stock
+          ════════════════════════════════════════════════ */}
+      <section className="mt-10">
+        <h2 className="mb-4 text-xl font-extrabold text-white">Account Stock</h2>
         <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
-          <StatCard
-            icon={<Key className="h-5 w-5" />}
-            label="Total Accounts"
-            value={a.totalAccounts}
-          />
-          <StatCard
-            icon={<CheckCircle2 className="h-5 w-5" />}
-            label="Available"
-            value={a.availableAccounts}
-          />
-          <StatCard
-            icon={<UserCheck className="h-5 w-5" />}
-            label="Sold"
-            value={a.soldAccounts}
-          />
-          <StatCard
-            icon={<XCircle className="h-5 w-5" />}
-            label="Expired"
-            value={a.expiredAccounts}
-          />
-          <StatCard
-            icon={<AlertTriangle className="h-5 w-5" />}
-            label="Problem"
-            value={a.problemAccounts}
-          />
+          <StatCard icon={<Key className="h-5 w-5" />} label="Total" value={a.totalAccounts} />
+          <StatCard icon={<CheckCircle2 className="h-5 w-5" />} label="Available" value={a.availableAccounts} />
+          <StatCard icon={<UserCheck className="h-5 w-5" />} label="Sold" value={a.soldAccounts} />
+          <StatCard icon={<Clock className="h-5 w-5" />} label="Expired" value={a.expiredAccounts} />
+          <StatCard icon={<XCircle className="h-5 w-5" />} label="Problem" value={a.problemAccounts} />
         </div>
         <div className="mt-4">
           <AccountStockBars data={a.accountStock} />
         </div>
-      </div>
+      </section>
 
-      {/* ════════════════════════════════════════════════════════════
-          SECTION 5: Payment Methods
-          ════════════════════════════════════════════════════════════ */}
-      <div className="mb-8">
-        <h2 className="mb-4 flex items-center gap-2 text-xl font-extrabold text-white">
-          <CreditCard className="h-5 w-5 text-tiger-ember" />
-          Payment Method Analytics
-        </h2>
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {a.revenueByPaymentMethod.map((pm) => (
-            <div
-              key={pm.method}
-              className="rounded-2xl border border-white/10 bg-white/[0.045] p-5 transition-all duration-300 hover:border-tiger-ember/30"
-            >
-              <p className="text-sm font-bold text-white/58">{pm.method}</p>
-              <p className="mt-2 text-2xl font-extrabold text-tiger-gold">{formatCurrency(pm.revenue)}</p>
-              <p className="mt-1 text-xs text-white/40">{pm.count} orders</p>
-            </div>
-          ))}
-        </div>
-        <div className="mt-4 max-w-lg">
+      {/* ════════════════════════════════════════════════
+          6. Payment Methods + Activity
+          ════════════════════════════════════════════════ */}
+      <section className="mt-10">
+        <h2 className="mb-4 text-xl font-extrabold text-white">Payment & Activity</h2>
+        <div className="grid gap-4 lg:grid-cols-2">
           <PaymentMethodPieChart data={a.revenueByPaymentMethod} />
-        </div>
-      </div>
-
-      {/* ════════════════════════════════════════════════════════════
-          SECTION 6: Smart Calculations
-          ════════════════════════════════════════════════════════════ */}
-      <div className="mb-8">
-        <h2 className="mb-4 flex items-center gap-2 text-xl font-extrabold text-white">
-          <BarChart3 className="h-5 w-5 text-tiger-ember" />
-          Business Insights
-        </h2>
-        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-          <div className="rounded-2xl border border-white/10 bg-gradient-to-br from-tiger-ember/10 to-transparent p-5">
-            <p className="text-xs font-bold uppercase tracking-wider text-white/40">Average Order Value</p>
-            <p className="mt-2 text-2xl font-extrabold text-white">{formatCurrency(a.averageOrderValue)}</p>
-          </div>
-          <div className="rounded-2xl border border-white/10 bg-gradient-to-br from-emerald-500/10 to-transparent p-5">
-            <p className="text-xs font-bold uppercase tracking-wider text-white/40">Conversion Rate</p>
-            <p className="mt-2 text-2xl font-extrabold text-white">{a.conversionRate}%</p>
-            <p className="mt-1 text-xs text-white/40">completed / total orders</p>
-          </div>
-          <div className="rounded-2xl border border-white/10 bg-gradient-to-br from-tiger-gold/10 to-transparent p-5">
-            <p className="text-xs font-bold uppercase tracking-wider text-white/40">Total Stock Value</p>
-            <p className="mt-2 text-2xl font-extrabold text-white">{formatCurrency(a.totalStockValue)}</p>
-            <p className="mt-1 text-xs text-white/40">available accounts × price</p>
-          </div>
-          <div className="rounded-2xl border border-white/10 bg-gradient-to-br from-blue-500/10 to-transparent p-5">
-            <p className="text-xs font-bold uppercase tracking-wider text-white/40">Revenue Growth</p>
-            <p className={`mt-2 text-2xl font-extrabold ${a.revenueGrowthPercent >= 0 ? "text-emerald-400" : "text-red-400"}`}>
-              {a.revenueGrowthPercent >= 0 ? "+" : ""}{a.revenueGrowthPercent}%
-            </p>
-            <p className="mt-1 text-xs text-white/40">this month vs last month</p>
-          </div>
-        </div>
-      </div>
-
-      {/* ════════════════════════════════════════════════════════════
-          SECTION 7: Activity Feed
-          ════════════════════════════════════════════════════════════ */}
-      <div className="mb-8">
-        <h2 className="mb-4 flex items-center gap-2 text-xl font-extrabold text-white">
-          <Clock className="h-5 w-5 text-tiger-ember" />
-          Recent Activity
-        </h2>
-        <div className="max-w-2xl">
           <ActivityFeed activities={a.recentActivity} />
         </div>
-      </div>
+      </section>
 
-      {/* ════════════════════════════════════════════════════════════
-          SECTION 8: Export Data
-          ════════════════════════════════════════════════════════════ */}
-      <div className="mb-4">
-        <h2 className="mb-4 flex items-center gap-2 text-xl font-extrabold text-white">
-          <Package className="h-5 w-5 text-tiger-ember" />
-          Export Data
-        </h2>
-        <div className="flex flex-wrap gap-3">
-          <ExportButton href="/admin/statistics/export?type=orders" label="Export Orders CSV" />
-          <ExportButton href="/admin/statistics/export?type=products" label="Export Products CSV" />
-          <ExportButton href="/admin/statistics/export?type=accounts" label="Export Accounts CSV" />
-          <ExportButton href="/admin/statistics/export?type=revenue" label="Export Revenue CSV" />
-        </div>
+      {/* ── Exports ── */}
+      <div className="mt-8 flex flex-wrap gap-3">
+        <ExportButton href="/admin/statistics/export?type=orders" label="Export Orders" />
+        <ExportButton href="/admin/statistics/export?type=products" label="Export Products" />
+        <ExportButton href="/admin/statistics/export?type=accounts" label="Export Accounts" />
+        <ExportButton href="/admin/statistics/export?type=revenue" label="Export Revenue" />
+        <ExportButton href="/admin/statistics/export?type=customers" label="Export Customers" />
       </div>
     </AdminShell>
   );

@@ -1,152 +1,56 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { isAdminAuthenticated } from '@/lib/admin-auth';
-import { getProducts, getOrders, getAccounts } from '@/lib/admin-store';
+import { NextResponse } from "next/server";
+import { getAnalytics } from "@/lib/analytics";
+import { requireAdmin } from "@/lib/admin-auth";
 
-/* ------------------------------------------------------------------ */
-/*  CSV helpers                                                        */
-/* ------------------------------------------------------------------ */
+export const dynamic = "force-dynamic";
 
-/** Escape a single CSV field – wrap in quotes if it contains commas, quotes, or newlines */
-function csvField(value: unknown): string {
-  const str = String(value ?? '');
-  if (str.includes(',') || str.includes('"') || str.includes('\n')) {
-    return `"${str.replace(/"/g, '""')}"`;
-  }
-  return str;
-}
+export async function GET(request: Request) {
+  await requireAdmin();
+  const { searchParams } = new URL(request.url);
+  const type = searchParams.get("type");
 
-/** Build a full CSV string from a header row + data rows */
-function buildCsv(headers: string[], rows: string[][]): string {
-  const lines = [headers.map(csvField).join(',')];
-  for (const row of rows) {
-    lines.push(row.map(csvField).join(','));
-  }
-  return lines.join('\n');
-}
+  const a = await getAnalytics();
+  let csv = "";
+  let filename = "";
 
-/* ------------------------------------------------------------------ */
-/*  CSV generators per export type                                     */
-/* ------------------------------------------------------------------ */
-
-async function ordersCSV(): Promise<string> {
-  const orders = await getOrders();
-  const headers = ['id', 'customerName', 'email', 'phone', 'paymentMethod', 'total', 'status', 'createdAt', 'adminNotes'];
-  const rows = orders.map((o) => [
-    o.id,
-    o.customerName,
-    o.email,
-    o.phone,
-    o.paymentMethod,
-    String(o.total),
-    o.status,
-    o.createdAt,
-    o.adminNotes ?? '',
-  ]);
-  return buildCsv(headers, rows);
-}
-
-async function productsCSV(): Promise<string> {
-  const products = await getProducts();
-  const headers = ['id', 'name', 'category', 'price', 'available', 'featured'];
-  const rows = products.map((p) => [
-    p.id,
-    p.name,
-    p.category,
-    String(p.price),
-    String(p.available),
-    String(p.featured),
-  ]);
-  return buildCsv(headers, rows);
-}
-
-async function accountsCSV(): Promise<string> {
-  const accounts = await getAccounts();
-  const headers = ['id', 'email', 'status', 'dateCreated', 'price', 'notes'];
-  const rows = accounts.map((a) => [
-    a.id,
-    a.email,
-    a.status,
-    a.dateCreated,
-    String(a.price),
-    a.notes ?? '',
-  ]);
-  return buildCsv(headers, rows);
-}
-
-async function revenueCSV(): Promise<string> {
-  const orders = await getOrders();
-
-  // Build a map of daily revenue for the last 90 days
-  const today = new Date();
-  const dailyMap = new Map<string, { revenue: number; orderCount: number }>();
-
-  for (let i = 0; i < 90; i++) {
-    const d = new Date(today);
-    d.setDate(d.getDate() - i);
-    const key = d.toISOString().slice(0, 10);
-    dailyMap.set(key, { revenue: 0, orderCount: 0 });
-  }
-
-  for (const order of orders) {
-    if (order.status === 'cancelled') continue;
-    const dateKey = order.createdAt?.slice(0, 10);
-    if (dateKey && dailyMap.has(dateKey)) {
-      const entry = dailyMap.get(dateKey)!;
-      entry.revenue += order.total;
-      entry.orderCount += 1;
+  if (type === "customers") {
+    filename = "customers.csv";
+    csv = "Name,Email,Orders,Total Spent,First Order,Last Order\n";
+    for (const c of a.customers) {
+      csv += `"${c.name}","${c.email}",${c.orderCount},${c.totalSpent},"${c.firstOrder}","${c.lastOrder}"\n`;
+    }
+  } else if (type === "orders") {
+    filename = "orders.csv";
+    csv = "ID,Date,Customer,Email,Phone,Total,Status,Payment Method,UTM Source,UTM Medium,UTM Campaign\n";
+    for (const o of a.recentOrders) {
+      csv += `"${o.id}","${o.createdAt}","${o.customerName}","${o.email}","${o.phone}",${o.total},"${o.status}","${o.paymentMethod}","${o.utm_source || ""}","${o.utm_medium || ""}","${o.utm_campaign || ""}"\n`;
+    }
+  } else if (type === "products") {
+    filename = "products.csv";
+    csv = "ID,Name,Category,Sales Count,Revenue\n";
+    for (const p of a.topProducts) {
+      csv += `"${p.id}","${p.name}","${p.category}",${p.salesCount},${p.revenue}\n`;
+    }
+  } else if (type === "revenue") {
+    filename = "revenue_by_day.csv";
+    csv = "Date,Revenue\n";
+    for (const r of a.revenueByDay) {
+      csv += `"${r.date}",${r.revenue}\n`;
+    }
+  } else if (type === "accounts") {
+    filename = "account_stock.csv";
+    csv = "Account Type,Available,Sold,Expired,Problem,Total\n";
+    for (const s of a.accountStock) {
+      csv += `"${s.label}",${s.available},${s.sold},${s.expired},${s.problem},${s.total}\n`;
     }
   }
 
-  // Sort dates ascending
-  const sortedDates = [...dailyMap.keys()].sort();
-
-  const headers = ['date', 'revenue', 'orderCount'];
-  const rows = sortedDates.map((date) => {
-    const entry = dailyMap.get(date)!;
-    return [date, String(entry.revenue), String(entry.orderCount)];
+  // To properly support Arabic characters in Excel, add a BOM
+  const bom = "\uFEFF";
+  return new NextResponse(bom + csv, {
+    headers: {
+      "Content-Type": "text/csv; charset=utf-8",
+      "Content-Disposition": `attachment; filename="${filename}"`,
+    },
   });
-
-  return buildCsv(headers, rows);
-}
-
-/* ------------------------------------------------------------------ */
-/*  GET handler                                                        */
-/* ------------------------------------------------------------------ */
-
-const GENERATORS: Record<string, () => Promise<string>> = {
-  orders: ordersCSV,
-  products: productsCSV,
-  accounts: accountsCSV,
-  revenue: revenueCSV,
-};
-
-export async function GET(request: NextRequest) {
-  const authenticated = await isAdminAuthenticated();
-  if (!authenticated) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-  }
-
-  const type = request.nextUrl.searchParams.get('type') ?? 'orders';
-
-  const generator = GENERATORS[type];
-  if (!generator) {
-    return NextResponse.json(
-      { error: `Invalid export type "${type}". Valid types: ${Object.keys(GENERATORS).join(', ')}` },
-      { status: 400 },
-    );
-  }
-
-  try {
-    const csvContent = await generator();
-
-    return new NextResponse(csvContent, {
-      headers: {
-        'Content-Type': 'text/csv; charset=utf-8',
-        'Content-Disposition': `attachment; filename="tiger-store-${type}-${new Date().toISOString().slice(0, 10)}.csv"`,
-      },
-    });
-  } catch (err) {
-    console.error(`CSV export error (${type}):`, err);
-    return NextResponse.json({ error: 'Failed to generate export' }, { status: 500 });
-  }
 }
