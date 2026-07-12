@@ -35,7 +35,6 @@ export function CheckoutView({ products, directProductSlug, directOption, direct
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethodId>("BaridiMob");
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
-  const [email, setEmail] = useState("");
   const [notes, setNotes] = useState("");
   const { currency } = useCurrency();
   const { locale } = useLocale();
@@ -47,7 +46,6 @@ export function CheckoutView({ products, directProductSlug, directOption, direct
         customerInfo: "معلومات الزبون",
         fullName: "الاسم الكامل",
         phone: "رقم الهاتف",
-        email: "البريد الإلكتروني للتفعيل",
         notes: "ملاحظات",
         notesPlaceholder: "تفاصيل إضافية اختيارية...",
         paymentMethod: "طريقة الدفع",
@@ -67,7 +65,6 @@ export function CheckoutView({ products, directProductSlug, directOption, direct
         customerInfo: "Customer Information",
         fullName: "Full Name",
         phone: "Phone Number",
-        email: "Activation Email",
         notes: "Notes",
         notesPlaceholder: "Optional details...",
         paymentMethod: "Payment Method",
@@ -138,7 +135,7 @@ export function CheckoutView({ products, directProductSlug, directOption, direct
       items,
       total,
       paymentMethod,
-      customer: { name, phone, email, notes: notes || undefined },
+      customer: { name, phone, email: phone, notes: notes || undefined },
       status: "submitted",
       source: "localStorage",
     };
@@ -155,7 +152,7 @@ export function CheckoutView({ products, directProductSlug, directOption, direct
       await submitOrderAction({
         customerName: name,
         phone,
-        email,
+        email: phone,
         products: items,
         paymentMethod,
         total,
@@ -190,7 +187,6 @@ export function CheckoutView({ products, directProductSlug, directOption, direct
       "Customer:",
       `Name: ${name}`,
       `Phone: ${phone}`,
-      `Activation Email: ${email}`,
       `Notes: ${notes || "None"}`,
       "",
       "Website: digitaldz.shop",
@@ -224,7 +220,6 @@ export function CheckoutView({ products, directProductSlug, directOption, direct
               <div className="grid gap-4">
                 <Field label={labels.fullName} value={name} onChange={setName} required autoComplete="name" />
                 <Field label={labels.phone} value={phone} onChange={setPhone} required inputMode="tel" autoComplete="tel" />
-                <Field label={labels.email} value={email} onChange={setEmail} required type="email" autoComplete="email" />
                 <label className="grid gap-2 text-sm font-bold text-white">
                   {labels.notes}
                   <textarea
