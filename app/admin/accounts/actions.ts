@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { requireAdmin } from "@/lib/admin-auth";
 import { deleteAccount, saveAccount, saveAccounts } from "@/lib/admin-store";
 import { AdminAccount, AdminAccountStatus } from "@/lib/types";
+import { adminAccountSchema } from "@/lib/validation";
 
 const statuses: AdminAccountStatus[] = ["Available", "Sold", "Expired", "Problem"];
 
@@ -35,13 +36,15 @@ function accountFromForm(formData: FormData): AdminAccount {
 
 export async function saveAccountAction(formData: FormData) {
   await requireAdmin();
-  await saveAccount(accountFromForm(formData));
+  await saveAccount(adminAccountSchema.parse(accountFromForm(formData)));
   revalidatePath("/admin/accounts");
 }
 
 export async function deleteAccountAction(formData: FormData) {
   await requireAdmin();
-  await deleteAccount(text(formData, "id"));
+  const id = text(formData, "id");
+  if (!id) throw new Error("Missing account id.");
+  await deleteAccount(id);
   revalidatePath("/admin/accounts");
 }
 
@@ -50,6 +53,9 @@ export async function importAccountsAction(formData: FormData) {
 
   const raw = text(formData, "accounts");
   const parsed = JSON.parse(raw) as Partial<AdminAccount>[];
+  if (!Array.isArray(parsed) || parsed.length > 500) {
+    throw new Error("Import must contain between 1 and 500 accounts.");
+  }
   const now = new Date().toISOString();
   const accounts = parsed
     .map((account) => {
@@ -66,7 +72,8 @@ export async function importAccountsAction(formData: FormData) {
         updatedAt: now,
       };
     })
-    .filter((account) => account.email);
+    .filter((account) => account.email)
+    .map((account) => adminAccountSchema.parse(account));
 
   if (accounts.length) {
     await saveAccounts(accounts);

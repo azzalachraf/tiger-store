@@ -26,12 +26,22 @@ Server actions and public API routes now validate critical payloads with Zod bef
 - checkout order submissions
 - admin product saves
 - admin order status/manual sale workflows
+- admin account saves/imports
+- marketing pixel/CAPI configuration
 - site settings saves
 - public funnel tracking events
 
 ## Admin workflow safety
 
 Admin order status updates no longer trust a serialized order object from the browser. The server loads the existing order by id, applies only the intended status and admin notes changes, then validates before saving.
+
+## Admin UX improvements
+
+The admin shell now uses a grouped SaaS-style navigation, a clearer control-center header, store preview action, and consistent admin surfaces. Products and orders pages have metric cards, cleaner tables/cards, better empty states, status badges, and safer action forms.
+
+## Known dependency audit status
+
+`npm audit --audit-level=moderate` still reports advisories in transitive dependencies. The remaining PostCSS advisory is nested under the current Next.js dependency tree, and `npm audit fix --force` suggests a breaking downgrade path. Do not force-apply that fix without testing a Next.js version strategy.
 
 ## Deployment caution
 

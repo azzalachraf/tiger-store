@@ -1,7 +1,9 @@
 "use server";
 
 import { getSupabaseServiceClient } from "@/lib/supabase";
+import { logger } from "@/lib/logger";
 import type { MarketingConfig } from "@/lib/types";
+import { marketingConfigSchema } from "@/lib/validation";
 
 const supabaseService = getSupabaseServiceClient();
 
@@ -22,9 +24,19 @@ export async function getMarketingConfig(): Promise<MarketingConfig> {
       .eq("id", "main")
       .maybeSingle();
 
-    if (error || !data) return defaultConfig;
-    return data as MarketingConfig;
-  } catch {
+    if (error) {
+      logger.error("getMarketingConfig failed", error);
+      return defaultConfig;
+    }
+    if (!data) return defaultConfig;
+    const parsed = marketingConfigSchema.safeParse(data);
+    if (!parsed.success) {
+      logger.error("getMarketingConfig validation failed", parsed.error);
+      return defaultConfig;
+    }
+    return parsed.data;
+  } catch (error) {
+    logger.error("getMarketingConfig unexpected failure", error);
     return defaultConfig;
   }
 }
@@ -32,12 +44,10 @@ export async function getMarketingConfig(): Promise<MarketingConfig> {
 export async function saveMarketingConfig(
   config: Partial<MarketingConfig>
 ): Promise<void> {
+  const payload = marketingConfigSchema.parse({ id: "main", ...config, updated_at: new Date().toISOString() });
   const { error } = await supabaseService
     .from("marketing_config")
-    .upsert(
-      { id: "main", ...config, updated_at: new Date().toISOString() },
-      { onConflict: "id" }
-    );
+    .upsert(payload, { onConflict: "id" });
   if (error) throw new Error(`saveMarketingConfig failed: ${error.message}`);
 }
 

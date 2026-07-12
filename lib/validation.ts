@@ -104,6 +104,27 @@ export const siteSettingsSchema = z.object({
   footerDisclaimer: z.string().trim().max(1200),
 });
 
+export const adminAccountSchema = z.object({
+  id: z.string().trim().min(1).max(160),
+  email: z.string().trim().email().max(180),
+  emailPassword: z.string().max(500),
+  chatgptPassword: z.string().max(500),
+  dateCreated: z.string().trim().min(1).max(40),
+  price: z.coerce.number().nonnegative(),
+  notes: optionalTextSchema,
+  status: accountStatusSchema,
+  updatedAt: z.string().trim().min(1).max(80),
+});
+
+export const marketingConfigSchema = z.object({
+  id: z.literal("main").default("main"),
+  meta_pixel_id: z.string().trim().max(80).default(""),
+  meta_pixel_enabled: z.boolean().default(false),
+  meta_capi_token: z.string().trim().max(2000).default(""),
+  meta_capi_enabled: z.boolean().default(false),
+  updated_at: z.string().trim().min(1).max(80),
+});
+
 export const pageEventInputSchema = z.object({
   event_type: z.enum(["page_view", "product_view", "add_to_cart", "checkout_started", "purchase_completed"]),
   page_url: optionalTextSchema,

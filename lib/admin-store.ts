@@ -5,7 +5,7 @@ import { getSupabaseServiceClient } from "@/lib/supabase";
 import { getEncryptionSecret } from "@/lib/env";
 import { logger } from "@/lib/logger";
 import { AdminAccount, AdminAccountStatus, AdminOrder, Product, SiteSettings } from "@/lib/types";
-import { adminOrderSchema, productSchema, siteSettingsSchema } from "@/lib/validation";
+import { adminAccountSchema, adminOrderSchema, productSchema, siteSettingsSchema } from "@/lib/validation";
 
 const supabaseService = getSupabaseServiceClient();
 
@@ -288,15 +288,16 @@ export async function getAccounts(): Promise<AdminAccount[]> {
 }
 
 export async function saveAccount(account: AdminAccount) {
+  const validatedAccount = adminAccountSchema.parse(account);
   const { error } = await supabaseService
     .from("accounts")
-    .upsert(accountToDbRow(account), { onConflict: "id" });
+    .upsert(accountToDbRow(validatedAccount), { onConflict: "id" });
 
   if (error) throw new Error(`saveAccount failed: ${error.message}`);
 }
 
 export async function saveAccounts(accounts: AdminAccount[]) {
-  const rows = accounts.map(accountToDbRow);
+  const rows = accounts.map((account) => accountToDbRow(adminAccountSchema.parse(account)));
   const { error } = await supabaseService
     .from("accounts")
     .upsert(rows, { onConflict: "id" });

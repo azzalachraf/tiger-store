@@ -7,10 +7,10 @@ import { requireAdmin } from "@/lib/admin-auth";
 export async function saveMarketingConfigAction(formData: FormData) {
   await requireAdmin();
 
-  const meta_pixel_id = formData.get("meta_pixel_id")?.toString() || undefined;
+  const meta_pixel_id = formData.get("meta_pixel_id")?.toString().trim() || "";
   const meta_pixel_enabled = formData.get("meta_pixel_enabled") === "on";
   
-  const meta_capi_token = formData.get("meta_capi_token")?.toString() || undefined;
+  const meta_capi_token = formData.get("meta_capi_token")?.toString().trim() || "";
   const meta_capi_enabled = formData.get("meta_capi_enabled") === "on";
 
   await saveMarketingConfig({

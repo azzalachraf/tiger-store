@@ -91,10 +91,15 @@ export function ProductForm({ product }: ProductFormProps) {
   }
 
   return (
-    <form action={saveProductAction} encType="multipart/form-data" className="grid gap-5 rounded-2xl border border-white/10 bg-white/[0.045] p-5">
+    <form action={saveProductAction} encType="multipart/form-data" className="grid gap-5 rounded-md border border-white/10 bg-white/[0.045] p-5 shadow-[0_18px_55px_rgba(0,0,0,0.24)]">
       <input type="hidden" name="id" defaultValue={product?.id ?? ""} />
       <input type="hidden" name="priceOptions" value={serializedVariants} />
 
+      <section className="rounded-md border border-white/10 bg-black/20 p-4">
+        <div className="mb-4">
+          <h2 className="text-lg font-black text-white">Product basics</h2>
+          <p className="mt-1 text-sm font-semibold text-white/55">Core catalog information shown on storefront cards and product pages.</p>
+        </div>
       <div className="grid gap-4 md:grid-cols-2">
         <AdminField name="name" label="Product name" defaultValue={product?.name ?? ""} required />
         <AdminField name="nameAr" label="Arabic name" defaultValue={product?.nameAr ?? product?.name ?? ""} />
@@ -126,9 +131,10 @@ export function ProductForm({ product }: ProductFormProps) {
         <AdminField name="activationTypeEn" label="Activation type" defaultValue={product?.activationTypeEn ?? ""} required />
         <AdminField name="activationTypeAr" label="Arabic activation type" defaultValue={product?.activationTypeAr ?? ""} />
       </div>
+      </section>
 
-      <section className="grid gap-4 rounded-2xl border border-white/10 bg-black/25 p-4 lg:grid-cols-[170px_1fr]">
-        <div className="relative aspect-[4/5] overflow-hidden rounded-2xl border border-white/10 bg-black">
+      <section className="grid gap-4 rounded-md border border-white/10 bg-black/25 p-4 lg:grid-cols-[170px_1fr]">
+        <div className="relative aspect-[4/5] overflow-hidden rounded-xl border border-white/10 bg-black">
           {uploadPreview || imagePath ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img src={uploadPreview ?? imagePath} alt="Product image preview" className="h-full w-full object-contain p-2" />
@@ -142,7 +148,7 @@ export function ProductForm({ product }: ProductFormProps) {
           <div>
             <h2 className="font-black text-white">Product image</h2>
             <p className="mt-1 text-sm leading-6 text-white/55">
-              Upload a PNG, JPG, WEBP, or AVIF under 4 MB, or keep/edit the image path below. Uploaded files are saved in public/products/uploads.
+              Upload a PNG, JPG, WEBP, or AVIF under 4 MB, or keep/edit the hosted image path below.
             </p>
           </div>
           <label className="inline-flex min-h-12 cursor-pointer items-center justify-center gap-2 rounded-xl border border-tiger-ember/35 bg-tiger-ember px-4 text-sm font-black text-black transition-colors duration-150 hover:bg-tiger-gold">
@@ -191,7 +197,7 @@ export function ProductForm({ product }: ProductFormProps) {
       <TextArea name="featuresEn" label="Features - one per line" defaultValue={product?.featuresEn.join("\n") ?? ""} />
       <TextArea name="featuresAr" label="Arabic features - one per line" defaultValue={product?.featuresAr.join("\n") ?? ""} />
 
-      <section className="grid gap-3 rounded-2xl border border-white/10 bg-black/25 p-4">
+      <section className="grid gap-3 rounded-md border border-white/10 bg-black/25 p-4">
         <div className="flex items-center justify-between gap-3">
           <div>
             <h2 className="font-black text-white">Variants and Durations</h2>
@@ -249,7 +255,7 @@ export function ProductForm({ product }: ProductFormProps) {
         </div>
       </div>
 
-      <button type="submit" className="min-h-12 rounded-xl bg-tiger-ember px-5 font-black text-black">
+      <button type="submit" className="min-h-12 rounded-xl bg-tiger-ember px-5 font-black text-black transition-colors hover:bg-tiger-gold">
         Save Product
       </button>
     </form>
@@ -277,7 +283,7 @@ function AdminField({
         type={type}
         defaultValue={defaultValue}
         required={required}
-        className="min-h-12 rounded-xl border border-white/10 bg-black px-4 text-white outline-none"
+        className="min-h-12 rounded-xl border border-white/10 bg-black px-4 text-white outline-none focus:border-tiger-ember"
       />
     </label>
   );
@@ -301,7 +307,7 @@ function InlineField({
         type={type}
         value={value}
         onChange={(event) => onChange(event.target.value)}
-        className="min-h-10 rounded-lg border border-white/10 bg-black px-3 text-sm text-white outline-none"
+        className="min-h-10 rounded-lg border border-white/10 bg-black px-3 text-sm text-white outline-none focus:border-tiger-ember"
       />
     </label>
   );
@@ -314,7 +320,7 @@ function TextArea({ name, label, defaultValue }: { name: string; label: string; 
       <textarea
         name={name}
         defaultValue={defaultValue}
-        className="min-h-28 rounded-xl border border-white/10 bg-black px-4 py-3 text-white outline-none"
+        className="min-h-28 rounded-xl border border-white/10 bg-black px-4 py-3 text-white outline-none focus:border-tiger-ember"
       />
     </label>
   );

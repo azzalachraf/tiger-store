@@ -20,7 +20,11 @@ export async function saveSettingsAction(formData: FormData) {
     baridiMobRip: text(formData, "baridiMobRip"),
     ccpDetails: text(formData, "ccpDetails"),
     redotPayDetails: text(formData, "redotPayDetails"),
-    promoHeadings: text(formData, "promoHeadings").split("\n").map((line) => line.trim()).filter(Boolean),
+    promoHeadings: text(formData, "promoHeadings")
+      .split("\n")
+      .map((line) => line.trim())
+      .filter(Boolean)
+      .slice(0, 12),
     footerDisclaimer: text(formData, "footerDisclaimer"),
   };
 
