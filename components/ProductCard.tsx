@@ -104,7 +104,7 @@ export function ProductCard({ product, compact = false }: ProductCardProps) {
         <div className="mb-1 flex items-center justify-between gap-2">
           <p className="truncate text-[11px] font-black uppercase tracking-[0.08em] text-tiger-gold">{product.category}</p>
           <div className="flex items-center gap-0.5 text-tiger-gold" aria-label="Rated 5 out of 5">
-            {Array.from({ length: compact ? 1 : 5 }).map((_, index) => (
+            {Array.from({ length: 5 }).map((_, index) => (
               <Star key={index} className="h-3.5 w-3.5 fill-current" />
             ))}
           </div>
