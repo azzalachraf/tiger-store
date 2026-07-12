@@ -2,26 +2,27 @@ import type { Metadata } from "next";
 import type { ReactNode } from "react";
 import { MetaPixelProvider } from "@/components/MetaPixelProvider";
 import { PageTracker } from "@/components/PageTracker";
+import { PerformanceProvider } from "@/components/PerformanceProvider";
 import "./globals.css";
 
 const description =
-  "Tiger Store يوفر اشتراكات مثل ChatGPT Plus, Gemini Pro, Canva Pro, CapCut Pro, Adobe Creative Cloud والمزيد.";
+  "Tiger Store يوفر اشتراكات رقمية في الجزائر مثل ChatGPT Plus و Gemini Pro و Canva Pro و CapCut Pro و Adobe Creative Cloud والمزيد.";
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://digitaldz.shop"),
   title: {
-    default: "Home - Tiger Store",
+    default: "Tiger Store - اشتراكات رقمية في الجزائر",
     template: "%s - Tiger Store",
   },
   description,
   keywords: [
-    "اشتراكات",
+    "اشتراكات رقمية الجزائر",
     "Tiger Store",
-    "ChatGPT Plus",
-    "Canva Pro",
-    "CapCut Pro",
-    "Adobe Creative Cloud",
-    "Gemini Pro",
+    "ChatGPT Plus Algeria",
+    "Canva Pro Algeria",
+    "CapCut Pro Algeria",
+    "Adobe Creative Cloud Algeria",
+    "Gemini Pro Algeria",
     "digitaldz.shop",
   ],
   alternates: {
@@ -33,7 +34,7 @@ export const metadata: Metadata = {
     apple: [{ url: "/apple-icon.png", sizes: "180x180", type: "image/png" }],
   },
   openGraph: {
-    title: "Home - Tiger Store",
+    title: "Tiger Store - اشتراكات رقمية في الجزائر",
     description,
     url: "https://digitaldz.shop",
     siteName: "Tiger Store",
@@ -56,7 +57,7 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "Home - Tiger Store",
+    title: "Tiger Store - اشتراكات رقمية في الجزائر",
     description,
     images: ["/products/12_ChatGPT_Plus.webp"],
   },
@@ -64,11 +65,13 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: Readonly<{ children: ReactNode }>) {
   return (
-    <html lang="ar-DZ" dir="rtl" className="dark">
+    <html lang="ar-DZ" dir="rtl" className="dark" data-performance-tier="standard" data-motion="enhanced">
       <body>
-        {children}
-        <MetaPixelProvider />
-        <PageTracker />
+        <PerformanceProvider>
+          {children}
+          <MetaPixelProvider />
+          <PageTracker />
+        </PerformanceProvider>
       </body>
     </html>
   );

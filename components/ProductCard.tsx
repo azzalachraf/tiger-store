@@ -62,23 +62,23 @@ export function ProductCard({ product, compact = false, priority = false }: Prod
   const buyHref = hasOptions ? `/products/${product.slug}` : `/checkout?product=${product.slug}`;
 
   return (
-    <article className="group flex h-full flex-col overflow-hidden rounded-md border border-white/9 bg-[linear-gradient(180deg,#222,#151515)] shadow-[0_18px_44px_rgba(0,0,0,0.3)] transition-all duration-150 hover:-translate-y-0.5 hover:border-tiger-ember/35 hover:shadow-[0_24px_58px_rgba(0,0,0,0.44)]">
+    <article className="motion-card motion-reveal group flex h-full flex-col overflow-hidden rounded-md border border-white/9 bg-[linear-gradient(180deg,#222,#151515)] shadow-[0_18px_44px_rgba(0,0,0,0.3)] hover:border-tiger-ember/35 hover:shadow-[0_24px_58px_rgba(0,0,0,0.44)]">
       <div className="relative aspect-[4/5] overflow-hidden bg-[#101010]">
         <Image
           src={product.image}
           alt={`${product.name} product card`}
           fill
           sizes="(min-width: 1280px) 23vw, (min-width: 768px) 31vw, 50vw"
-          className="object-contain p-1.5 transition-transform duration-200 group-hover:scale-[1.025]"
+          className="motion-media object-contain p-1.5"
           priority={priority}
           loading={priority ? undefined : "lazy"}
         />
         <Link href={`/products/${product.slug}`} className="absolute inset-0 z-10" aria-label={`View ${product.name}`} />
 
-        <div className="absolute right-2 top-2 z-20 flex translate-y-0 flex-col gap-1.5 rounded-md bg-black/80 p-1.5 opacity-100 shadow-[0_14px_28px_rgba(0,0,0,0.5)] backdrop-blur transition-all duration-150 md:-translate-y-1 md:opacity-0 md:group-hover:translate-y-0 md:group-hover:opacity-100">
+        <div className="absolute right-2 top-2 z-20 flex translate-y-0 flex-col gap-1.5 rounded-md bg-black/80 p-1.5 opacity-100 shadow-[0_14px_28px_rgba(0,0,0,0.5)] backdrop-blur transition-all duration-150 md:-translate-y-1 md:opacity-0 md:group-hover:translate-y-0 md:group-hover:opacity-100 md:group-focus-within:translate-y-0 md:group-focus-within:opacity-100">
           <Link
             href={`/products/${product.slug}`}
-            className="inline-flex h-8 w-8 items-center justify-center rounded-md text-white transition-colors duration-150 hover:bg-white/12"
+            className="tap-feedback inline-flex h-8 w-8 items-center justify-center rounded-md text-white transition-colors duration-150 hover:bg-white/12 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-tiger-ember"
             aria-label={`View details for ${product.name}`}
           >
             <Search className="h-4 w-4" />
@@ -86,7 +86,7 @@ export function ProductCard({ product, compact = false, priority = false }: Prod
           <button
             type="button"
             onClick={handleWishlist}
-            className="inline-flex h-8 w-8 items-center justify-center rounded-md text-white transition-colors duration-150 hover:bg-white/12"
+            className="tap-feedback inline-flex h-8 w-8 items-center justify-center rounded-md text-white transition-colors duration-150 hover:bg-white/12 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-tiger-ember"
             aria-label={`${wishlisted ? "Remove" : "Add"} ${product.name} wishlist`}
           >
             <Heart className={cn("h-4 w-4", wishlisted && "fill-tiger-ember text-tiger-ember")} />
@@ -114,7 +114,7 @@ export function ProductCard({ product, compact = false, priority = false }: Prod
           </div>
         </div>
 
-        <Link href={`/products/${product.slug}`} className="line-clamp-2 min-h-[42px] text-sm font-black leading-5 text-white transition-colors duration-150 hover:text-tiger-gold sm:text-base">
+        <Link href={`/products/${product.slug}`} className="line-clamp-2 min-h-[42px] text-sm font-black leading-5 text-white transition-colors duration-150 hover:text-tiger-gold focus-visible:outline-none focus-visible:text-tiger-gold sm:text-base">
           {product.name}
         </Link>
 

@@ -109,7 +109,7 @@ export function CategoryShowcase({ categories, products, locale, className }: Ca
           <Link
             key={group.title}
             href={group.href}
-            className="group min-w-[150px] rounded-md border border-white/8 bg-[#111] p-3 text-center shadow-[0_14px_30px_rgba(0,0,0,0.28)] transition-all duration-150 hover:-translate-y-1 hover:border-tiger-ember/55 hover:bg-[#1d1d1d] lg:min-w-0"
+            className="motion-card group min-w-[150px] rounded-md border border-white/8 bg-[#111] p-3 text-center shadow-[0_14px_30px_rgba(0,0,0,0.28)] hover:border-tiger-ember/55 hover:bg-[#1d1d1d] lg:min-w-0"
           >
             <div className="relative mx-auto h-[112px] w-[116px]">
               <div className="absolute bottom-2 left-1/2 h-9 w-24 -translate-x-1/2 rounded-full bg-tiger-ember/20 blur-sm" />

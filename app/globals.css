@@ -89,6 +89,94 @@ body {
   background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.12), transparent);
 }
 
+.route-progress {
+  position: fixed;
+  inset-block-start: 0;
+  inset-inline: 0;
+  z-index: 9999;
+  height: 2px;
+  pointer-events: none;
+  background: linear-gradient(90deg, #ff6a00, #ffb000);
+  opacity: 0;
+  transform: scaleX(0);
+  transform-origin: left;
+}
+
+.route-progress-active {
+  opacity: 1;
+  animation: route-progress 420ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.motion-reveal {
+  opacity: 1;
+}
+
+.motion-card,
+.motion-media,
+.tap-feedback {
+  transform: translateZ(0);
+  backface-visibility: hidden;
+}
+
+html[data-performance-tier="premium"] .motion-reveal {
+  animation: reveal-up 520ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+html[data-performance-tier="standard"] .motion-reveal {
+  animation: reveal-soft 280ms ease-out both;
+}
+
+html[data-performance-tier="premium"] .motion-card {
+  transition: transform 220ms cubic-bezier(0.22, 1, 0.36, 1), border-color 180ms ease, box-shadow 220ms ease, background-color 180ms ease;
+}
+
+html[data-performance-tier="standard"] .motion-card {
+  transition: transform 150ms ease, border-color 150ms ease, box-shadow 150ms ease, background-color 150ms ease;
+}
+
+html[data-performance-tier="premium"] .motion-card:hover {
+  transform: translateY(-4px);
+}
+
+html[data-performance-tier="standard"] .motion-card:hover {
+  transform: translateY(-2px);
+}
+
+html[data-performance-tier="premium"] .motion-media {
+  transition: transform 320ms cubic-bezier(0.22, 1, 0.36, 1), filter 240ms ease;
+}
+
+html[data-performance-tier="premium"] .group:hover .motion-media {
+  transform: scale(1.035);
+}
+
+html[data-motion="enhanced"] .tap-feedback {
+  transition: transform 140ms ease, filter 140ms ease, background-color 150ms ease, border-color 150ms ease;
+}
+
+html[data-motion="enhanced"] .tap-feedback:active {
+  transform: scale(0.985);
+}
+
+.skeleton {
+  position: relative;
+  overflow: hidden;
+  border-radius: 0.5rem;
+  background: rgba(255, 255, 255, 0.07);
+}
+
+.skeleton::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  transform: translateX(-100%);
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.08), transparent);
+}
+
+html[data-motion="enhanced"] .skeleton::after {
+  animation: skeleton-shimmer 1.4s ease-in-out infinite;
+}
+
 .scrollbar-none {
   scrollbar-width: none;
 }
@@ -101,6 +189,62 @@ body {
   direction: ltr;
   unicode-bidi: isolate;
   text-align: left;
+}
+
+@keyframes reveal-up {
+  from {
+    opacity: 0;
+    transform: translateY(14px) scale(0.99);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes reveal-soft {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes route-progress {
+  0% {
+    transform: scaleX(0);
+  }
+  55% {
+    transform: scaleX(0.72);
+  }
+  100% {
+    transform: scaleX(1);
+  }
+}
+
+@keyframes skeleton-shimmer {
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 1ms !important;
+    animation-iteration-count: 1 !important;
+    scroll-behavior: auto !important;
+    transition-duration: 1ms !important;
+  }
+
+  .route-progress,
+  .skeleton::after {
+    display: none;
+  }
 }
 
 @media (max-width: 639px) {

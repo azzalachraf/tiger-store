@@ -45,7 +45,7 @@ export function Hero({ products }: HeroProps) {
   return (
     <section className="relative overflow-hidden border-b border-white/10 bg-[#111]">
       <div className="mx-auto grid max-w-[1440px] gap-6 px-3 py-6 sm:px-5 lg:grid-cols-[minmax(0,1fr)_minmax(420px,0.9fr)] lg:px-8 lg:py-10" dir={locale === "ar" ? "rtl" : "ltr"}>
-        <div className="flex min-w-0 flex-col justify-center rounded-md border border-white/10 bg-[linear-gradient(145deg,rgba(37,37,37,0.92),rgba(15,15,15,0.98))] p-5 shadow-[0_28px_80px_rgba(0,0,0,0.36)] sm:p-8 lg:min-h-[520px]">
+        <div className="motion-reveal flex min-w-0 flex-col justify-center rounded-md border border-white/10 bg-[linear-gradient(145deg,rgba(37,37,37,0.92),rgba(15,15,15,0.98))] p-5 shadow-[0_28px_80px_rgba(0,0,0,0.36)] sm:p-8 lg:min-h-[520px]">
           <div className="inline-flex w-fit items-center gap-2 rounded-full border border-tiger-ember/25 bg-tiger-ember/10 px-3 py-2 text-xs font-black text-tiger-gold">
             <Sparkles className="h-4 w-4" />
             {copy.eyebrow}
@@ -87,7 +87,7 @@ export function Hero({ products }: HeroProps) {
 
           <div className="mt-7 grid gap-3 border-t border-white/10 pt-5 sm:grid-cols-3">
             {featured.map((product) => (
-              <Link key={product.id} href={`/products/${product.slug}`} className="group flex items-center gap-3 rounded-md border border-white/8 bg-white/[0.035] p-2 transition-colors duration-150 hover:border-tiger-ember/45 hover:bg-white/[0.06]">
+              <Link key={product.id} href={`/products/${product.slug}`} className="motion-card group flex items-center gap-3 rounded-md border border-white/8 bg-white/[0.035] p-2 hover:border-tiger-ember/45 hover:bg-white/[0.06]">
                 <span className="relative h-14 w-12 shrink-0 overflow-hidden rounded-md bg-black/40">
                   <Image src={product.image} alt={product.name} fill sizes="64px" className="object-contain" />
                 </span>
@@ -101,20 +101,20 @@ export function Hero({ products }: HeroProps) {
         </div>
 
         <div className="grid gap-4">
-          <Link href="/shop" className="group overflow-hidden rounded-md border border-white/10 bg-[#1d1d1d] shadow-[0_28px_80px_rgba(0,0,0,0.38)]" aria-label="Shop Tiger Store">
+          <Link href="/shop" className="motion-reveal group overflow-hidden rounded-md border border-white/10 bg-[#1d1d1d] shadow-[0_28px_80px_rgba(0,0,0,0.38)]" aria-label="Shop Tiger Store">
             <div className="relative aspect-[16/11]">
               <Image
                 src={mainHeroImage}
                 alt="Tiger Store digital subscriptions"
                 fill
                 sizes="(min-width: 1024px) 42vw, 100vw"
-                className="object-contain p-2 transition-transform duration-300 group-hover:scale-[1.015]"
+                className="motion-media object-contain p-2"
                 priority
               />
             </div>
           </Link>
 
-          <aside className="premium-card rounded-md p-4">
+          <aside className="premium-card motion-reveal rounded-md p-4">
             <div className="mb-3 flex items-center justify-between gap-3">
               <div>
                 <p className="text-xs font-black uppercase tracking-[0.16em] text-tiger-gold">{copy.curated}</p>
@@ -132,7 +132,7 @@ export function Hero({ products }: HeroProps) {
                 <Link
                   key={product.id}
                   href={`/products/${product.slug}`}
-                  className="group grid grid-cols-[58px_1fr] gap-3 rounded-md border border-white/8 bg-black/18 p-2 transition-colors duration-150 hover:border-tiger-ember/45"
+                  className="motion-card group grid grid-cols-[58px_1fr] gap-3 rounded-md border border-white/8 bg-black/18 p-2 hover:border-tiger-ember/45"
                 >
                   <span className="relative aspect-[4/5] overflow-hidden rounded-md bg-black/35">
                     <Image src={product.image} alt={product.name} fill sizes="70px" className="object-contain p-0.5" />

@@ -163,7 +163,7 @@ export function ProductDetails({ product }: ProductDetailsProps) {
     <section className="space-y-10">
       <div className="grid gap-6 xl:grid-cols-[minmax(340px,480px)_minmax(0,1fr)_360px] xl:items-start" dir={direction}>
         <div className="xl:col-start-1">
-          <div className="overflow-hidden rounded-md border border-white/10 bg-[#202020] shadow-[0_24px_70px_rgba(0,0,0,0.36)]">
+          <div className="motion-reveal overflow-hidden rounded-md border border-white/10 bg-[#202020] shadow-[0_24px_70px_rgba(0,0,0,0.36)]">
             <div className="relative aspect-[4/5] overflow-hidden bg-[#101010]">
               <Image
                 src={product.image}
@@ -186,7 +186,7 @@ export function ProductDetails({ product }: ProductDetailsProps) {
           </div>
         </div>
 
-        <div className="min-w-0 py-1 xl:col-start-2">
+        <div className="motion-reveal min-w-0 py-1 xl:col-start-2">
           <div className="text-sm font-bold text-white/55">
             <Link href="/" className="hover:text-tiger-gold">{labels.home}</Link>
             <span className="mx-2">/</span>
@@ -247,7 +247,7 @@ export function ProductDetails({ product }: ProductDetailsProps) {
                       onClick={() => !disabled && setSelectedKey(offer.key)}
                       disabled={disabled}
                       className={cn(
-                        "rounded-md border bg-[#202020] p-4 text-start transition-colors duration-150 disabled:cursor-not-allowed disabled:opacity-45",
+                        "tap-feedback rounded-md border bg-[#202020] p-4 text-start transition-colors duration-150 disabled:cursor-not-allowed disabled:opacity-45 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-tiger-ember",
                         selectedKey === offer.key
                           ? "border-tiger-ember bg-tiger-ember/12"
                           : "border-white/10 hover:border-tiger-ember/45",
@@ -267,7 +267,7 @@ export function ProductDetails({ product }: ProductDetailsProps) {
           ) : null}
         </div>
 
-        <aside className="w-full rounded-md border border-white/10 bg-[#252525] p-5 shadow-[0_24px_70px_rgba(0,0,0,0.35)] xl:col-start-3 xl:sticky xl:top-24">
+        <aside className="premium-card motion-reveal w-full rounded-md p-5 xl:col-start-3 xl:sticky xl:top-24">
           <div className="flex flex-wrap items-end gap-3">
             {selectedOffer.oldPrice && selectedOffer.oldPrice > selectedOffer.price ? (
               <p className="pb-1 text-base font-bold text-white/40 line-through">
@@ -300,7 +300,7 @@ export function ProductDetails({ product }: ProductDetailsProps) {
           <button
             type="button"
             onClick={handleWishlist}
-            className="mt-4 inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-full border border-white/10 bg-black/25 text-sm font-black text-white transition-colors duration-150 hover:bg-white/10"
+            className="tap-feedback mt-4 inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-full border border-white/10 bg-black/25 text-sm font-black text-white transition-colors duration-150 hover:bg-white/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-tiger-ember"
           >
             <Heart className={cn("h-4 w-4", wishlisted && "fill-tiger-ember text-tiger-ember")} />
             {wishlisted ? labels.saved : labels.addWishlist}
@@ -315,7 +315,7 @@ export function ProductDetails({ product }: ProductDetailsProps) {
         </aside>
       </div>
 
-      <div className="rounded-md border border-white/10 bg-[#181818] p-5 shadow-[0_20px_55px_rgba(0,0,0,0.28)] sm:p-7" dir={direction}>
+      <div className="motion-reveal rounded-md border border-white/10 bg-[#181818] p-5 shadow-[0_20px_55px_rgba(0,0,0,0.28)] sm:p-7" dir={direction}>
         <h2 className="text-2xl font-black text-white">{labels.description}</h2>
         <div className="mt-5 border-t border-white/10 pt-6">
           <p className="max-w-3xl whitespace-pre-line text-base font-bold leading-8 text-white/82">
@@ -329,7 +329,7 @@ export function ProductDetails({ product }: ProductDetailsProps) {
               </h3>
               <ul className="grid max-w-5xl gap-3 sm:grid-cols-2">
                 {features.map((feature, index) => (
-                  <li key={index} className="flex items-center gap-3 rounded-md border border-white/8 bg-white/[0.035] p-3 font-bold text-white/80">
+                  <li key={index} className="motion-card flex items-center gap-3 rounded-md border border-white/8 bg-white/[0.035] p-3 font-bold text-white/80">
                     <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-tiger-ember/20 text-tiger-gold">
                       <Check className="h-3 w-3" />
                     </span>
@@ -347,7 +347,7 @@ export function ProductDetails({ product }: ProductDetailsProps) {
 
 function InfoItem({ icon, label, value }: { icon: ReactNode; label: string; value: string }) {
   return (
-    <div className="rounded-md border border-white/9 bg-white/[0.035] p-4">
+    <div className="motion-card rounded-md border border-white/9 bg-white/[0.035] p-4">
       <div className="mb-3 flex items-center gap-2 text-tiger-gold">
         {icon}
         <p className="text-xs font-black text-white/72">{label}</p>

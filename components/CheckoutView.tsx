@@ -215,7 +215,7 @@ export function CheckoutView({ products, directProductSlug, directOption, direct
   return (
     <main className="store-shell min-h-screen px-3 py-6 sm:px-5 lg:px-8" dir={locale === "ar" ? "rtl" : "ltr"}>
       <div className="mx-auto max-w-6xl">
-        <div className="premium-card mb-5 rounded-md p-5 sm:p-7">
+        <div className="premium-card motion-reveal mb-5 rounded-md p-5 sm:p-7">
           <p className="text-sm font-black text-tiger-gold">{labels.eyebrow}</p>
           <h1 className="mt-2 max-w-3xl text-2xl font-black leading-tight text-white sm:text-4xl">{labels.title}</h1>
           <p className="mt-2 max-w-2xl text-sm font-semibold leading-7 text-white/62">
@@ -231,7 +231,7 @@ export function CheckoutView({ products, directProductSlug, directOption, direct
         {items.length ? (
           <form onSubmit={handleSubmit} className="grid gap-4 lg:grid-cols-[1fr_380px]">
             <div className="grid gap-4">
-              <div className="premium-card rounded-md p-4 sm:p-5">
+              <div className="premium-card motion-reveal rounded-md p-4 sm:p-5">
                 <h2 className="mb-4 text-xl font-black text-white">{labels.customerInfo}</h2>
                 <div className="grid gap-4">
                   <Field label={labels.fullName} value={name} onChange={setName} required autoComplete="name" />
@@ -248,7 +248,7 @@ export function CheckoutView({ products, directProductSlug, directOption, direct
                 </div>
               </div>
 
-              <div className="premium-card rounded-md p-4 sm:p-5">
+              <div className="premium-card motion-reveal rounded-md p-4 sm:p-5">
                 <h2 className="mb-4 text-xl font-black text-white">{labels.paymentMethod}</h2>
                 <div className="grid grid-cols-3 gap-2">
                   {paymentMethods.map((method) => (
@@ -256,7 +256,7 @@ export function CheckoutView({ products, directProductSlug, directOption, direct
                       key={method}
                       type="button"
                       onClick={() => setPaymentMethod(method)}
-                      className={`min-h-12 rounded-xl border px-2 text-xs font-black transition-colors duration-150 sm:text-sm ${
+                      className={`tap-feedback min-h-12 rounded-xl border px-2 text-xs font-black transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-tiger-ember sm:text-sm ${
                         paymentMethod === method
                           ? "border-tiger-ember bg-tiger-ember text-black"
                           : "border-white/10 bg-black/40 text-white"
@@ -284,7 +284,7 @@ export function CheckoutView({ products, directProductSlug, directOption, direct
               </div>
             </div>
 
-            <aside className="premium-card h-fit rounded-md p-4 sm:p-5 lg:sticky lg:top-24">
+            <aside className="premium-card motion-reveal h-fit rounded-md p-4 sm:p-5 lg:sticky lg:top-24">
               <h2 className="mb-4 text-xl font-black text-white">{labels.summary}</h2>
               <div className="grid gap-3">
                 {items.map((item) => (
@@ -320,7 +320,7 @@ export function CheckoutView({ products, directProductSlug, directOption, direct
             </aside>
           </form>
         ) : (
-          <div className="premium-card rounded-md p-6 text-center">
+          <div className="premium-card motion-reveal rounded-md p-6 text-center">
             <p className="font-bold text-white">{labels.empty}</p>
             <Button asChild className="mt-4 min-h-12 rounded-full">
               <Link href="/shop">{labels.browse}</Link>
@@ -334,7 +334,7 @@ export function CheckoutView({ products, directProductSlug, directOption, direct
 
 function Step({ label, index }: { label: string; index: number }) {
   return (
-    <div className="flex items-center gap-3 rounded-md border border-white/8 bg-white/[0.035] p-3">
+    <div className="motion-card flex items-center gap-3 rounded-md border border-white/8 bg-white/[0.035] p-3">
       <span className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-tiger-ember text-xs font-black text-black">{index}</span>
       <span className="text-sm font-black text-white/82">{label}</span>
       <CheckCircle2 className="ms-auto h-4 w-4 text-tiger-gold" />
@@ -344,7 +344,7 @@ function Step({ label, index }: { label: string; index: number }) {
 
 function TrustItem({ icon, text }: { icon: ReactNode; text: string }) {
   return (
-    <div className="flex min-h-12 items-center gap-2 rounded-md border border-white/8 bg-black/20 px-3 text-xs font-black text-white/70">
+    <div className="motion-card flex min-h-12 items-center gap-2 rounded-md border border-white/8 bg-black/20 px-3 text-xs font-black text-white/70">
       <span className="text-tiger-gold">{icon}</span>
       {text}
     </div>

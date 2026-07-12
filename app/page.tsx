@@ -39,7 +39,7 @@ export default async function Home() {
         <section className="mx-auto max-w-[1440px] px-3 py-5 sm:px-5 lg:px-8">
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
             {trustItems.map((item) => (
-              <article key={item.title} className="premium-card rounded-md p-4">
+              <article key={item.title} className="premium-card motion-card motion-reveal rounded-md p-4">
                 <item.icon className="mb-3 h-5 w-5 text-tiger-ember" />
                 <h3 className="text-sm font-black text-white sm:text-base">{item.title}</h3>
                 <p className="mt-1 text-xs font-bold text-white/54">{item.subtitle}</p>
@@ -55,7 +55,7 @@ export default async function Home() {
               { title: "أكد الطلب", text: "املأ معلوماتك واختر طريقة الدفع.", icon: CheckCircle2 },
               { title: "استلم التفعيل", text: "نكمل معك حتى التفعيل.", icon: MessageCircle },
             ].map((step, index) => (
-              <article key={step.title} className="rounded-md border border-white/8 bg-white/[0.035] p-4">
+              <article key={step.title} className="motion-card rounded-md border border-white/8 bg-white/[0.035] p-4">
                 <div className="mb-4 flex items-center justify-between">
                   <span className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-tiger-ember text-sm font-black text-black">0{index + 1}</span>
                   <step.icon className="h-5 w-5 text-tiger-gold" />
@@ -84,7 +84,7 @@ export default async function Home() {
               { name: "CCP", text: <LocalizedText ar="نرسل لك تفاصيل الدفع بعد مراجعة الطلب." en="Payment details are confirmed after order review." />, logo: "/logos/payments/algerie-poste.svg" },
               { name: "RedotPay", text: <LocalizedText ar="طريقة متاحة لبعض الطلبات حسب التوفر." en="Payment available for selected orders." />, logo: "/logos/payments/redotpay.svg" },
             ].map(({ name, text, logo }) => (
-              <article key={name} className="premium-card rounded-md p-5 transition-all duration-150 hover:-translate-y-0.5 hover:border-tiger-ember/35">
+              <article key={name} className="premium-card motion-card rounded-md p-5 hover:border-tiger-ember/35">
                 <span className="mb-4 inline-flex h-12 w-12 items-center justify-center rounded-full bg-white p-2">
                   <Image src={logo} alt={`${name} logo`} width={44} height={44} className="h-full w-full object-contain" />
                 </span>
@@ -111,7 +111,7 @@ export default async function Home() {
             </div>
             <div className="grid gap-3 sm:grid-cols-2">
               {["تفعيل حسب المنتج", "مراجعة الطلب قبل الدفع", "دعم مستمر", "ضمان طيلة المدة"].map((item) => (
-                <div key={item} className="flex items-center gap-3 rounded-md border border-white/9 bg-black/20 p-4">
+                <div key={item} className="motion-card flex items-center gap-3 rounded-md border border-white/9 bg-black/20 p-4">
                   <ShieldCheck className="h-5 w-5 text-tiger-gold" />
                   <p className="font-black text-white">{item}</p>
                 </div>
@@ -123,7 +123,7 @@ export default async function Home() {
         <FaqPreview />
 
         <section className="mx-auto max-w-[1440px] px-3 pb-10 pt-4 sm:px-5 lg:px-8">
-          <div className="rounded-md border border-tiger-ember/25 bg-[#211813] p-5 shadow-[0_18px_45px_rgba(0,0,0,0.36)] sm:p-7">
+          <div className="motion-reveal rounded-md border border-tiger-ember/25 bg-[#211813] p-5 shadow-[0_18px_45px_rgba(0,0,0,0.36)] sm:p-7">
             <div className="grid gap-4 md:grid-cols-[1fr_auto] md:items-center">
               <div>
                 <p className="text-sm font-black uppercase tracking-[0.18em] text-tiger-gold">

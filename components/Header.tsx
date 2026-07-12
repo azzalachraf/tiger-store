@@ -71,7 +71,7 @@ export function Header() {
             <Link
               key={item.href}
               href={item.href}
-              className="rounded-full px-3 py-2 text-sm font-black text-white/78 transition-colors duration-150 hover:bg-white/8 hover:text-tiger-gold"
+            className="tap-feedback rounded-full px-3 py-2 text-sm font-black text-white/78 transition-colors duration-150 hover:bg-white/8 hover:text-tiger-gold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-tiger-ember"
             >
               {locale === "ar" ? item.ar : item.en}
             </Link>
@@ -86,7 +86,7 @@ export function Header() {
           />
           <button
             type="submit"
-            className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-tiger-ember text-black transition-colors duration-150 hover:bg-tiger-gold"
+            className="tap-feedback inline-flex h-9 w-9 items-center justify-center rounded-full bg-tiger-ember text-black transition-colors duration-150 hover:bg-tiger-gold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-tiger-ember"
             aria-label="Search"
           >
             <Search className="h-4 w-4" />
@@ -106,7 +106,7 @@ export function Header() {
           <button
             type="button"
             onClick={toggleLocale}
-            className="inline-flex min-h-11 items-center gap-2 rounded-full border border-white/12 bg-white/6 px-2 text-xs font-black text-white/84 transition-colors duration-150 hover:bg-white/10 sm:px-3"
+            className="tap-feedback inline-flex min-h-11 items-center gap-2 rounded-full border border-white/12 bg-white/6 px-2 text-xs font-black text-white/84 transition-colors duration-150 hover:bg-white/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-tiger-ember sm:px-3"
             aria-label="Language switch AR / EN"
           >
             <Globe2 className="hidden h-4 w-4 sm:block" />
@@ -115,7 +115,7 @@ export function Header() {
           <button
             type="button"
             onClick={toggleCurrency}
-            className="inline-flex min-h-11 items-center gap-2 rounded-full border border-white/12 bg-white/6 px-2 text-xs font-black text-white/84 transition-colors duration-150 hover:bg-white/10 sm:px-3"
+            className="tap-feedback inline-flex min-h-11 items-center gap-2 rounded-full border border-white/12 bg-white/6 px-2 text-xs font-black text-white/84 transition-colors duration-150 hover:bg-white/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-tiger-ember sm:px-3"
             aria-label="Currency switch DZD / USD"
             title="250 DZD = 1 USD"
           >
@@ -130,7 +130,7 @@ export function Header() {
           <Link
             key={item.href}
             href={item.href}
-            className="shrink-0 rounded-full border border-white/10 bg-white/5 px-3.5 py-2 text-xs font-black text-white/82"
+            className="tap-feedback shrink-0 rounded-full border border-white/10 bg-white/5 px-3.5 py-2 text-xs font-black text-white/82 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-tiger-ember"
           >
             {locale === "ar" ? item.ar : item.en}
           </Link>
@@ -145,7 +145,7 @@ function IconLink({ href, label, count, children, className }: { href: string; l
     <Link
       href={href}
       aria-label={label}
-      className={cn("relative inline-flex h-11 w-11 items-center justify-center rounded-full text-white transition-colors duration-150 hover:bg-white/10 hover:text-tiger-gold", className)}
+      className={cn("tap-feedback relative inline-flex h-11 w-11 items-center justify-center rounded-full text-white transition-colors duration-150 hover:bg-white/10 hover:text-tiger-gold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-tiger-ember", className)}
     >
       {children}
       {count ? (
