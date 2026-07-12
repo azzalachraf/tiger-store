@@ -5,7 +5,7 @@ import { PageTracker } from "@/components/PageTracker";
 import "./globals.css";
 
 const description =
-  "Tiger Store يوفر اشتراكات رقمية في الجزائر مثل ChatGPT Plus, Gemini Pro, Canva Pro, CapCut Pro, Adobe Creative Cloud والمزيد.";
+  "Tiger Store يوفر اشتراكات مثل ChatGPT Plus, Gemini Pro, Canva Pro, CapCut Pro, Adobe Creative Cloud والمزيد.";
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://digitaldz.shop"),
@@ -15,13 +15,13 @@ export const metadata: Metadata = {
   },
   description,
   keywords: [
-    "اشتراكات رقمية الجزائر",
+    "اشتراكات",
     "Tiger Store",
-    "ChatGPT Plus Algeria",
-    "Canva Pro Algeria",
-    "CapCut Pro Algeria",
-    "Adobe Creative Cloud Algeria",
-    "Gemini Pro Algeria",
+    "ChatGPT Plus",
+    "Canva Pro",
+    "CapCut Pro",
+    "Adobe Creative Cloud",
+    "Gemini Pro",
     "digitaldz.shop",
   ],
   alternates: {

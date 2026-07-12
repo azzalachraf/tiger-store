@@ -24,8 +24,8 @@ export function Footer({ disclaimer }: FooterProps) {
           </div>
           <p className="max-w-md text-sm font-semibold leading-7 text-white/62">
             <LocalizedText
-              ar="متجر اشتراكات رقمية في الجزائر لخدمات الذكاء الاصطناعي، التصميم، التعليم، والبرامج. تفعيل واضح ودعم عبر واتساب."
-              en="Digital subscription store in Algeria for AI, design, education, and software. Clear activation and WhatsApp support."
+              ar="متجر اشتراكات لخدمات الذكاء الاصطناعي، التصميم، التعليم، والبرامج. تفعيل واضح ودعم مستمر."
+              en="Subscription store for AI, design, education, and software. Clear activation and continuous support."
             />
           </p>
           <p className="mt-4 max-w-xl text-xs leading-6 text-white/42">

@@ -16,9 +16,9 @@ import { Product } from "@/lib/types";
 
 const trustItems = [
   { title: "تفعيل سريع", subtitle: "Fast activation", icon: Zap },
-  { title: "دعم واتساب", subtitle: "After-sale support", icon: Headphones },
-  { title: "أسعار واضحة", subtitle: "DZD pricing", icon: BadgeCheck },
-  { title: "دفع جزائري", subtitle: "BaridiMob, CCP, RedotPay", icon: CreditCard },
+  { title: "دعم مستمر", subtitle: "After-sale support", icon: Headphones },
+  { title: "أسعار واضحة", subtitle: "Clear pricing", icon: BadgeCheck },
+  { title: "دفع مرن", subtitle: "BaridiMob, CCP, RedotPay", icon: CreditCard },
 ];
 
 export default async function Home() {
@@ -53,7 +53,7 @@ export default async function Home() {
             {[
               { title: "اختر الاشتراك", text: "تصفح المنتجات والخطط المتوفرة.", icon: Sparkles },
               { title: "أكد الطلب", text: "املأ معلوماتك واختر طريقة الدفع.", icon: CheckCircle2 },
-              { title: "استلم التفعيل", text: "نكمل معك عبر واتساب حتى التفعيل.", icon: MessageCircle },
+              { title: "استلم التفعيل", text: "نكمل معك حتى التفعيل.", icon: MessageCircle },
             ].map((step, index) => (
               <article key={step.title} className="rounded-md border border-white/8 bg-white/[0.035] p-4">
                 <div className="mb-4 flex items-center justify-between">
@@ -82,7 +82,7 @@ export default async function Home() {
             {[
               { name: "BaridiMob", text: `RIP: ${settings.baridiMobRip}`, logo: "/logos/payments/baridimob.png" },
               { name: "CCP", text: <LocalizedText ar="نرسل لك تفاصيل الدفع بعد مراجعة الطلب." en="Payment details are confirmed after order review." />, logo: "/logos/payments/algerie-poste.svg" },
-              { name: "RedotPay", text: <LocalizedText ar="طريقة رقمية متاحة لبعض الطلبات حسب التوفر." en="Digital payment available for selected orders." />, logo: "/logos/payments/redotpay.svg" },
+              { name: "RedotPay", text: <LocalizedText ar="طريقة متاحة لبعض الطلبات حسب التوفر." en="Payment available for selected orders." />, logo: "/logos/payments/redotpay.svg" },
             ].map(({ name, text, logo }) => (
               <article key={name} className="premium-card rounded-md p-5 transition-all duration-150 hover:-translate-y-0.5 hover:border-tiger-ember/35">
                 <span className="mb-4 inline-flex h-12 w-12 items-center justify-center rounded-full bg-white p-2">
@@ -110,7 +110,7 @@ export default async function Home() {
               </p>
             </div>
             <div className="grid gap-3 sm:grid-cols-2">
-              {["تفعيل حسب المنتج", "مراجعة الطلب قبل الدفع", "دعم عبر واتساب", "أسعار وخطط واضحة"].map((item) => (
+              {["تفعيل حسب المنتج", "مراجعة الطلب قبل الدفع", "دعم مستمر", "أسعار وخطط واضحة"].map((item) => (
                 <div key={item} className="flex items-center gap-3 rounded-md border border-white/9 bg-black/20 p-4">
                   <ShieldCheck className="h-5 w-5 text-tiger-gold" />
                   <p className="font-black text-white">{item}</p>

@@ -22,24 +22,24 @@ export function Hero({ products }: HeroProps) {
 
   const copy = locale === "ar"
     ? {
-        eyebrow: "متجر اشتراكات رقمية للجزائر",
-        title: "اشتراكات أصلية، تفعيل سريع، ودفع جزائري واضح.",
-        description: "اختر اشتراكك، أرسل الطلب، وتابع معنا عبر واتساب حتى يتم التفعيل. بدون حساب، بدون تعقيد، وبأسعار واضحة بالدينار الجزائري.",
+        eyebrow: "متجر اشتراكات",
+        title: "اشتراكات أصلية، تفعيل سريع، ودفع واضح.",
+        description: "اختر اشتراكك، أرسل الطلب، وتابع معنا حتى يتم التفعيل. بدون حساب، بدون تعقيد، وبأسعار واضحة.",
         primary: "تسوق الآن",
         secondary: "طرق الدفع",
-        trust: ["دعم واتساب", "BaridiMob و CCP", "تفعيل حسب المنتج", "أسعار بالدينار"],
+        trust: ["دعم مستمر", "BaridiMob و CCP", "تفعيل حسب المنتج", "أسعار واضحة"],
         curated: "اختيارات مطلوبة",
-        proof: "متجر محلي موثوق للخدمات الرقمية",
+        proof: "متجر موثوق للخدمات",
       }
     : {
-        eyebrow: "Digital subscriptions for Algeria",
-        title: "Original subscriptions, fast activation, clear local payment.",
-        description: "Choose your subscription, submit the order, and continue on WhatsApp until activation. No account, no confusion, clear DZD pricing.",
+        eyebrow: "Subscriptions",
+        title: "Original subscriptions, fast activation, clear payment.",
+        description: "Choose your subscription, submit the order, and continue until activation. No account, no confusion, clear pricing.",
         primary: "Shop now",
         secondary: "Payment methods",
-        trust: ["WhatsApp support", "BaridiMob and CCP", "Activation by product", "DZD pricing"],
+        trust: ["Continuous support", "BaridiMob and CCP", "Activation by product", "Clear pricing"],
         curated: "Most requested",
-        proof: "Trusted local store for digital services",
+        proof: "Trusted store for services",
       };
 
   return (
