@@ -121,18 +121,23 @@ export const products: Product[] = [
     nameAr: "Adobe Creative Cloud",
     category: "Design",
     categoryAr: "التصميم",
-    price: 1500,
+    price: 2500,
     currency: "DZD",
-    ...defaultOffer,
+    duration: "1 month",
+    durationAr: "شهر واحد",
     shortDescriptionAr: "حزمة Adobe للتصميم والصور والفيديو.",
     shortDescriptionEn: "Adobe suite for design, photos, and video.",
-    featuresAr: defaultFeaturesAr,
+    featuresAr: ["المميزات", ...defaultFeaturesAr],
     featuresEn: defaultFeaturesEn,
     activationTypeAr: "تفعيل رقمي",
     activationTypeEn: "Digital activation",
     image: "/products/05_Adobe_Creative_Cloud.webp",
     available: true,
     featured: true,
+    priceOptions: [
+      { label: "1 month shared account", labelAr: "حساب مشترك شهر واحد", price: 2500, duration: "1 month", durationAr: "شهر واحد", available: true },
+      { label: "1 month private account (2 devices)", labelAr: "حساب خاص شهر واحد (جهازين)", price: 4500, duration: "1 month", durationAr: "شهر واحد", available: true }
+    ]
   },
   {
     id: "duolingo-premium",
