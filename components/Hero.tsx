@@ -24,20 +24,20 @@ export function Hero({ products }: HeroProps) {
     ? {
         eyebrow: "متجر اشتراكات",
         title: "اشتراكات أصلية، تفعيل سريع، ودفع واضح.",
-        description: "اختر اشتراكك، أرسل الطلب، وتابع معنا حتى يتم التفعيل. بدون حساب، بدون تعقيد، وبأسعار واضحة.",
+        description: "اختر اشتراكك، أرسل الطلب، وتابع معنا حتى يتم التفعيل. استلم طلبك بدون أي تعقيد.",
         primary: "تسوق الآن",
         secondary: "طرق الدفع",
-        trust: ["دعم مستمر", "BaridiMob و CCP", "تفعيل حسب المنتج", "أسعار واضحة"],
+        trust: ["دعم مستمر", "BaridiMob و CCP", "تفعيل حسب المنتج", "ضمان كامل"],
         curated: "اختيارات مطلوبة",
         proof: "متجر موثوق للخدمات",
       }
     : {
         eyebrow: "Subscriptions",
         title: "Original subscriptions, fast activation, clear payment.",
-        description: "Choose your subscription, submit the order, and continue until activation. No account, no confusion, clear pricing.",
+        description: "Choose your subscription, submit the order, and continue until activation. Receive your account with zero hassle.",
         primary: "Shop now",
         secondary: "Payment methods",
-        trust: ["Continuous support", "BaridiMob and CCP", "Activation by product", "Clear pricing"],
+        trust: ["Continuous support", "BaridiMob and CCP", "Activation by product", "Full guarantee"],
         curated: "Most requested",
         proof: "Trusted store for services",
       };

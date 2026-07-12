@@ -17,7 +17,7 @@ import { Product } from "@/lib/types";
 const trustItems = [
   { title: "تفعيل سريع", subtitle: "Fast activation", icon: Zap },
   { title: "دعم مستمر", subtitle: "After-sale support", icon: Headphones },
-  { title: "أسعار واضحة", subtitle: "Clear pricing", icon: BadgeCheck },
+  { title: "ضمان كامل", subtitle: "Full guarantee", icon: BadgeCheck },
   { title: "دفع مرن", subtitle: "BaridiMob, CCP, RedotPay", icon: CreditCard },
 ];
 
@@ -110,7 +110,7 @@ export default async function Home() {
               </p>
             </div>
             <div className="grid gap-3 sm:grid-cols-2">
-              {["تفعيل حسب المنتج", "مراجعة الطلب قبل الدفع", "دعم مستمر", "أسعار وخطط واضحة"].map((item) => (
+              {["تفعيل حسب المنتج", "مراجعة الطلب قبل الدفع", "دعم مستمر", "ضمان طيلة المدة"].map((item) => (
                 <div key={item} className="flex items-center gap-3 rounded-md border border-white/9 bg-black/20 p-4">
                   <ShieldCheck className="h-5 w-5 text-tiger-gold" />
                   <p className="font-black text-white">{item}</p>
