@@ -1,6 +1,8 @@
 import "server-only";
 
-import { supabase } from "@/lib/supabase";
+import { getSupabaseServiceClient } from "@/lib/supabase";
+
+const supabaseService = getSupabaseServiceClient();
 
 /**
  * Record a page event for funnel / attribution analytics.
@@ -19,7 +21,7 @@ export async function recordPageEvent(event: {
   referrer?: string;
 }) {
   const id = crypto.randomUUID();
-  const { error } = await supabase.from("page_events").insert({
+  const { error } = await supabaseService.from("page_events").insert({
     id,
     ...event,
     created_at: new Date().toISOString(),
@@ -36,7 +38,7 @@ export async function countEventsByType(
   startDate?: string,
   endDate?: string
 ): Promise<Record<string, number>> {
-  let query = supabase.from("page_events").select("event_type");
+  let query = supabaseService.from("page_events").select("event_type");
   if (startDate) query = query.gte("created_at", startDate);
   if (endDate) query = query.lte("created_at", endDate);
 
@@ -82,7 +84,7 @@ export async function getAttributionData(
   startDate?: string,
   endDate?: string
 ) {
-  let query = supabase
+  let query = supabaseService
     .from("orders")
     .select("utm_source, utm_medium, utm_campaign, total, status");
 
@@ -116,3 +118,5 @@ export async function getAttributionData(
     byMedium: groupBy("utm_medium"),
   };
 }
+
+

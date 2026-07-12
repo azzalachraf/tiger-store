@@ -1,14 +1,17 @@
-import { createClient } from "@supabase/supabase-js";
+import "server-only";
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
+import { createClient, SupabaseClient } from "@supabase/supabase-js";
+import { getServerEnv } from "@/lib/env";
 
-if (!supabaseUrl || !supabaseServiceKey) {
-  throw new Error(
-    "Missing Supabase environment variables. Set NEXT_PUBLIC_SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY."
-  );
+let serviceClient: SupabaseClient | null = null;
+
+export function getSupabaseServiceClient() {
+  if (serviceClient) return serviceClient;
+
+  const env = getServerEnv();
+  serviceClient = createClient(env.NEXT_PUBLIC_SUPABASE_URL, env.SUPABASE_SERVICE_ROLE_KEY, {
+    auth: { persistSession: false, autoRefreshToken: false },
+  });
+
+  return serviceClient;
 }
-
-export const supabase = createClient(supabaseUrl, supabaseServiceKey, {
-  auth: { persistSession: false, autoRefreshToken: false },
-});

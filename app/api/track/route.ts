@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { recordPageEvent } from "@/lib/page-events";
+import { pageEventInputSchema } from "@/lib/validation";
 
 export const runtime = "nodejs";
 
@@ -11,35 +12,9 @@ export const runtime = "nodejs";
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const {
-      event_type,
-      page_url,
-      product_id,
-      session_id,
-      utm_source,
-      utm_medium,
-      utm_campaign,
-      utm_content,
-      utm_term,
-      referrer,
-    } = body;
+    const event = pageEventInputSchema.parse(body);
 
-    if (!event_type || typeof event_type !== "string") {
-      return NextResponse.json({ error: "event_type required" }, { status: 400 });
-    }
-
-    await recordPageEvent({
-      event_type,
-      page_url,
-      product_id,
-      session_id,
-      utm_source,
-      utm_medium,
-      utm_campaign,
-      utm_content,
-      utm_term,
-      referrer,
-    });
+    await recordPageEvent(event);
 
     return NextResponse.json({ ok: true });
   } catch {

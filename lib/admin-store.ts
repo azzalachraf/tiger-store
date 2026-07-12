@@ -1,8 +1,13 @@
 import "server-only";
 
 import { createHash, randomBytes, createCipheriv, createDecipheriv } from "crypto";
-import { supabase } from "@/lib/supabase";
+import { getSupabaseServiceClient } from "@/lib/supabase";
+import { getEncryptionSecret } from "@/lib/env";
+import { logger } from "@/lib/logger";
 import { AdminAccount, AdminAccountStatus, AdminOrder, Product, SiteSettings } from "@/lib/types";
+import { adminOrderSchema, productSchema, siteSettingsSchema } from "@/lib/validation";
+
+const supabaseService = getSupabaseServiceClient();
 
 /* ------------------------------------------------------------------ */
 /*  Encryption helpers (unchanged – passwords encrypted before DB)    */
@@ -11,8 +16,7 @@ import { AdminAccount, AdminAccountStatus, AdminOrder, Product, SiteSettings } f
 const accountStatuses: AdminAccountStatus[] = ["Available", "Sold", "Expired", "Problem"];
 
 function encryptionKey() {
-  const secret = process.env.ADMIN_PASSWORD || process.env.ADMIN_EMAIL || "tiger-store-local-admin";
-  return createHash("sha256").update(secret).digest();
+  return createHash("sha256").update(getEncryptionSecret()).digest();
 }
 
 function encryptSecret(value: string) {
@@ -71,45 +75,68 @@ const defaultSettings: SiteSettings = {
 /* ------------------------------------------------------------------ */
 
 export async function getProducts(): Promise<Product[]> {
-  const { data, error } = await supabase
+  const { data, error } = await supabaseService
     .from("products")
     .select("*")
     .order("featured", { ascending: false });
 
   if (error) {
-    console.error("getProducts error:", error.message);
+    logger.error("getProducts failed", error);
     return [];
   }
-  return (data ?? []) as Product[];
+  return productSchema.array().catch([]).parse(data ?? []);
 }
 
 export async function getProductById(id: string): Promise<Product | undefined> {
-  const { data } = await supabase
+  const { data, error } = await supabaseService
     .from("products")
     .select("*")
     .eq("id", id)
     .maybeSingle();
 
-  return (data as Product) ?? undefined;
+  if (error) {
+    logger.error("getProductById failed", error, { id });
+    return undefined;
+  }
+
+  if (!data) return undefined;
+  const parsed = productSchema.safeParse(data);
+  if (!parsed.success) {
+    logger.error("getProductById validation failed", parsed.error, { id });
+    return undefined;
+  }
+  return parsed.data;
 }
 
 export async function getProductBySlug(slug: string): Promise<Product | undefined> {
-  const { data } = await supabase
+  const { data, error } = await supabaseService
     .from("products")
     .select("*")
     .eq("slug", slug)
     .maybeSingle();
 
-  return (data as Product) ?? undefined;
+  if (error) {
+    logger.error("getProductBySlug failed", error, { slug });
+    return undefined;
+  }
+
+  if (!data) return undefined;
+  const parsed = productSchema.safeParse(data);
+  if (!parsed.success) {
+    logger.error("getProductBySlug validation failed", parsed.error, { slug });
+    return undefined;
+  }
+  return parsed.data;
 }
 
 export async function saveProduct(product: Product) {
-  const { error } = await supabase.from("products").upsert(product, { onConflict: "id" });
+  const validatedProduct = productSchema.parse(product);
+  const { error } = await supabaseService.from("products").upsert(validatedProduct, { onConflict: "id" });
   if (error) throw new Error(`saveProduct failed: ${error.message}`);
 }
 
 export async function deleteProduct(id: string) {
-  const { error } = await supabase.from("products").delete().eq("id", id);
+  const { error } = await supabaseService.from("products").delete().eq("id", id);
   if (error) throw new Error(`deleteProduct failed: ${error.message}`);
 }
 
@@ -118,25 +145,47 @@ export async function deleteProduct(id: string) {
 /* ------------------------------------------------------------------ */
 
 export async function getOrders(): Promise<AdminOrder[]> {
-  const { data, error } = await supabase
+  const { data, error } = await supabaseService
     .from("orders")
     .select("*")
     .order("createdAt", { ascending: false });
 
   if (error) {
-    console.error("getOrders error:", error.message);
+    logger.error("getOrders failed", error);
     return [];
   }
-  return (data ?? []) as AdminOrder[];
+  return adminOrderSchema.array().catch([]).parse(data ?? []);
+}
+
+export async function getOrderById(id: string): Promise<AdminOrder | undefined> {
+  const { data, error } = await supabaseService
+    .from("orders")
+    .select("*")
+    .eq("id", id)
+    .maybeSingle();
+
+  if (error) {
+    logger.error("getOrderById failed", error, { id });
+    return undefined;
+  }
+
+  if (!data) return undefined;
+  const parsed = adminOrderSchema.safeParse(data);
+  if (!parsed.success) {
+    logger.error("getOrderById validation failed", parsed.error, { id });
+    return undefined;
+  }
+  return parsed.data;
 }
 
 export async function saveOrder(order: AdminOrder) {
-  const { error } = await supabase.from("orders").upsert(order, { onConflict: "id" });
+  const validatedOrder = adminOrderSchema.parse(order);
+  const { error } = await supabaseService.from("orders").upsert(validatedOrder, { onConflict: "id" });
   if (error) throw new Error(`saveOrder failed: ${error.message}`);
 }
 
 export async function deleteOrder(id: string) {
-  const { error } = await supabase.from("orders").delete().eq("id", id);
+  const { error } = await supabaseService.from("orders").delete().eq("id", id);
   if (error) throw new Error(`deleteOrder failed: ${error.message}`);
 }
 
@@ -145,14 +194,14 @@ export async function deleteOrder(id: string) {
 /* ------------------------------------------------------------------ */
 
 export async function getSettings(): Promise<SiteSettings> {
-  const { data, error } = await supabase
+  const { data, error } = await supabaseService
     .from("settings")
     .select("*")
     .eq("id", "main")
     .maybeSingle();
 
   if (error) {
-    console.error("getSettings error:", error.message);
+    logger.error("getSettings failed", error);
     return defaultSettings;
   }
 
@@ -168,13 +217,14 @@ export async function getSettings(): Promise<SiteSettings> {
 
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const { id: _id, ...rest } = data;
-  return { ...defaultSettings, ...rest } as SiteSettings;
+  return siteSettingsSchema.catch(defaultSettings).parse({ ...defaultSettings, ...rest });
 }
 
 export async function saveSettings(settings: SiteSettings) {
-  const { error } = await supabase
+  const validatedSettings = siteSettingsSchema.parse(settings);
+  const { error } = await supabaseService
     .from("settings")
-    .upsert({ id: "main", ...settings }, { onConflict: "id" });
+    .upsert({ id: "main", ...validatedSettings }, { onConflict: "id" });
 
   if (error) throw new Error(`saveSettings failed: ${error.message}`);
 }
@@ -224,7 +274,7 @@ function accountToDbRow(account: AdminAccount): StoredAccount {
 }
 
 export async function getAccounts(): Promise<AdminAccount[]> {
-  const { data, error } = await supabase
+  const { data, error } = await supabaseService
     .from("accounts")
     .select("*")
     .order("updatedAt", { ascending: false });
@@ -238,7 +288,7 @@ export async function getAccounts(): Promise<AdminAccount[]> {
 }
 
 export async function saveAccount(account: AdminAccount) {
-  const { error } = await supabase
+  const { error } = await supabaseService
     .from("accounts")
     .upsert(accountToDbRow(account), { onConflict: "id" });
 
@@ -247,7 +297,7 @@ export async function saveAccount(account: AdminAccount) {
 
 export async function saveAccounts(accounts: AdminAccount[]) {
   const rows = accounts.map(accountToDbRow);
-  const { error } = await supabase
+  const { error } = await supabaseService
     .from("accounts")
     .upsert(rows, { onConflict: "id" });
 
@@ -255,6 +305,8 @@ export async function saveAccounts(accounts: AdminAccount[]) {
 }
 
 export async function deleteAccount(id: string) {
-  const { error } = await supabase.from("accounts").delete().eq("id", id);
+  const { error } = await supabaseService.from("accounts").delete().eq("id", id);
   if (error) throw new Error(`deleteAccount failed: ${error.message}`);
 }
+
+

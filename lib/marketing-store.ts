@@ -1,7 +1,9 @@
 "use server";
 
-import { supabase } from "@/lib/supabase";
+import { getSupabaseServiceClient } from "@/lib/supabase";
 import type { MarketingConfig } from "@/lib/types";
+
+const supabaseService = getSupabaseServiceClient();
 
 const defaultConfig: MarketingConfig = {
   id: "main",
@@ -14,7 +16,7 @@ const defaultConfig: MarketingConfig = {
 
 export async function getMarketingConfig(): Promise<MarketingConfig> {
   try {
-    const { data, error } = await supabase
+    const { data, error } = await supabaseService
       .from("marketing_config")
       .select("*")
       .eq("id", "main")
@@ -30,7 +32,7 @@ export async function getMarketingConfig(): Promise<MarketingConfig> {
 export async function saveMarketingConfig(
   config: Partial<MarketingConfig>
 ): Promise<void> {
-  const { error } = await supabase
+  const { error } = await supabaseService
     .from("marketing_config")
     .upsert(
       { id: "main", ...config, updated_at: new Date().toISOString() },
@@ -38,3 +40,5 @@ export async function saveMarketingConfig(
     );
   if (error) throw new Error(`saveMarketingConfig failed: ${error.message}`);
 }
+
+

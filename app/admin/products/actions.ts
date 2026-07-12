@@ -5,8 +5,11 @@ import { redirect } from "next/navigation";
 import { requireAdmin } from "@/lib/admin-auth";
 import { deleteProduct, saveProduct } from "@/lib/admin-store";
 import { getSiteCategories } from "@/lib/categories";
-import { supabase } from "@/lib/supabase";
+import { getSupabaseServiceClient } from "@/lib/supabase";
 import { Product, ProductPriceOption } from "@/lib/types";
+import { productPriceOptionSchema } from "@/lib/validation";
+
+const supabaseService = getSupabaseServiceClient();
 
 function text(formData: FormData, key: string) {
   return String(formData.get(key) ?? "").trim();
@@ -57,7 +60,7 @@ async function saveUploadedProductImage(formData: FormData, slug: string) {
   const bytes = Buffer.from(await uploaded.arrayBuffer());
   const filename = `${safeFileBase(slug)}-${Date.now()}.${extension}`;
 
-  const { error } = await supabase.storage
+  const { error } = await supabaseService.storage
     .from("product-images")
     .upload(filename, bytes, { contentType: uploaded.type, upsert: true });
 
@@ -65,7 +68,7 @@ async function saveUploadedProductImage(formData: FormData, slug: string) {
     throw new Error(`Image upload failed: ${error.message}`);
   }
 
-  const { data: urlData } = supabase.storage
+  const { data: urlData } = supabaseService.storage
     .from("product-images")
     .getPublicUrl(filename);
 
@@ -92,6 +95,7 @@ function parseVariants(value: string): ProductPriceOption[] | undefined {
         oldPrice: variant.oldPrice ? Number(variant.oldPrice) : undefined,
         available: variant.available !== false,
       }))
+      .map((variant) => productPriceOptionSchema.parse(variant))
       .filter((variant) => variant.label && variant.duration && Number.isFinite(variant.price) && variant.price > 0);
 
     return variants.length ? variants : undefined;
@@ -159,8 +163,11 @@ export async function saveProductAction(formData: FormData) {
 export async function deleteProductAction(formData: FormData) {
   await requireAdmin();
   const id = text(formData, "id");
+  if (!id) throw new Error("Missing product id.");
   await deleteProduct(id);
   revalidatePath("/");
   revalidatePath("/shop");
   revalidatePath("/admin/products");
 }
+
+

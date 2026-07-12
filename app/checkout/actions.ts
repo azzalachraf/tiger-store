@@ -6,6 +6,7 @@ import { AdminOrder, CartItem, PaymentMethodId } from "@/lib/types";
 import { sendConversionEvent } from "@/lib/meta-capi";
 import { getMarketingConfig } from "@/lib/marketing-store";
 import { recordPageEvent } from "@/lib/page-events";
+import { checkoutOrderInputSchema } from "@/lib/validation";
 
 export async function submitOrderAction(data: {
   customerName: string;
@@ -21,21 +22,27 @@ export async function submitOrderAction(data: {
   referrer?: string;
   eventId?: string;
 }) {
+  const parsed = checkoutOrderInputSchema.parse(data);
+  const expectedTotal = parsed.products.reduce((sum, item) => sum + item.price * item.quantity, 0);
+  if (Math.abs(expectedTotal - parsed.total) > 1) {
+    throw new Error("Order total does not match cart contents.");
+  }
+
   const order: AdminOrder = {
     id: crypto.randomUUID(),
-    customerName: data.customerName,
-    phone: data.phone,
-    email: data.email,
-    products: data.products,
-    paymentMethod: data.paymentMethod,
-    total: data.total,
-    notes: data.notes,
+    customerName: parsed.customerName,
+    phone: parsed.phone,
+    email: parsed.email || parsed.phone,
+    products: parsed.products,
+    paymentMethod: parsed.paymentMethod,
+    total: parsed.total,
+    notes: parsed.notes,
     status: "pending",
     createdAt: new Date().toISOString(),
-    utm_source: data.utm_source,
-    utm_medium: data.utm_medium,
-    utm_campaign: data.utm_campaign,
-    referrer: data.referrer,
+    utm_source: parsed.utm_source,
+    utm_medium: parsed.utm_medium,
+    utm_campaign: parsed.utm_campaign,
+    referrer: parsed.referrer,
   };
 
   await saveOrder(order);
@@ -45,9 +52,9 @@ export async function submitOrderAction(data: {
     await recordPageEvent({
       event_type: "purchase_completed",
       session_id: undefined,
-      utm_source: data.utm_source,
-      utm_medium: data.utm_medium,
-      utm_campaign: data.utm_campaign,
+      utm_source: parsed.utm_source,
+      utm_medium: parsed.utm_medium,
+      utm_campaign: parsed.utm_campaign,
     });
   } catch {
     // Non-critical
@@ -61,14 +68,14 @@ export async function submitOrderAction(data: {
         pixelId: config.meta_pixel_id,
         accessToken: config.meta_capi_token,
         eventName: "Purchase",
-        eventId: data.eventId || `server-${order.id}`,
-        email: data.email,
-        phone: data.phone,
-        value: data.total,
+        eventId: parsed.eventId || `server-${order.id}`,
+        email: order.email,
+        phone: parsed.phone,
+        value: parsed.total,
         currency: "DZD",
-        contentIds: data.products.map((p) => p.productId),
+        contentIds: parsed.products.map((p) => p.productId),
         orderId: order.id,
-        numItems: data.products.length,
+        numItems: parsed.products.length,
       });
     }
   } catch {

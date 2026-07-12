@@ -9,14 +9,7 @@ export type LocalizedText = {
 
 export type Currency = "DZD";
 
-export type ProductCategory =
-  | "AI"
-  | "Architecture"
-  | "VPN"
-  | "Video Editing"
-  | "Design"
-  | "Education"
-  | "Software";
+export type ProductCategory = string;
 
 export type ProductPriceOption = {
   label: string;
