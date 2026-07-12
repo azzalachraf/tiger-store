@@ -1,7 +1,9 @@
 "use client";
 
 import Link from "next/link";
+import type { ReactNode } from "react";
 import { FormEvent, useEffect, useMemo, useState } from "react";
+import { CheckCircle2, CreditCard, MessageCircle, ShieldCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { CartItem, LocalOrder, PaymentMethodId, Product, SiteSettings } from "@/lib/types";
 import {
@@ -41,41 +43,55 @@ export function CheckoutView({ products, directProductSlug, directOption, direct
   const labels = locale === "ar"
     ? {
         eyebrow: "إتمام الطلب",
-        title: "إكمال الطلب",
-        description: "أدخل معلوماتك، اختر طريقة الدفع، ثم أكد الطلب.",
+        title: "أكمل الطلب وسنؤكد معك عبر واتساب",
+        description: "املأ معلوماتك، اختر طريقة الدفع، ثم سيتم فتح واتساب برسالة الطلب حتى نراجع التفاصيل ونكمل التفعيل.",
         customerInfo: "معلومات الزبون",
         fullName: "الاسم الكامل",
         phone: "رقم الهاتف",
         notes: "ملاحظات",
-        notesPlaceholder: "تفاصيل إضافية اختيارية...",
+        notesPlaceholder: "مثال: أريد التفعيل على حسابي، أو الوقت المناسب للتواصل...",
         paymentMethod: "طريقة الدفع",
         paymentLater: "سيتم تأكيد تفاصيل الدفع بعد إرسال الطلب.",
         summary: "ملخص الطلب",
         total: "المجموع",
-        confirm: "تأكيد الطلب",
+        confirm: "تأكيد الطلب عبر واتساب",
         clear: "تفريغ السلة",
         back: "العودة للسلة",
         empty: "السلة فارغة.",
         browse: "تصفح المنتجات",
+        stepOne: "معلوماتك",
+        stepTwo: "طريقة الدفع",
+        stepThree: "تأكيد واتساب",
+        reassurance: "لا يتم الدفع داخل الموقع. نراجع الطلب أولا ثم نرسل لك التفاصيل المناسبة.",
+        support: "دعم بعد الطلب",
+        secure: "مراجعة قبل الدفع",
+        local: "دفع محلي",
       }
     : {
         eyebrow: "Checkout",
-        title: "Checkout",
-        description: "Enter your details, choose a payment method, and confirm your order.",
-        customerInfo: "Customer Information",
-        fullName: "Full Name",
-        phone: "Phone Number",
+        title: "Complete your order and continue on WhatsApp",
+        description: "Enter your details, choose a payment method, then WhatsApp opens with the order message so we can review and activate it.",
+        customerInfo: "Customer information",
+        fullName: "Full name",
+        phone: "Phone number",
         notes: "Notes",
-        notesPlaceholder: "Optional details...",
-        paymentMethod: "Payment Method",
+        notesPlaceholder: "Example: activate on my account, or preferred contact time...",
+        paymentMethod: "Payment method",
         paymentLater: "Payment details will be confirmed after order submission.",
-        summary: "Order Summary",
+        summary: "Order summary",
         total: "Total",
-        confirm: "Confirm Order",
-        clear: "Clear Cart",
-        back: "Back to Cart",
+        confirm: "Confirm on WhatsApp",
+        clear: "Clear cart",
+        back: "Back to cart",
         empty: "Your cart is empty.",
-        browse: "Browse Products",
+        browse: "Browse products",
+        stepOne: "Your details",
+        stepTwo: "Payment",
+        stepThree: "WhatsApp confirm",
+        reassurance: "Payment is not collected inside the website. We review the order first and send the right payment details.",
+        support: "After-order support",
+        secure: "Review before payment",
+        local: "Local payment",
       };
 
   useEffect(() => {
@@ -102,11 +118,9 @@ export function CheckoutView({ products, directProductSlug, directOption, direct
 
   const total = useMemo(() => getCartSubtotal(items), [items]);
 
-  // Fire InitiateCheckout pixel event when items are loaded
   useEffect(() => {
     if (items.length > 0) {
       trackInitiateCheckout(getCartSubtotal(items), items.length);
-      // Track funnel event
       fetch("/api/track", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -142,10 +156,7 @@ export function CheckoutView({ products, directProductSlug, directOption, direct
 
     saveLocalOrder(order);
 
-    // Fire pixel Purchase event
     const purchaseEventId = trackPurchase(order.id, total, items.map((i) => ({ id: i.productId })));
-
-    // Get UTM data from storage
     const utm = readStoredUtm();
 
     try {
@@ -202,107 +213,141 @@ export function CheckoutView({ products, directProductSlug, directOption, direct
   }
 
   return (
-    <main className="store-shell min-h-screen px-3 py-6 sm:px-5 lg:px-8">
+    <main className="store-shell min-h-screen px-3 py-6 sm:px-5 lg:px-8" dir={locale === "ar" ? "rtl" : "ltr"}>
       <div className="mx-auto max-w-6xl">
-      <div className="store-panel mb-5 rounded-md p-5 sm:p-7">
-        <p className="text-sm font-black text-tiger-gold">{labels.eyebrow}</p>
-        <h1 className="mt-2 text-2xl font-black text-white sm:text-4xl">{labels.title}</h1>
-        <p className="mt-2 max-w-2xl text-sm leading-7 text-white/60">
-          {labels.description}
-        </p>
-      </div>
+        <div className="premium-card mb-5 rounded-md p-5 sm:p-7">
+          <p className="text-sm font-black text-tiger-gold">{labels.eyebrow}</p>
+          <h1 className="mt-2 max-w-3xl text-2xl font-black leading-tight text-white sm:text-4xl">{labels.title}</h1>
+          <p className="mt-2 max-w-2xl text-sm font-semibold leading-7 text-white/62">
+            {labels.description}
+          </p>
+          <div className="mt-5 grid gap-2 sm:grid-cols-3">
+            <Step label={labels.stepOne} index={1} />
+            <Step label={labels.stepTwo} index={2} />
+            <Step label={labels.stepThree} index={3} />
+          </div>
+        </div>
 
-      {items.length ? (
-        <form onSubmit={handleSubmit} className="grid gap-4 lg:grid-cols-[1fr_360px]">
-          <div className="grid gap-4">
-            <div className="store-panel rounded-md p-4">
-              <h2 className="mb-4 text-xl font-black text-white">{labels.customerInfo}</h2>
-              <div className="grid gap-4">
-                <Field label={labels.fullName} value={name} onChange={setName} required autoComplete="name" />
-                <Field label={labels.phone} value={phone} onChange={setPhone} required inputMode="tel" autoComplete="tel" />
-                <label className="grid gap-2 text-sm font-bold text-white">
-                  {labels.notes}
-                  <textarea
-                    value={notes}
-                    onChange={(event) => setNotes(event.target.value)}
-                    className="min-h-24 rounded-xl border border-white/10 bg-black px-4 py-3 text-base text-white outline-none placeholder:text-white/35 focus:border-tiger-ember"
-                    placeholder={labels.notesPlaceholder}
-                  />
-                </label>
+        {items.length ? (
+          <form onSubmit={handleSubmit} className="grid gap-4 lg:grid-cols-[1fr_380px]">
+            <div className="grid gap-4">
+              <div className="premium-card rounded-md p-4 sm:p-5">
+                <h2 className="mb-4 text-xl font-black text-white">{labels.customerInfo}</h2>
+                <div className="grid gap-4">
+                  <Field label={labels.fullName} value={name} onChange={setName} required autoComplete="name" />
+                  <Field label={labels.phone} value={phone} onChange={setPhone} required inputMode="tel" autoComplete="tel" />
+                  <label className="grid gap-2 text-sm font-bold text-white">
+                    {labels.notes}
+                    <textarea
+                      value={notes}
+                      onChange={(event) => setNotes(event.target.value)}
+                      className="min-h-28 rounded-xl border border-white/10 bg-black/45 px-4 py-3 text-base text-white outline-none placeholder:text-white/35 focus:border-tiger-ember"
+                      placeholder={labels.notesPlaceholder}
+                    />
+                  </label>
+                </div>
+              </div>
+
+              <div className="premium-card rounded-md p-4 sm:p-5">
+                <h2 className="mb-4 text-xl font-black text-white">{labels.paymentMethod}</h2>
+                <div className="grid grid-cols-3 gap-2">
+                  {paymentMethods.map((method) => (
+                    <button
+                      key={method}
+                      type="button"
+                      onClick={() => setPaymentMethod(method)}
+                      className={`min-h-12 rounded-xl border px-2 text-xs font-black transition-colors duration-150 sm:text-sm ${
+                        paymentMethod === method
+                          ? "border-tiger-ember bg-tiger-ember text-black"
+                          : "border-white/10 bg-black/40 text-white"
+                      }`}
+                    >
+                      {method}
+                    </button>
+                  ))}
+                </div>
+                <div className="mt-4 rounded-xl border border-white/10 bg-black/35 p-4 text-sm font-bold leading-7 text-white/70">
+                  {paymentMethod === "BaridiMob" ? (
+                    <p>
+                      RIP: <span className="font-black text-tiger-gold">{settings.baridiMobRip}</span>
+                    </p>
+                  ) : (
+                    <p>{labels.paymentLater}</p>
+                  )}
+                </div>
+              </div>
+
+              <div className="grid gap-2 sm:grid-cols-3">
+                <TrustItem icon={<ShieldCheck className="h-4 w-4" />} text={labels.secure} />
+                <TrustItem icon={<MessageCircle className="h-4 w-4" />} text={labels.support} />
+                <TrustItem icon={<CreditCard className="h-4 w-4" />} text={labels.local} />
               </div>
             </div>
 
-            <div className="store-panel rounded-md p-4">
-              <h2 className="mb-4 text-xl font-black text-white">{labels.paymentMethod}</h2>
-              <div className="grid grid-cols-3 gap-2">
-                {paymentMethods.map((method) => (
-                  <button
-                    key={method}
-                    type="button"
-                    onClick={() => setPaymentMethod(method)}
-                    className={`min-h-12 rounded-xl border px-2 text-xs font-black transition-colors duration-150 sm:text-sm ${
-                      paymentMethod === method
-                        ? "border-tiger-ember bg-tiger-ember text-black"
-                        : "border-white/10 bg-black/40 text-white"
-                    }`}
-                  >
-                    {method}
-                  </button>
+            <aside className="premium-card h-fit rounded-md p-4 sm:p-5 lg:sticky lg:top-24">
+              <h2 className="mb-4 text-xl font-black text-white">{labels.summary}</h2>
+              <div className="grid gap-3">
+                {items.map((item) => (
+                  <div key={item.id} className="rounded-xl border border-white/10 bg-black/35 p-3">
+                    <div className="flex justify-between gap-3">
+                      <div className="min-w-0">
+                        <p className="truncate font-black text-white">{item.name}</p>
+                        <p className="mt-1 text-xs font-bold text-white/52">{item.option}</p>
+                      </div>
+                      <p className="font-bold text-white/70">x{item.quantity}</p>
+                    </div>
+                    <p className="mt-2 font-black text-tiger-gold">{formatPriceDZD(item.price * item.quantity, locale, currency)}</p>
+                  </div>
                 ))}
               </div>
-              <div className="mt-4 rounded-xl border border-white/10 bg-black/40 p-4 text-sm leading-7 text-white/70">
-                {paymentMethod === "BaridiMob" ? (
-                  <p>
-                    RIP: <span className="font-black text-tiger-gold">{settings.baridiMobRip}</span>
-                  </p>
-                ) : (
-                  <p>{labels.paymentLater}</p>
-                )}
+              <div className="mt-4 flex items-center justify-between border-t border-white/10 pt-4 text-lg font-black">
+                <span className="text-white">{labels.total}</span>
+                <span className="text-tiger-gold">{formatPriceDZD(total, locale, currency)}</span>
               </div>
-            </div>
+              <div className="mt-4 rounded-xl border border-tiger-ember/20 bg-tiger-ember/10 p-3 text-xs font-bold leading-6 text-white/72">
+                {labels.reassurance}
+              </div>
+              <Button type="submit" className="mt-4 w-full min-h-12 rounded-full">
+                <MessageCircle className="h-4 w-4" />
+                {labels.confirm}
+              </Button>
+              <Button type="button" onClick={clearCart} variant="secondary" className="mt-2 w-full min-h-12 rounded-full">
+                {labels.clear}
+              </Button>
+              <Button asChild variant="ghost" className="mt-2 w-full min-h-12 rounded-full">
+                <Link href="/cart">{labels.back}</Link>
+              </Button>
+            </aside>
+          </form>
+        ) : (
+          <div className="premium-card rounded-md p-6 text-center">
+            <p className="font-bold text-white">{labels.empty}</p>
+            <Button asChild className="mt-4 min-h-12 rounded-full">
+              <Link href="/shop">{labels.browse}</Link>
+            </Button>
           </div>
-
-          <aside className="store-panel h-fit rounded-md p-4">
-            <h2 className="mb-4 text-xl font-black text-white">{labels.summary}</h2>
-            <div className="grid gap-3">
-              {items.map((item) => (
-                <div key={item.id} className="rounded-xl border border-white/10 bg-black/40 p-3">
-                  <div className="flex justify-between gap-3">
-                    <div className="min-w-0">
-                      <p className="truncate font-black text-white">{item.name}</p>
-                      <p className="mt-1 text-xs font-bold text-white/52">{item.option}</p>
-                    </div>
-                    <p className="font-bold text-white/70">x{item.quantity}</p>
-                  </div>
-                  <p className="mt-2 font-black text-tiger-gold">{formatPriceDZD(item.price * item.quantity, locale, currency)}</p>
-                </div>
-              ))}
-            </div>
-            <div className="mt-4 flex items-center justify-between border-t border-white/10 pt-4 text-lg font-black">
-              <span className="text-white">{labels.total}</span>
-              <span className="text-tiger-gold">{formatPriceDZD(total, locale, currency)}</span>
-            </div>
-            <Button type="submit" className="mt-4 w-full min-h-12">
-              {labels.confirm}
-            </Button>
-            <Button type="button" onClick={clearCart} variant="secondary" className="mt-2 w-full min-h-12">
-              {labels.clear}
-            </Button>
-            <Button asChild variant="ghost" className="mt-2 w-full min-h-12">
-              <Link href="/cart">{labels.back}</Link>
-            </Button>
-          </aside>
-        </form>
-      ) : (
-        <div className="store-panel rounded-md p-6 text-center">
-          <p className="font-bold text-white">{labels.empty}</p>
-          <Button asChild className="mt-4 min-h-12">
-            <Link href="/shop">{labels.browse}</Link>
-          </Button>
-        </div>
-      )}
+        )}
       </div>
     </main>
+  );
+}
+
+function Step({ label, index }: { label: string; index: number }) {
+  return (
+    <div className="flex items-center gap-3 rounded-md border border-white/8 bg-white/[0.035] p-3">
+      <span className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-tiger-ember text-xs font-black text-black">{index}</span>
+      <span className="text-sm font-black text-white/82">{label}</span>
+      <CheckCircle2 className="ms-auto h-4 w-4 text-tiger-gold" />
+    </div>
+  );
+}
+
+function TrustItem({ icon, text }: { icon: ReactNode; text: string }) {
+  return (
+    <div className="flex min-h-12 items-center gap-2 rounded-md border border-white/8 bg-black/20 px-3 text-xs font-black text-white/70">
+      <span className="text-tiger-gold">{icon}</span>
+      {text}
+    </div>
   );
 }
 
@@ -333,7 +378,7 @@ function Field({
         type={type}
         inputMode={inputMode}
         autoComplete={autoComplete}
-        className="min-h-12 rounded-xl border border-white/10 bg-black px-4 text-base text-white outline-none placeholder:text-white/35 focus:border-tiger-ember"
+        className="min-h-12 rounded-xl border border-white/10 bg-black/45 px-4 text-base text-white outline-none placeholder:text-white/35 focus:border-tiger-ember"
       />
     </label>
   );

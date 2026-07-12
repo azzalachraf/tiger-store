@@ -37,7 +37,7 @@ const contactCards = [
     text: "digitaldz.shop",
     button: <LocalizedText ar="تصفح المتجر" en="Browse Store" />,
     href: "/shop",
-    logo: "/logos/contact/tiger-store.png",
+    logo: "/logo/tiger-store-ui.png",
   },
 ];
 
@@ -92,7 +92,7 @@ export default function ContactPage() {
               <div className="rounded-3xl border border-tiger-ember/20 bg-[linear-gradient(145deg,rgba(255,106,0,0.16),rgba(255,255,255,0.045))] p-5 shadow-[0_24px_80px_rgba(255,106,0,0.12)]">
                 <div className="flex items-center gap-4">
                   <span className="inline-flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-white p-2 shadow-orange">
-                    <Image src="/logos/contact/tiger-store.png" alt="Tiger Store" width={48} height={48} className="h-full w-full object-contain" />
+                    <Image src="/logo/tiger-store-ui.png" alt="Tiger Store" width={48} height={48} className="h-full w-full object-contain" />
                   </span>
                   <div>
                     <p className="text-xl font-black text-white"><LocalizedText ar="دعم سريع" en="Fast support" /></p>
@@ -119,7 +119,7 @@ export default function ContactPage() {
             <div className="flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
               <div className="flex items-center gap-4">
                 <span className="inline-flex h-14 w-14 shrink-0 items-center justify-center rounded-full border border-tiger-ember/30 bg-white p-2">
-                  <Image src="/logos/contact/tiger-store.png" alt="Tiger Store support" width={48} height={48} className="h-full w-full object-contain" />
+                  <Image src="/logo/tiger-store-ui.png" alt="Tiger Store support" width={48} height={48} className="h-full w-full object-contain" />
                 </span>
                 <div>
                   <h2 className="text-2xl font-black text-white"><LocalizedText ar="مكتب دعم احترافي" en="Premium support desk" /></h2>
@@ -168,7 +168,7 @@ export default function ContactPage() {
             <article className="rounded-3xl border border-white/10 bg-[#202020] p-5">
               <div className="mb-4 flex items-center gap-4">
                 <span className="inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-full border border-tiger-ember/30 bg-white p-2">
-                  <Image src="/logos/contact/tiger-store.png" alt="Tiger Store" width={42} height={42} className="h-full w-full object-contain" />
+                  <Image src="/logo/tiger-store-ui.png" alt="Tiger Store" width={42} height={42} className="h-full w-full object-contain" />
                 </span>
                 <div>
                   <h2 className="text-2xl font-black text-white"><LocalizedText ar="القنوات الرسمية" en="Official channels" /></h2>

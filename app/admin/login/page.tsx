@@ -18,7 +18,7 @@ export default async function AdminLoginPage({ searchParams }: AdminLoginPagePro
     <main className="mx-auto flex min-h-screen max-w-xl items-center px-3 py-10 sm:px-5">
       <section className="glass-panel w-full rounded-2xl p-6 sm:p-8">
         <Image
-          src="/logo/tiger-store.webp"
+          src="/logo/tiger-store-ui.png"
           alt="Tiger Store"
           width={72}
           height={72}

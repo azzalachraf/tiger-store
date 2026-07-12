@@ -14,22 +14,24 @@ import { readWishlist, toggleWishlist } from "@/lib/wishlist";
 type ProductCardProps = {
   product: Product;
   compact?: boolean;
+  priority?: boolean;
 };
 
-export function ProductCard({ product, compact = false }: ProductCardProps) {
+export function ProductCard({ product, compact = false, priority = false }: ProductCardProps) {
   const discount = calculateDiscount(product.oldPrice, product.price);
   const hasOptions = Boolean(product.priceOptions?.length);
   const [wishlisted, setWishlisted] = useState(false);
   const { locale } = useLocale();
   const labels = locale === "ar"
     ? {
-        from: "ابتداءا من ",
+        from: "ابتداء من ",
         duration: "المدة",
         available: "متوفر",
         unavailable: "غير متوفر",
         soldOut: "غير متوفر",
         buyNow: "اشتر الآن",
         details: "التفاصيل",
+        fast: "تفعيل سريع",
       }
     : {
         from: "From ",
@@ -39,6 +41,7 @@ export function ProductCard({ product, compact = false }: ProductCardProps) {
         soldOut: "Sold out",
         buyNow: "Buy Now",
         details: "Details",
+        fast: "Fast activation",
       };
 
   useEffect(() => {
@@ -59,19 +62,20 @@ export function ProductCard({ product, compact = false }: ProductCardProps) {
   const buyHref = hasOptions ? `/products/${product.slug}` : `/checkout?product=${product.slug}`;
 
   return (
-    <article className="group flex h-full flex-col overflow-hidden rounded-md border border-white/8 bg-[#202020] shadow-[0_18px_38px_rgba(0,0,0,0.28)] transition-all duration-150 hover:-translate-y-0.5 hover:border-white/16 hover:shadow-[0_24px_52px_rgba(0,0,0,0.42)]">
-      <div className="relative aspect-[4/5] overflow-hidden bg-[#151515]">
+    <article className="group flex h-full flex-col overflow-hidden rounded-md border border-white/9 bg-[linear-gradient(180deg,#222,#151515)] shadow-[0_18px_44px_rgba(0,0,0,0.3)] transition-all duration-150 hover:-translate-y-0.5 hover:border-tiger-ember/35 hover:shadow-[0_24px_58px_rgba(0,0,0,0.44)]">
+      <div className="relative aspect-[4/5] overflow-hidden bg-[#101010]">
         <Image
           src={product.image}
           alt={`${product.name} product card`}
           fill
           sizes="(min-width: 1280px) 23vw, (min-width: 768px) 31vw, 50vw"
-          className="object-contain p-0.5 transition-transform duration-200 group-hover:scale-[1.025]"
-          loading="lazy"
+          className="object-contain p-1.5 transition-transform duration-200 group-hover:scale-[1.025]"
+          priority={priority}
+          loading={priority ? undefined : "lazy"}
         />
         <Link href={`/products/${product.slug}`} className="absolute inset-0 z-10" aria-label={`View ${product.name}`} />
 
-        <div className="absolute right-2 top-2 z-20 flex translate-y-0 flex-col gap-1.5 rounded-md bg-black/90 p-1.5 opacity-100 shadow-[0_14px_28px_rgba(0,0,0,0.5)] transition-all duration-150 md:-translate-y-1 md:opacity-0 md:group-hover:translate-y-0 md:group-hover:opacity-100">
+        <div className="absolute right-2 top-2 z-20 flex translate-y-0 flex-col gap-1.5 rounded-md bg-black/80 p-1.5 opacity-100 shadow-[0_14px_28px_rgba(0,0,0,0.5)] backdrop-blur transition-all duration-150 md:-translate-y-1 md:opacity-0 md:group-hover:translate-y-0 md:group-hover:opacity-100">
           <Link
             href={`/products/${product.slug}`}
             className="inline-flex h-8 w-8 items-center justify-center rounded-md text-white transition-colors duration-150 hover:bg-white/12"
@@ -90,11 +94,11 @@ export function ProductCard({ product, compact = false }: ProductCardProps) {
         </div>
 
         {!product.available ? (
-          <span className="absolute left-2 top-2 z-20 rounded-full bg-black px-3 py-1 text-[11px] font-black uppercase text-white">
+          <span className="absolute left-2 top-2 z-20 rounded-full bg-black/85 px-3 py-1 text-[11px] font-black uppercase text-white">
             {labels.soldOut}
           </span>
         ) : discount ? (
-          <span className="absolute left-2 top-2 z-20 rounded-full bg-[#242424] px-3 py-1 text-[11px] font-black text-tiger-gold">
+          <span className="absolute left-2 top-2 z-20 rounded-full bg-tiger-gold px-3 py-1 text-[11px] font-black text-black">
             -{discount}%
           </span>
         ) : null}
@@ -123,24 +127,25 @@ export function ProductCard({ product, compact = false }: ProductCardProps) {
           ) : null}
         </div>
 
-        <div className="mt-2 flex items-center justify-between gap-2 text-[11px] font-bold text-white/54">
-          <span className="truncate">
+        <div className="mt-2 grid gap-1.5 text-[11px] font-bold text-white/58">
+          <span className="truncate rounded-full border border-white/8 bg-white/[0.035] px-2 py-1">
             {labels.duration}: {locale === "ar" ? product.durationAr : product.duration}
           </span>
-          <span className={cn(product.available ? "text-emerald-300" : "text-white/40")}>{product.available ? labels.available : labels.unavailable}</span>
+          <span className={cn("inline-flex w-fit items-center rounded-full px-2 py-1", product.available ? "bg-emerald-400/10 text-emerald-300" : "bg-white/5 text-white/40")}>
+            {product.available ? `${labels.available} - ${labels.fast}` : labels.unavailable}
+          </span>
         </div>
 
-        <div className="mt-3 grid grid-cols-2 gap-2">
-          <Button asChild size="sm" className="min-h-9 rounded-full px-2 text-xs">
+        <div className="mt-3 grid grid-cols-[1fr_auto] gap-2">
+          <Button asChild size="sm" className="min-h-10 rounded-full px-3 text-xs">
             <Link href={buyHref}>
               <ShoppingBag className="h-4 w-4" />
               {labels.buyNow}
             </Link>
           </Button>
-          <Button asChild variant="secondary" size="sm" className="min-h-9 rounded-full px-2 text-xs">
+          <Button asChild variant="secondary" size="sm" className="min-h-10 rounded-full px-3 text-xs" aria-label={`${labels.details} ${product.name}`}>
             <Link href={`/products/${product.slug}`}>
               <Eye className="h-4 w-4" />
-              {labels.details}
             </Link>
           </Button>
         </div>

@@ -12,7 +12,7 @@ const paymentLogos: Record<string, string> = {
 };
 
 export function PaymentMethodCard({ method }: PaymentMethodCardProps) {
-  const logo = paymentLogos[method.name] ?? "/logos/contact/tiger-store.png";
+  const logo = paymentLogos[method.name] ?? "/logo/tiger-store-ui.png";
 
   return (
     <div className="rounded-2xl border border-white/10 bg-white/[0.045] p-5">

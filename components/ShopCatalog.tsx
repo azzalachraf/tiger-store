@@ -41,41 +41,45 @@ export function ShopCatalog({
         home: "الرئيسية",
         shop: "المتجر",
         products: "منتج",
-        filter: "تصفية",
-        search: "ابحث عن منتج...",
+        filter: "تصفية المنتجات",
+        search: "ابحث عن اشتراك...",
         all: "الكل",
-        featured: "عروض",
-        sale: "تخفيضات",
+        featured: "مختارة",
+        sale: "عروض",
         available: "متوفر",
         sortBy: "ترتيب حسب",
-        defaultSort: "الترتيب الافتراضي",
+        defaultSort: "الأكثر مناسبة",
         priceAsc: "السعر: من الأقل للأعلى",
         priceDesc: "السعر: من الأعلى للأقل",
         name: "الاسم",
         showing: "عدد النتائج",
         category: "القسم",
-        saleOnly: "المنتجات المخفضة فقط",
+        saleOnly: "العروض فقط",
         empty: "لا توجد منتجات تطابق الفلاتر الحالية.",
+        headline: "كل الاشتراكات الرقمية",
+        intro: "اختر القسم أو ابحث باسم المنتج. الأسعار بالدينار والتفعيل يختلف حسب نوع الاشتراك.",
       }
     : {
         home: "Home",
         shop: "Shop",
         products: "products",
-        filter: "Filter",
-        search: "Search products...",
+        filter: "Filter products",
+        search: "Search subscriptions...",
         all: "All",
         featured: "Featured",
-        sale: "Sale",
+        sale: "Deals",
         available: "Available",
         sortBy: "Sort by",
-        defaultSort: "Default sorting",
+        defaultSort: "Best match",
         priceAsc: "Price: low to high",
         priceDesc: "Price: high to low",
         name: "Name",
         showing: "Showing",
         category: "Category",
-        saleOnly: "Sale products only",
+        saleOnly: "Deals only",
         empty: "No products match the current filters.",
+        headline: "All digital subscriptions",
+        intro: "Choose a category or search by product name. Prices are shown in DZD and activation depends on subscription type.",
       };
 
   const filteredProducts = useMemo(() => {
@@ -103,15 +107,19 @@ export function ShopCatalog({
   }, [availableOnly, category, featuredOnly, products, query, saleOnly, sort]);
 
   return (
-    <div className="store-shell min-h-screen">
+    <div className="store-shell min-h-screen" dir={locale === "ar" ? "rtl" : "ltr"}>
       <section className="mx-auto max-w-[1440px] px-3 pt-5 sm:px-5 lg:px-8">
-        <div className="flex items-center justify-between gap-3 text-sm font-bold text-white/60">
-          <div>
-            <Link href="/" className="hover:text-tiger-gold">{labels.home}</Link>
-            <span className="mx-2">/</span>
-            <span className="text-white">{labels.shop}</span>
+        <div className="premium-card rounded-md p-4 sm:p-5">
+          <div className="flex items-center justify-between gap-3 text-sm font-bold text-white/60">
+            <div>
+              <Link href="/" className="hover:text-tiger-gold">{labels.home}</Link>
+              <span className="mx-2">/</span>
+              <span className="text-white">{labels.shop}</span>
+            </div>
+            <p>{filteredProducts.length} {labels.products}</p>
           </div>
-          <p>{filteredProducts.length} {labels.products}</p>
+          <h1 className="mt-4 text-3xl font-black text-white sm:text-4xl">{labels.headline}</h1>
+          <p className="mt-2 max-w-2xl text-sm font-semibold leading-7 text-white/60">{labels.intro}</p>
         </div>
       </section>
 
@@ -119,14 +127,14 @@ export function ShopCatalog({
 
       <section className="mx-auto max-w-[1440px] px-3 pb-10 pt-2 sm:px-5 lg:px-8">
         <div className="grid gap-5 lg:grid-cols-[320px_1fr]">
-          <aside className="store-panel h-fit rounded-md p-4 lg:sticky lg:top-28">
+          <aside className="premium-card h-fit rounded-md p-4 lg:sticky lg:top-28">
             <div className="mb-4 flex items-center gap-2">
               <ListFilter className="h-5 w-5 text-tiger-ember" />
               <h2 className="font-black text-white">{labels.filter}</h2>
             </div>
 
             <label className="relative block">
-              <Search className="pointer-events-none absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-white/35" />
+              <Search className="pointer-events-none absolute start-3 top-1/2 h-5 w-5 -translate-y-1/2 text-white/35" />
               <input
                 value={query}
                 onChange={(event) => setQuery(event.target.value)}
@@ -171,7 +179,7 @@ export function ShopCatalog({
             <div className="mb-4 flex flex-wrap items-end justify-between gap-3">
               <div>
                 <p className="text-xs font-black uppercase tracking-[0.18em] text-tiger-gold">{locale === "ar" ? "المتجر" : "Shop"}</p>
-                <h1 className="mt-1 text-3xl font-black text-white">{labels.shop}</h1>
+                <h2 className="mt-1 text-2xl font-black text-white">{labels.shop}</h2>
               </div>
 
               <label className="relative inline-flex min-h-12 items-center gap-2 rounded-full border border-tiger-ember/25 bg-[linear-gradient(135deg,rgba(255,106,0,0.16),rgba(255,255,255,0.045))] px-4 shadow-[0_14px_40px_rgba(0,0,0,0.28)]">
@@ -180,18 +188,18 @@ export function ShopCatalog({
                 <select
                   value={sort}
                   onChange={(event) => setSort(event.target.value as SortMode)}
-                  className="min-h-10 appearance-none bg-transparent pl-7 pr-1 text-sm font-black text-white outline-none"
+                  className="min-h-10 appearance-none bg-transparent pe-7 ps-1 text-sm font-black text-white outline-none"
                 >
                   <option value="featured">{labels.defaultSort}</option>
                   <option value="price-asc">{labels.priceAsc}</option>
                   <option value="price-desc">{labels.priceDesc}</option>
                   <option value="name">{labels.name}</option>
                 </select>
-                <ChevronDown className="pointer-events-none absolute left-4 h-4 w-4 text-tiger-gold" />
+                <ChevronDown className="pointer-events-none absolute end-4 h-4 w-4 text-tiger-gold" />
               </label>
             </div>
 
-            <div className="mb-4 flex flex-wrap items-center gap-2 rounded-md border border-white/8 bg-[#202020] px-3 py-2 text-xs font-bold text-white/58">
+            <div className="mb-4 flex flex-wrap items-center gap-2 rounded-md border border-white/8 bg-[#181818] px-3 py-2 text-xs font-bold text-white/58">
               <SlidersHorizontal className="h-4 w-4 text-tiger-ember" />
               <span>{labels.showing}: {filteredProducts.length}</span>
               {category !== "all" ? <span className="text-tiger-gold">{labels.category}: {category}</span> : null}
@@ -200,12 +208,12 @@ export function ShopCatalog({
 
             {filteredProducts.length ? (
               <div className="grid grid-cols-2 gap-3 sm:gap-4 md:grid-cols-3 xl:grid-cols-4">
-                {filteredProducts.map((product) => (
-                  <ProductCard key={product.id} product={product} />
+                {filteredProducts.map((product, index) => (
+                  <ProductCard key={product.id} product={product} priority={index < 4} />
                 ))}
               </div>
             ) : (
-              <div className="store-panel rounded-md p-8 text-center text-white/65">
+              <div className="premium-card rounded-md p-8 text-center text-white/65">
                 {labels.empty}
               </div>
             )}

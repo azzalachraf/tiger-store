@@ -3,7 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import type { ReactNode } from "react";
-import { CircleDollarSign, Globe2, Heart, Menu, Search, ShoppingCart, UserRound } from "lucide-react";
+import { CircleDollarSign, Globe2, Heart, Search, ShoppingCart, UserRound } from "lucide-react";
 import { useEffect, useState } from "react";
 import { readCart } from "@/lib/cart";
 import { readWishlist } from "@/lib/wishlist";
@@ -15,11 +15,13 @@ const navItems = [
   { href: "/", ar: "الرئيسية", en: "Home" },
   { href: "/shop", ar: "المتجر", en: "Shop" },
   { href: "/categories", ar: "الأقسام", en: "Categories" },
-  { href: "/shop?sale=true", ar: "المنتجات المخفضة", en: "Sale" },
+  { href: "/shop?sale=true", ar: "العروض", en: "Deals" },
   { href: "/payment-methods", ar: "الدفع", en: "Payment" },
   { href: "/faq", ar: "الأسئلة", en: "FAQ" },
-  { href: "/contact", ar: "تواصل", en: "Contact" },
+  { href: "/contact", ar: "الدعم", en: "Support" },
 ];
+
+const BRAND_LOGO = "/logo/tiger-store-ui.png";
 
 export function Header() {
   const [wishlistCount, setWishlistCount] = useState(0);
@@ -45,21 +47,23 @@ export function Header() {
   }, []);
 
   return (
-    <header className="sticky top-0 z-50 border-b border-white/10 bg-[#202020]/96 shadow-[0_10px_28px_rgba(0,0,0,0.32)] backdrop-blur-md" dir="ltr">
-      <div className="mx-auto flex min-h-[70px] max-w-[1440px] items-center gap-3 px-3 sm:px-5 lg:px-8">
-        <Link href="/" className="flex min-w-[48px] items-center gap-3 sm:min-w-[144px]" aria-label="Tiger Store homepage">
-          <Image
-            src="/logo/tiger-head-icon.png"
-            alt="Tiger Store"
-            width={54}
-            height={54}
-            className="h-12 w-12 rounded-2xl object-contain"
-            priority
-          />
-          <div className="hidden leading-tight min-[380px]:block">
-            <p className="text-lg font-black text-white">Tiger Store</p>
-            <p className="text-xs font-black text-tiger-gold">digitaldz.shop</p>
-          </div>
+    <header className="sticky top-0 z-50 border-b border-white/10 bg-[#141414]/94 shadow-[0_16px_40px_rgba(0,0,0,0.36)] backdrop-blur-xl" dir="ltr">
+      <div className="mx-auto flex min-h-[72px] max-w-[1440px] items-center gap-3 px-3 sm:px-5 lg:px-8">
+        <Link href="/" className="flex min-w-[112px] items-center gap-3 sm:min-w-[190px]" aria-label="Tiger Store homepage">
+          <span className="relative h-12 w-12 overflow-hidden rounded-2xl border border-white/10 bg-white shadow-[0_12px_28px_rgba(0,0,0,0.3)] sm:h-14 sm:w-14">
+            <Image
+              src={BRAND_LOGO}
+              alt="Tiger Store"
+              fill
+              sizes="56px"
+              className="object-cover object-left"
+              priority
+            />
+          </span>
+          <span className="hidden leading-tight min-[380px]:block">
+            <span className="block text-lg font-black text-white">Tiger Store</span>
+            <span className="block text-xs font-black text-tiger-gold">digitaldz.shop</span>
+          </span>
         </Link>
 
         <nav className="hidden flex-1 items-center justify-center gap-1 lg:flex" aria-label="Main navigation" dir="rtl">
@@ -67,18 +71,18 @@ export function Header() {
             <Link
               key={item.href}
               href={item.href}
-              className="rounded-full px-3 py-2 text-sm font-black text-white/86 transition-colors duration-150 hover:bg-white/8 hover:text-tiger-gold"
+              className="rounded-full px-3 py-2 text-sm font-black text-white/78 transition-colors duration-150 hover:bg-white/8 hover:text-tiger-gold"
             >
               {locale === "ar" ? item.ar : item.en}
             </Link>
           ))}
         </nav>
 
-        <form action="/shop" className="hidden w-[290px] items-center rounded-full border border-white/12 bg-[#161616] px-3 py-1.5 lg:flex" dir="ltr">
+        <form action="/shop" className="hidden w-[300px] items-center rounded-full border border-white/12 bg-black/35 px-2 py-1.5 lg:flex" dir="ltr">
           <input
             name="q"
-            placeholder={locale === "ar" ? "ابحث عن المنتجات" : "Search for products"}
-            className="min-h-9 flex-1 bg-transparent text-sm font-semibold text-white outline-none placeholder:text-white/42"
+            placeholder={locale === "ar" ? "ابحث عن اشتراك..." : "Search subscriptions..."}
+            className="min-h-9 flex-1 bg-transparent px-2 text-sm font-semibold text-white outline-none placeholder:text-white/42"
           />
           <button
             type="submit"
@@ -118,13 +122,6 @@ export function Header() {
             <CircleDollarSign className="hidden h-4 w-4 sm:block" />
             {currency}
           </button>
-          <button
-            type="button"
-            className="hidden h-11 w-11 items-center justify-center rounded-full border border-white/12 bg-white/6 text-white lg:hidden"
-            aria-label="Menu"
-          >
-            <Menu className="h-5 w-5" />
-          </button>
         </div>
       </div>
 
@@ -133,7 +130,7 @@ export function Header() {
           <Link
             key={item.href}
             href={item.href}
-            className="shrink-0 rounded-full border border-white/10 bg-[#171717] px-3.5 py-2 text-xs font-black text-white/82"
+            className="shrink-0 rounded-full border border-white/10 bg-white/5 px-3.5 py-2 text-xs font-black text-white/82"
           >
             {locale === "ar" ? item.ar : item.en}
           </Link>

@@ -6,22 +6,22 @@ import { useLocale } from "@/lib/useLocale";
 const faqContent = {
   ar: {
     eyebrow: "الأسئلة الشائعة",
-    title: "أسئلة شائعة",
+    title: "إجابات سريعة قبل الطلب",
     viewAll: "عرض الكل",
     items: [
-      ["كيف أستلم الاشتراك؟", "بعد تأكيد الطلب والدفع، يتم تجهيز تفاصيل التفعيل حسب المنتج والخطة المختارة."],
-      ["كم يستغرق التفعيل؟", "غالبا يكون التفعيل سريعا، وقد يختلف حسب توفر المنتج ونوع الاشتراك."],
-      ["هل أحتاج إلى حساب؟", "لا تحتاج إلى حساب عميل. اختر المنتج وأكمل الطلب مباشرة."],
+      ["كيف أستلم الاشتراك؟", "بعد إرسال الطلب نتابع معك عبر واتساب ونرسل طريقة التفعيل حسب المنتج والخطة المختارة."],
+      ["كم يستغرق التفعيل؟", "غالبا يكون التفعيل سريعا، وقد يختلف الوقت حسب توفر المنتج ونوع الاشتراك."],
+      ["هل أدفع داخل الموقع؟", "لا. الموقع يستقبل الطلب فقط، ثم نراجع التفاصيل ونرسل لك معلومات الدفع المناسبة."],
     ],
   },
   en: {
     eyebrow: "FAQ",
-    title: "Frequently Asked Questions",
+    title: "Quick answers before ordering",
     viewAll: "View all",
     items: [
-      ["How do I receive the subscription?", "After order and payment confirmation, activation details are prepared for the selected product."],
-      ["How long does activation take?", "Activation is usually fast, but timing depends on product availability and the selected plan."],
-      ["Do I need an account?", "No customer account is required. Choose a product and complete the order directly."],
+      ["How do I receive the subscription?", "After submitting the order, we continue on WhatsApp and send activation details for the selected plan."],
+      ["How long does activation take?", "Activation is usually fast, but timing depends on product availability and subscription type."],
+      ["Do I pay inside the website?", "No. The website collects the order only, then we review it and send the right payment details."],
     ],
   },
 };
@@ -44,9 +44,9 @@ export function FaqPreview() {
 
       <div className="grid gap-3 md:grid-cols-3">
         {content.items.map(([question, answer]) => (
-          <article key={question} className="store-panel rounded-md p-5">
+          <article key={question} className="premium-card rounded-md p-5">
             <h3 className="font-black text-white">{question}</h3>
-            <p className="mt-2 text-sm leading-7 text-white/62">{answer}</p>
+            <p className="mt-2 text-sm font-semibold leading-7 text-white/62">{answer}</p>
           </article>
         ))}
       </div>

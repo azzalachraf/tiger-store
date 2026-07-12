@@ -2,7 +2,8 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { ArrowRight, Check, Heart, ShoppingCart, Star } from "lucide-react";
+import type { ReactNode } from "react";
+import { ArrowRight, Check, Clock3, CreditCard, Heart, MessageCircle, PackageCheck, ShieldCheck, ShoppingCart, Star, Zap } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { CurrencyPrice } from "@/components/CurrencyPrice";
 import { Button } from "@/components/ui/button";
@@ -65,16 +66,21 @@ export function ProductDetails({ product }: ProductDetailsProps) {
         activation: "نوع التفعيل",
         productType: "نوع المنتج",
         availability: "التوفر",
-        chooseOption: "اختر المدة",
-        paymentMethods: "طرق الدفع: BaridiMob, CCP, RedotPay.",
+        chooseOption: "اختر الخطة",
+        paymentMethods: "الدفع متاح عبر BaridiMob و CCP و RedotPay.",
         addToCart: "أضف إلى السلة",
         added: "تمت الإضافة",
         buyNow: "اشتر الآن",
         saved: "محفوظ",
         addWishlist: "أضف للمفضلة",
         back: "العودة للمتجر",
-        description: "الوصف",
+        description: "تفاصيل المنتج",
         features: "المميزات",
+        rating: "تقييم العملاء",
+        support: "الدعم عبر واتساب بعد الطلب",
+        fast: "تفعيل سريع حسب توفر المنتج",
+        guarantee: "نراجع الطلب قبل إرسال تفاصيل الدفع",
+        payments: "طرق دفع محلية",
       }
     : {
         home: "Home",
@@ -82,19 +88,24 @@ export function ProductDetails({ product }: ProductDetailsProps) {
         available: "Available",
         unavailable: "Unavailable",
         duration: "Duration",
-        activation: "Type of Activation",
-        productType: "Type of Product",
+        activation: "Activation type",
+        productType: "Product type",
         availability: "Availability",
-        chooseOption: "Choose option",
-        paymentMethods: "Payment methods: BaridiMob, CCP, RedotPay.",
+        chooseOption: "Choose plan",
+        paymentMethods: "Payment available with BaridiMob, CCP, and RedotPay.",
         addToCart: "Add to Cart",
         added: "Added",
         buyNow: "Buy Now",
         saved: "Saved",
         addWishlist: "Add to wishlist",
         back: "Back to Shop",
-        description: "Description",
+        description: "Product details",
         features: "Features",
+        rating: "Customer rating",
+        support: "WhatsApp support after order",
+        fast: "Fast activation depending on availability",
+        guarantee: "We review the order before payment details",
+        payments: "Local payment methods",
       };
 
   const checkoutParams = new URLSearchParams({
@@ -149,37 +160,33 @@ export function ProductDetails({ product }: ProductDetailsProps) {
   }
 
   return (
-    <section className="space-y-12">
-      <div
-        className="grid gap-6 xl:grid-cols-[480px_minmax(0,1fr)_360px] xl:items-start"
-        dir="ltr"
-        style={{ direction: "ltr" }}
-      >
+    <section className="space-y-10">
+      <div className="grid gap-6 xl:grid-cols-[minmax(340px,480px)_minmax(0,1fr)_360px] xl:items-start" dir={direction}>
         <div className="xl:col-start-1">
-          <div className="overflow-hidden rounded-md bg-[#2b2b2b] shadow-[0_24px_70px_rgba(0,0,0,0.35)]">
-          <div className="relative aspect-[4/5] overflow-hidden bg-[#202020]">
-            <Image
-              src={product.image}
-              alt={`${product.name} product card`}
-              fill
-              sizes="(min-width: 1280px) 480px, (min-width: 1024px) 440px, 100vw"
-              className="object-contain p-3"
-              priority
-            />
-            {!product.available ? (
-              <span className="absolute left-4 top-4 rounded-full bg-black px-3 py-1 text-xs font-black uppercase text-white">
-                {labels.soldOut}
-              </span>
-            ) : discount ? (
-              <span className="absolute left-4 top-4 rounded-full bg-[#252525] px-3 py-1 text-xs font-black text-tiger-gold">
-                -{discount}%
-              </span>
-            ) : null}
-          </div>
+          <div className="overflow-hidden rounded-md border border-white/10 bg-[#202020] shadow-[0_24px_70px_rgba(0,0,0,0.36)]">
+            <div className="relative aspect-[4/5] overflow-hidden bg-[#101010]">
+              <Image
+                src={product.image}
+                alt={`${product.name} product card`}
+                fill
+                sizes="(min-width: 1280px) 480px, (min-width: 1024px) 440px, 100vw"
+                className="object-contain p-3"
+                priority
+              />
+              {!product.available ? (
+                <span className="absolute left-4 top-4 rounded-full bg-black/85 px-3 py-1 text-xs font-black uppercase text-white">
+                  {labels.soldOut}
+                </span>
+              ) : discount ? (
+                <span className="absolute left-4 top-4 rounded-full bg-tiger-gold px-3 py-1 text-xs font-black text-black">
+                  -{discount}%
+                </span>
+              ) : null}
+            </div>
           </div>
         </div>
 
-        <div className="min-w-0 py-1 xl:col-start-2" dir={direction}>
+        <div className="min-w-0 py-1 xl:col-start-2">
           <div className="text-sm font-bold text-white/55">
             <Link href="/" className="hover:text-tiger-gold">{labels.home}</Link>
             <span className="mx-2">/</span>
@@ -190,7 +197,16 @@ export function ProductDetails({ product }: ProductDetailsProps) {
             <span className="text-white">{product.name}</span>
           </div>
 
-          <h1 className="mt-7 max-w-2xl text-3xl font-black leading-tight text-white sm:text-4xl">
+          <div className="mt-6 flex flex-wrap items-center gap-2">
+            <span className="rounded-full border border-tiger-ember/25 bg-tiger-ember/10 px-3 py-1 text-xs font-black text-tiger-gold">
+              {product.category}
+            </span>
+            <span className={cn("rounded-full px-3 py-1 text-xs font-black", unavailable ? "bg-white/8 text-white/50" : "bg-emerald-400/10 text-emerald-300")}>
+              {unavailable ? labels.unavailable : labels.available}
+            </span>
+          </div>
+
+          <h1 className="mt-4 max-w-2xl text-3xl font-black leading-tight text-white sm:text-5xl">
             {product.name}
           </h1>
 
@@ -198,18 +214,24 @@ export function ProductDetails({ product }: ProductDetailsProps) {
             {Array.from({ length: 5 }).map((_, index) => (
               <Star key={index} className="h-4 w-4 fill-current" />
             ))}
-            <span className="text-xs font-black text-white/50">5.0</span>
+            <span className="text-xs font-black text-white/50">5.0 · {labels.rating}</span>
           </div>
 
-          <div className="mt-8 grid gap-x-10 gap-y-6 border-b border-white/10 pb-8 sm:grid-cols-2 xl:grid-cols-3">
-            <InfoItem label={labels.duration} value={locale === "ar" ? selectedOffer.durationAr : selectedOffer.duration} />
-            <InfoItem label={labels.activation} value={locale === "ar" ? product.activationTypeAr : product.activationTypeEn} />
-            <InfoItem label={labels.productType} value={product.category} />
-            <InfoItem label={labels.availability} value={unavailable ? labels.unavailable : labels.available} />
+          <div className="mt-6 grid gap-3 sm:grid-cols-2">
+            <InfoItem icon={<Clock3 className="h-4 w-4" />} label={labels.duration} value={locale === "ar" ? selectedOffer.durationAr : selectedOffer.duration} />
+            <InfoItem icon={<Zap className="h-4 w-4" />} label={labels.activation} value={locale === "ar" ? product.activationTypeAr : product.activationTypeEn} />
+            <InfoItem icon={<PackageCheck className="h-4 w-4" />} label={labels.productType} value={locale === "ar" ? product.categoryAr || product.category : product.category} />
+            <InfoItem icon={<ShieldCheck className="h-4 w-4" />} label={labels.availability} value={unavailable ? labels.unavailable : labels.available} />
+          </div>
+
+          <div className="mt-6 grid gap-2 sm:grid-cols-3">
+            <TrustNote icon={<MessageCircle className="h-4 w-4" />} text={labels.support} />
+            <TrustNote icon={<CreditCard className="h-4 w-4" />} text={labels.payments} />
+            <TrustNote icon={<ShieldCheck className="h-4 w-4" />} text={labels.guarantee} />
           </div>
 
           {offers.length > 1 ? (
-            <div className="mt-8">
+            <div className="mt-7">
               <p className="mb-3 font-black text-white">{labels.chooseOption}</p>
               <div className="grid gap-3 sm:grid-cols-2">
                 {offers.map((offer) => {
@@ -225,9 +247,9 @@ export function ProductDetails({ product }: ProductDetailsProps) {
                       onClick={() => !disabled && setSelectedKey(offer.key)}
                       disabled={disabled}
                       className={cn(
-                        "rounded-md border bg-[#242424] p-4 text-start transition-colors duration-150 disabled:cursor-not-allowed disabled:opacity-45",
+                        "rounded-md border bg-[#202020] p-4 text-start transition-colors duration-150 disabled:cursor-not-allowed disabled:opacity-45",
                         selectedKey === offer.key
-                          ? "border-tiger-ember bg-tiger-ember/14"
+                          ? "border-tiger-ember bg-tiger-ember/12"
                           : "border-white/10 hover:border-tiger-ember/45",
                       )}
                     >
@@ -235,7 +257,7 @@ export function ProductDetails({ product }: ProductDetailsProps) {
                       <span className="mt-1 block text-xs font-bold text-white/50" dir="ltr">{subtitle}</span>
                       <span className="mt-3 block text-sm font-black text-tiger-gold">
                         <CurrencyPrice amount={offer.price} locale={locale} />
-                        {optionDiscount ? ` / -${optionDiscount}%` : ""}
+                        {optionDiscount ? ` · -${optionDiscount}%` : ""}
                       </span>
                     </button>
                   );
@@ -245,7 +267,7 @@ export function ProductDetails({ product }: ProductDetailsProps) {
           ) : null}
         </div>
 
-        <aside className="w-full rounded-md bg-[#303030] p-6 shadow-[0_24px_70px_rgba(0,0,0,0.35)] xl:col-start-3 xl:sticky xl:top-24" dir={direction}>
+        <aside className="w-full rounded-md border border-white/10 bg-[#252525] p-5 shadow-[0_24px_70px_rgba(0,0,0,0.35)] xl:col-start-3 xl:sticky xl:top-24">
           <div className="flex flex-wrap items-end gap-3">
             {selectedOffer.oldPrice && selectedOffer.oldPrice > selectedOffer.price ? (
               <p className="pb-1 text-base font-bold text-white/40 line-through">
@@ -259,11 +281,7 @@ export function ProductDetails({ product }: ProductDetailsProps) {
             {labels.paymentMethods}
           </div>
 
-          <div className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-2">
-            <Button type="button" onClick={addToCart} disabled={unavailable} variant="secondary" className="w-full rounded-full">
-              <ShoppingCart className="h-4 w-4" />
-              {added ? labels.added : labels.addToCart}
-            </Button>
+          <div className="mt-5 grid gap-3">
             {unavailable ? (
               <Button type="button" disabled className="w-full rounded-full">
                 {labels.buyNow}
@@ -273,6 +291,10 @@ export function ProductDetails({ product }: ProductDetailsProps) {
                 <Link href={`/checkout?${checkoutParams.toString()}`}>{labels.buyNow}</Link>
               </Button>
             )}
+            <Button type="button" onClick={addToCart} disabled={unavailable} variant="secondary" className="w-full rounded-full">
+              <ShoppingCart className="h-4 w-4" />
+              {added ? labels.added : labels.addToCart}
+            </Button>
           </div>
 
           <button
@@ -293,7 +315,7 @@ export function ProductDetails({ product }: ProductDetailsProps) {
         </aside>
       </div>
 
-      <div className="max-w-5xl" dir={direction}>
+      <div className="rounded-md border border-white/10 bg-[#181818] p-5 shadow-[0_20px_55px_rgba(0,0,0,0.28)] sm:p-7" dir={direction}>
         <h2 className="text-2xl font-black text-white">{labels.description}</h2>
         <div className="mt-5 border-t border-white/10 pt-6">
           <p className="max-w-3xl whitespace-pre-line text-base font-bold leading-8 text-white/82">
@@ -305,9 +327,9 @@ export function ProductDetails({ product }: ProductDetailsProps) {
               <h3 className="mb-4 text-sm font-black uppercase tracking-wider text-white/50">
                 {labels.features}
               </h3>
-              <ul className="grid max-w-4xl gap-3 sm:grid-cols-2">
+              <ul className="grid max-w-5xl gap-3 sm:grid-cols-2">
                 {features.map((feature, index) => (
-                  <li key={index} className="flex items-center gap-3 font-bold text-white/80">
+                  <li key={index} className="flex items-center gap-3 rounded-md border border-white/8 bg-white/[0.035] p-3 font-bold text-white/80">
                     <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-tiger-ember/20 text-tiger-gold">
                       <Check className="h-3 w-3" />
                     </span>
@@ -323,11 +345,23 @@ export function ProductDetails({ product }: ProductDetailsProps) {
   );
 }
 
-function InfoItem({ label, value }: { label: string; value: string }) {
+function InfoItem({ icon, label, value }: { icon: ReactNode; label: string; value: string }) {
   return (
-    <div>
-      <p className="text-xs font-black text-white/72">{label}</p>
-      <p className="mt-3 text-sm font-black leading-6 text-tiger-ember">{value}</p>
+    <div className="rounded-md border border-white/9 bg-white/[0.035] p-4">
+      <div className="mb-3 flex items-center gap-2 text-tiger-gold">
+        {icon}
+        <p className="text-xs font-black text-white/72">{label}</p>
+      </div>
+      <p className="text-sm font-black leading-6 text-white">{value || "-"}</p>
+    </div>
+  );
+}
+
+function TrustNote({ icon, text }: { icon: ReactNode; text: string }) {
+  return (
+    <div className="flex min-h-12 items-center gap-2 rounded-md border border-white/8 bg-black/18 px-3 text-xs font-black leading-5 text-white/72">
+      <span className="text-tiger-gold">{icon}</span>
+      {text}
     </div>
   );
 }

@@ -39,9 +39,9 @@ export const metadata: Metadata = {
     siteName: "Tiger Store",
     images: [
       {
-        url: "/logo/tiger-store.webp",
-        width: 240,
-        height: 240,
+        url: "/logo/tiger-store-brand.png",
+        width: 640,
+        height: 640,
         alt: "Tiger Store logo",
       },
       {
@@ -73,4 +73,3 @@ export default function RootLayout({ children }: Readonly<{ children: ReactNode 
     </html>
   );
 }
-
