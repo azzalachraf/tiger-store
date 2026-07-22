@@ -50,13 +50,13 @@ export function Header() {
     <header className="sticky top-0 z-50 border-b border-white/10 bg-[#141414]/94 shadow-[0_16px_40px_rgba(0,0,0,0.36)] backdrop-blur-xl" dir="ltr">
       <div className="mx-auto flex min-h-[72px] max-w-[1440px] items-center gap-3 px-3 sm:px-5 lg:px-8">
         <Link href="/" className="flex min-w-[112px] items-center gap-3 sm:min-w-[190px]" aria-label="Tiger Store homepage">
-          <span className="relative h-12 w-12 overflow-hidden rounded-2xl border border-white/10 bg-white shadow-[0_12px_28px_rgba(0,0,0,0.3)] sm:h-14 sm:w-14">
+          <span className="relative h-12 w-12 overflow-hidden sm:h-14 sm:w-14">
             <Image
               src={BRAND_LOGO}
               alt="Tiger Store"
               fill
               sizes="56px"
-              className="object-cover object-left"
+              className="object-contain"
               priority
             />
           </span>

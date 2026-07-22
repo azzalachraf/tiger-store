@@ -14,8 +14,8 @@ export function Footer({ disclaimer }: FooterProps) {
       <div className="mx-auto grid max-w-[1440px] gap-8 px-3 py-10 sm:px-5 md:grid-cols-[1.35fr_1fr_1fr_1fr] lg:px-8">
         <div>
           <div className="mb-4 flex items-center gap-3">
-            <span className="relative h-14 w-14 overflow-hidden rounded-2xl border border-white/10 bg-white shadow-[0_14px_32px_rgba(0,0,0,0.34)]">
-              <Image src={BRAND_LOGO} alt="Tiger Store" fill sizes="56px" className="object-cover object-left" />
+            <span className="relative h-14 w-14 overflow-hidden">
+              <Image src={BRAND_LOGO} alt="Tiger Store" fill sizes="56px" className="object-contain" />
             </span>
             <div>
               <p className="text-lg font-black text-white">Tiger Store</p>
@@ -68,8 +68,8 @@ export function Footer({ disclaimer }: FooterProps) {
               Facebook
             </a>
             <Link href="/contact" className="inline-flex items-center gap-2 hover:text-tiger-gold">
-              <span className="relative h-5 w-5 overflow-hidden rounded-full bg-white">
-                <Image src={BRAND_LOGO} alt="" fill sizes="20px" className="object-cover object-left" />
+              <span className="relative h-5 w-5 overflow-hidden">
+                <Image src={BRAND_LOGO} alt="" fill sizes="20px" className="object-contain" />
               </span>
               <LocalizedText ar="صفحة التواصل" en="Contact page" />
             </Link>
