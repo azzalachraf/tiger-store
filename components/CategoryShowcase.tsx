@@ -19,49 +19,49 @@ const showcaseGroups = [
     titleAr: "أدوات الذكاء الاصطناعي",
     href: "/categories/ai",
     categoryIds: ["AI"],
-    productNames: ["Gemini Pro", "ChatGPT Plus", "Grok AI", "Claude Pro", "Lovable Pro"],
+    productSlugs: ["gemini-pro", "chatgpt-plus", "grok-ai", "claude-pro", "lovable-pro"],
   },
   {
     title: "Creative Studio",
     titleAr: "التصميم والمونتاج",
     href: "/categories/design",
     categoryIds: ["Design", "Video Editing"],
-    productNames: ["Adobe Creative Cloud", "Canva Pro", "CapCut Pro"],
+    productSlugs: ["adobe-creative-cloud", "canva-pro", "capcut-pro"],
   },
   {
     title: "Learning Hub",
     titleAr: "التعلم",
     href: "/categories/education",
     categoryIds: ["Education"],
-    productNames: ["Duolingo Premium", "Gemini Pro", "Canva Pro"],
+    productSlugs: ["duolingo-premium", "gemini-pro", "canva-pro"],
   },
   {
     title: "Social Media",
-    titleAr: "السوشيال ميديا",
+    titleAr: "التواصل الاجتماعي",
     href: "/categories/social-media",
     categoryIds: ["Social Media"],
-    productNames: ["Snap Plus"],
+    productSlugs: ["snap-plus"],
   },
   {
     title: "Premium Access",
     titleAr: "اشتراكات بريميوم",
     href: "/shop?featured=true",
     categoryIds: ["AI", "Design"],
-    productNames: ["ChatGPT Plus", "Claude Pro", "Adobe Creative Cloud"],
+    productSlugs: ["chatgpt-plus", "claude-pro", "adobe-creative-cloud"],
   },
   {
     title: "Professional Growth",
     titleAr: "أدوات احترافية",
     href: "/categories/architecture",
     categoryIds: ["Architecture", "Education"],
-    productNames: ["AutoCAD", "Revit 2026", "Duolingo Premium"],
+    productSlugs: ["autocad", "revit-2026", "duolingo-premium"],
   },
   {
     title: "Software & Apps",
     titleAr: "برامج وتطبيقات",
     href: "/categories/software",
     categoryIds: ["Software", "VPN", "Video Editing"],
-    productNames: ["HMA VPN", "CapCut Pro", "Lovable Pro"],
+    productSlugs: ["hma-vpn", "capcut-pro", "lovable-pro"],
   },
 ];
 
@@ -74,8 +74,8 @@ export function CategoryShowcase({ categories, products, locale, className }: Ca
   const groups = showcaseGroups
     .filter((group) => group.categoryIds.some((id) => availableCategories.has(id)))
     .map((group) => {
-      const preferred = group.productNames
-        .map((name) => products.find((product) => product.name === name))
+      const preferred = group.productSlugs
+        .map((slug) => products.find((product) => product.slug === slug))
         .filter(Boolean) as Product[];
       const byCategory = products.filter((product) => group.categoryIds.includes(product.category));
       const merged = [...preferred, ...byCategory].filter(
