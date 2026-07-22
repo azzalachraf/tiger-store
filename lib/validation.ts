@@ -10,15 +10,25 @@ const optionalTextSchema = z.preprocess((value) => {
   return text.length ? text : undefined;
 }, z.string().optional());
 
+const optionalPositiveNumberSchema = z.preprocess((value) => {
+  if (value === null || value === undefined || value === "") return undefined;
+  return value;
+}, z.coerce.number().positive().optional());
+
 export const productPriceOptionSchema = z.object({
   label: z.string().trim().min(1).max(120),
   labelAr: z.string().trim().min(1).max(120),
   price: z.coerce.number().positive(),
-  oldPrice: z.coerce.number().positive().optional(),
+  oldPrice: optionalPositiveNumberSchema,
   duration: z.string().trim().min(1).max(120),
   durationAr: z.string().trim().min(1).max(120),
   available: z.boolean().optional().default(true),
 });
+
+const productPriceOptionsSchema = z.preprocess((value) => {
+  if (value === null || value === undefined) return undefined;
+  return value;
+}, z.array(productPriceOptionSchema).optional());
 
 export const productSchema = z.object({
   id: z.string().trim().min(1).max(160),
@@ -28,7 +38,7 @@ export const productSchema = z.object({
   category: z.string().trim().min(1).max(80),
   categoryAr: z.string().trim().min(1).max(120),
   price: z.coerce.number().nonnegative(),
-  oldPrice: z.coerce.number().positive().optional(),
+  oldPrice: optionalPositiveNumberSchema,
   currency: z.literal("DZD"),
   duration: z.string().trim().min(1).max(120),
   durationAr: z.string().trim().min(1).max(120),
@@ -41,7 +51,7 @@ export const productSchema = z.object({
   image: z.string().trim().min(1).max(2000),
   available: z.boolean(),
   featured: z.boolean(),
-  priceOptions: z.array(productPriceOptionSchema).optional(),
+  priceOptions: productPriceOptionsSchema,
 });
 
 export const cartItemSchema = z.object({

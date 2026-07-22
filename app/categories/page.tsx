@@ -10,6 +10,8 @@ export const metadata = {
   title: "Categories",
 };
 
+export const dynamic = "force-dynamic";
+
 export default async function CategoriesPage() {
   const products = await getProducts();
   const categories = getSiteCategories(products);

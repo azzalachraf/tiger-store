@@ -8,6 +8,8 @@ export const metadata = {
   title: "Shop",
 };
 
+export const dynamic = "force-dynamic";
+
 type ShopPageProps = {
   searchParams: Promise<{ category?: string; featured?: string; sale?: string; q?: string }>;
 };

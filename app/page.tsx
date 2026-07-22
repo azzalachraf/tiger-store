@@ -14,6 +14,8 @@ import { getProducts, getSettings } from "@/lib/admin-store";
 import { getSiteCategories } from "@/lib/categories";
 import { Product } from "@/lib/types";
 
+export const dynamic = "force-dynamic";
+
 const trustItems = [
   { title: "تفعيل سريع", subtitle: "Fast activation", icon: Zap },
   { title: "دعم مستمر", subtitle: "After-sale support", icon: Headphones },
