@@ -33,7 +33,7 @@ const showcaseGroups = [
     titleAr: "التعلم",
     href: "/categories/education",
     categoryIds: ["Education"],
-    productSlugs: ["duolingo-premium", "gemini-pro", "canva-pro"],
+    productSlugs: ["coursera", "duolingo-premium", "gemini-pro", "canva-pro"],
   },
   {
     title: "Social Media",
