@@ -6,12 +6,13 @@ import { Check, CheckCircle2 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { categorySlug } from "@/lib/categories";
+import { formatDzd } from "@/lib/currency";
 import { Product, ProductPriceOption } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { trackViewContent } from "@/lib/meta-pixel";
 
 type Offer = ProductPriceOption & { key: string };
-const money = (value: number) => `${value.toLocaleString("en-US")} DA`;
+const money = formatDzd;
 
 export function ProductDetails({ product }: { product: Product }) {
   const offers = useMemo<Offer[]>(() => (product.priceOptions?.length ? product.priceOptions : [{ label: product.duration || "Standard", labelAr: product.durationAr || "Standard", price: product.price, duration: product.duration, durationAr: product.durationAr, available: product.available }]).map((offer) => ({ ...offer, key: offer.label })), [product]);
@@ -25,10 +26,10 @@ export function ProductDetails({ product }: { product: Product }) {
   ].filter((item): item is [string, string] => Boolean(item[1]));
   const checkoutHref = selected ? `/checkout?product=${encodeURIComponent(product.slug)}&option=${encodeURIComponent(selected.label)}` : "/checkout";
   return <section className="space-y-8" dir="ltr">
-    <nav className="text-sm font-bold text-white/55"><Link href="/" className="hover:text-tiger-gold">Home</Link><span className="mx-2">/</span><Link href={`/categories/${categorySlug(product.category)}`} className="hover:text-tiger-gold">{product.category}</Link><span className="mx-2">/</span><span className="text-white">{product.name}</span></nav>
+    <nav className="text-sm font-bold text-[#5F6368]"><Link href="/" className="hover:text-[#C54E00]">Home</Link><span className="mx-2">/</span><Link href={`/categories/${categorySlug(product.category)}`} className="hover:text-[#C54E00]">{product.category}</Link><span className="mx-2">/</span><span className="text-[#151515]">{product.name}</span></nav>
     <div className="grid gap-6 lg:grid-cols-2 lg:items-start">
-      <div className="overflow-hidden rounded-md border border-white/10 bg-[#171717]"><div className="relative aspect-[4/5]"><Image src={product.image} alt={`${product.name} product artwork`} fill priority sizes="(min-width: 1024px) 50vw, 100vw" className="object-contain p-3" /></div></div>
-      <aside className="rounded-md border border-white/10 bg-[#f8f6f2] p-5 text-[#171717] shadow-[0_24px_70px_rgba(0,0,0,.28)] sm:p-7">
+      <div className="overflow-hidden rounded-xl border border-[#D9D7D2] bg-white"><div className="relative aspect-[4/5]"><Image src={product.image} alt={`${product.name} product artwork`} fill priority sizes="(min-width: 1024px) 50vw, 100vw" className="object-contain p-3" /></div></div>
+      <aside className="rounded-xl border border-[#D9D7D2] bg-white p-5 text-[#151515] shadow-[0_8px_24px_rgba(21,21,21,.06)] sm:p-7">
         <p className="text-sm font-bold text-[#75511f]">{product.category}</p>
         <h1 className="mt-2 text-3xl font-black leading-tight sm:text-5xl">{product.name}</h1>
         <p className="mt-4 text-base font-medium leading-7 text-black/65">{product.shortDescriptionEn}</p>
@@ -39,7 +40,7 @@ export function ProductDetails({ product }: { product: Product }) {
         {unavailable ? <Button disabled className="mt-7 min-h-12 w-full rounded-full">Out of stock</Button> : <Button asChild className="mt-7 min-h-12 w-full rounded-full"><Link href={checkoutHref}>Buy Now</Link></Button>}
       </aside>
     </div>
-    <section className="rounded-md bg-[#181818] p-5 sm:p-7"><h2 className="text-2xl font-black text-white">Product details</h2><ul className="mt-5 grid gap-3 sm:grid-cols-2">{product.featuresEn.map((feature) => <li key={feature} className="flex items-center gap-3 text-sm font-bold leading-6 text-white/80"><CheckCircle2 className="h-4 w-4 shrink-0 text-tiger-gold" />{feature}</li>)}</ul></section>
-    {product.faqs?.length ? <section className="rounded-md bg-[#181818] p-5 sm:p-7"><h2 className="text-2xl font-black text-white">Frequently asked questions</h2><div className="mt-5 grid gap-3">{product.faqs.map((faq) => <details key={faq.questionEn} className="border-b border-white/10 pb-4"><summary className="cursor-pointer font-black text-white">{faq.questionEn}</summary><p className="mt-3 text-sm font-semibold leading-7 text-white/70">{faq.answerEn}</p></details>)}</div></section> : null}
+    <section className="rounded-xl border border-[#D9D7D2] bg-white p-5 sm:p-7"><h2 className="text-2xl font-black text-[#151515]">Product details</h2><ul className="mt-5 grid gap-3 sm:grid-cols-2">{product.featuresEn.map((feature) => <li key={feature} className="flex items-center gap-3 text-sm font-bold leading-6 text-[#151515]"><CheckCircle2 className="h-4 w-4 shrink-0 text-[#C54E00]" />{feature}</li>)}</ul></section>
+    {product.faqs?.length ? <section className="rounded-xl border border-[#D9D7D2] bg-white p-5 sm:p-7"><h2 className="text-2xl font-black text-[#151515]">Frequently asked questions</h2><div className="mt-5 grid gap-3">{product.faqs.map((faq) => <details key={faq.questionEn} className="border-b border-[#D9D7D2] pb-4"><summary className="cursor-pointer font-black text-[#151515]">{faq.questionEn}</summary><p className="mt-3 text-sm font-semibold leading-7 text-[#5F6368]">{faq.answerEn}</p></details>)}</div></section> : null}
   </section>;
 }

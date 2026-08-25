@@ -28,11 +28,11 @@ const config: Config = {
           foreground: "hsl(var(--card-foreground))",
         },
         tiger: {
-          ember: "#ff6a00",
-          gold: "#ffb000",
-          ink: "#070707",
-          smoke: "#151515",
-          cream: "#fff7ed",
+          ember: "#FF7300",
+          gold: "#C54E00",
+          ink: "#151515",
+          smoke: "#0D0F0F",
+          cream: "#FFF1E6",
         },
       },
       boxShadow: {

@@ -7,19 +7,14 @@ export function isDisplayCurrency(value: string | null): value is DisplayCurrenc
   return value === "DZD" || value === "USD";
 }
 
-export function convertDzdToUsd(priceDzd: number) {
-  return priceDzd / DZD_PER_USD;
-}
+export function convertDzdToUsd(priceDzd: number) { return priceDzd / DZD_PER_USD; }
+export function formatDzd(priceDzd: number) { return `${priceDzd.toLocaleString("en-US")} DA`; }
 
-export function formatDisplayPrice(priceDzd: number, locale: Locale = "ar", currency: DisplayCurrency = "DZD") {
+export function formatDisplayPrice(priceDzd: number, _locale: Locale = "en", currency: DisplayCurrency = "DZD") {
+  void _locale;
   if (currency === "USD") {
     const value = convertDzdToUsd(priceDzd);
-    const formatted = Number.isInteger(value)
-      ? value.toString()
-      : value.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-
-    return `$${formatted}`;
+    return `$${Number.isInteger(value) ? value.toString() : value.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
   }
-
-  return locale === "ar" ? `${priceDzd} دج` : `${priceDzd} DA`;
+  return formatDzd(priceDzd);
 }
