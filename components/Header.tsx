@@ -62,7 +62,7 @@ export function Header() {
           </span>
           <span className="hidden leading-tight min-[380px]:block">
             <span className="block text-lg font-black text-white">Tiger Store</span>
-            <span className="block text-xs font-black text-tiger-gold">digitaldz.shop</span>
+            <span className="block text-xs font-black text-tiger-gold">tiger-storedz.com</span>
           </span>
         </Link>
 

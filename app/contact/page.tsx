@@ -34,7 +34,7 @@ const contactCards = [
   },
   {
     title: "Website",
-    text: "digitaldz.shop",
+    text: "tiger-storedz.com",
     button: <LocalizedText ar="تصفح المتجر" en="Browse Store" />,
     href: "/shop",
     logo: "/logo/tiger-store-ui.png",

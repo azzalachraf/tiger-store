@@ -6,6 +6,7 @@ import { getEncryptionSecret } from "@/lib/env";
 import { logger } from "@/lib/logger";
 import { AdminAccount, AdminAccountStatus, AdminOrder, Product, SiteSettings } from "@/lib/types";
 import { adminAccountSchema, adminOrderSchema, productSchema, siteSettingsSchema } from "@/lib/validation";
+import { getCatalogProductById, getCatalogProductBySlug, products as catalogProducts } from "@/data/products";
 
 const supabaseService = getSupabaseServiceClient();
 
@@ -56,7 +57,7 @@ const defaultSettings: SiteSettings = {
   whatsappNumber: "+213 556 97 45 93",
   instagramUrl: "https://www.instagram.com/tigerr_store_dz/",
   facebookUrl: "https://www.facebook.com/people/Tiger-Store/61589903873726/",
-  domainText: "digitaldz.shop",
+  domainText: "tiger-storedz.com",
   baridiMobRip: "00799999004414930471",
   ccpDetails: "Payment details will be confirmed after order submission.",
   redotPayDetails: "Payment details will be confirmed after order submission.",
@@ -82,9 +83,10 @@ export async function getProducts(): Promise<Product[]> {
 
   if (error) {
     logger.error("getProducts failed", error);
-    return [];
+    return catalogProducts;
   }
-  return productSchema.array().catch([]).parse(data ?? []);
+  const stored = productSchema.array().catch([]).parse(data ?? []);
+  return stored.length ? stored : catalogProducts;
 }
 
 export async function getProductById(id: string): Promise<Product | undefined> {
@@ -96,14 +98,14 @@ export async function getProductById(id: string): Promise<Product | undefined> {
 
   if (error) {
     logger.error("getProductById failed", error, { id });
-    return undefined;
+    return getCatalogProductById(id);
   }
 
-  if (!data) return undefined;
+  if (!data) return getCatalogProductById(id);
   const parsed = productSchema.safeParse(data);
   if (!parsed.success) {
     logger.error("getProductById validation failed", parsed.error, { id });
-    return undefined;
+    return getCatalogProductById(id);
   }
   return parsed.data;
 }
@@ -117,14 +119,14 @@ export async function getProductBySlug(slug: string): Promise<Product | undefine
 
   if (error) {
     logger.error("getProductBySlug failed", error, { slug });
-    return undefined;
+    return getCatalogProductBySlug(slug);
   }
 
-  if (!data) return undefined;
+  if (!data) return getCatalogProductBySlug(slug);
   const parsed = productSchema.safeParse(data);
   if (!parsed.success) {
     logger.error("getProductBySlug validation failed", parsed.error, { slug });
-    return undefined;
+    return getCatalogProductBySlug(slug);
   }
   return parsed.data;
 }

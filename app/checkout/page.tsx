@@ -8,12 +8,11 @@ export const metadata = {
 };
 
 type CheckoutPageProps = {
-  searchParams: Promise<{ product?: string; option?: string; price?: string }>;
+  searchParams: Promise<{ product?: string; option?: string }>;
 };
 
 export default async function CheckoutPage({ searchParams }: CheckoutPageProps) {
-  const { product, option, price } = await searchParams;
-  const selectedPrice = price ? Number(price) : undefined;
+  const { product, option } = await searchParams;
   const products = await getProducts();
   const settings = await getSettings();
 
@@ -24,7 +23,6 @@ export default async function CheckoutPage({ searchParams }: CheckoutPageProps) 
         products={products}
         directProductSlug={product}
         directOption={option}
-        directPrice={Number.isFinite(selectedPrice) ? selectedPrice : undefined}
         settings={settings}
       />
       <Footer />

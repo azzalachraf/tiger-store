@@ -19,7 +19,7 @@ export function Footer({ disclaimer }: FooterProps) {
             </span>
             <div>
               <p className="text-lg font-black text-white">Tiger Store</p>
-              <p className="text-sm font-bold text-tiger-gold">digitaldz.shop</p>
+              <p className="text-sm font-bold text-tiger-gold">tiger-storedz.com</p>
             </div>
           </div>
           <p className="max-w-md text-sm font-semibold leading-7 text-white/62">
@@ -77,7 +77,7 @@ export function Footer({ disclaimer }: FooterProps) {
         </div>
       </div>
       <div className="border-t border-white/10 px-3 py-4 text-center text-xs text-white/45">
-        © 2026 Tiger Store. digitaldz.shop
+        © 2026 Tiger Store. tiger-storedz.com
       </div>
     </footer>
   );

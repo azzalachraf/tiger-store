@@ -7,6 +7,7 @@ import { sendConversionEvent } from "@/lib/meta-capi";
 import { getMarketingConfig } from "@/lib/marketing-store";
 import { recordPageEvent } from "@/lib/page-events";
 import { checkoutOrderInputSchema } from "@/lib/validation";
+import { getProductById } from "@/lib/admin-store";
 
 export async function submitOrderAction(data: {
   customerName: string;
@@ -23,19 +24,30 @@ export async function submitOrderAction(data: {
   eventId?: string;
 }) {
   const parsed = checkoutOrderInputSchema.parse(data);
-  const expectedTotal = parsed.products.reduce((sum, item) => sum + item.price * item.quantity, 0);
-  if (Math.abs(expectedTotal - parsed.total) > 1) {
-    throw new Error("Order total does not match cart contents.");
+  const authoritativeProducts: CartItem[] = [];
+  for (const submitted of parsed.products) {
+    const product = await getProductById(submitted.productId);
+    if (!product || !product.available) throw new Error("One or more products are unavailable.");
+    const offer = product.priceOptions?.length
+      ? product.priceOptions.find((item) => item.label === submitted.option)
+      : { label: product.duration, labelAr: product.durationAr, duration: product.duration, durationAr: product.durationAr, price: product.price, available: product.available };
+    if (!offer || offer.available === false || offer.price <= 0) throw new Error("One or more selected offers are unavailable.");
+    authoritativeProducts.push({
+      id: `${product.id}:${offer.label}`, productId: product.id, slug: product.slug, name: product.name, nameAr: product.nameAr,
+      image: product.image, option: offer.label, optionAr: offer.labelAr, duration: offer.duration, durationAr: offer.durationAr,
+      price: offer.price, quantity: submitted.quantity,
+    });
   }
+  const expectedTotal = authoritativeProducts.reduce((sum, item) => sum + item.price * item.quantity, 0);
 
   const order: AdminOrder = {
     id: crypto.randomUUID(),
     customerName: parsed.customerName,
     phone: parsed.phone,
     email: parsed.email || parsed.phone,
-    products: parsed.products,
+    products: authoritativeProducts,
     paymentMethod: parsed.paymentMethod,
-    total: parsed.total,
+    total: expectedTotal,
     notes: parsed.notes,
     status: "pending",
     createdAt: new Date().toISOString(),
@@ -71,9 +83,9 @@ export async function submitOrderAction(data: {
         eventId: parsed.eventId || `server-${order.id}`,
         email: order.email,
         phone: parsed.phone,
-        value: parsed.total,
+        value: expectedTotal,
         currency: "DZD",
-        contentIds: parsed.products.map((p) => p.productId),
+        contentIds: authoritativeProducts.map((p) => p.productId),
         orderId: order.id,
         numItems: parsed.products.length,
       });
@@ -83,4 +95,5 @@ export async function submitOrderAction(data: {
   }
 
   revalidatePath("/admin", "layout");
+  return { id: order.id, products: authoritativeProducts, total: expectedTotal };
 }

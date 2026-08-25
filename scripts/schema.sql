@@ -25,7 +25,9 @@ CREATE TABLE IF NOT EXISTS products (
   image            TEXT NOT NULL DEFAULT '',
   available        BOOLEAN NOT NULL DEFAULT true,
   featured         BOOLEAN NOT NULL DEFAULT false,
-  "priceOptions"   JSONB
+  "priceOptions"   JSONB,
+  details          JSONB,
+  faqs             JSONB
 );
 
 ALTER TABLE products ENABLE ROW LEVEL SECURITY;

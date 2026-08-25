@@ -6,6 +6,7 @@ import { ProductDetails } from "@/components/ProductDetails";
 import { LocalizedText } from "@/components/LocalizedText";
 import { getProductBySlug, getProducts } from "@/lib/admin-store";
 import { Product } from "@/lib/types";
+import type { Metadata } from "next";
 
 export const dynamic = "force-dynamic";
 
@@ -13,13 +14,13 @@ type PageProps = {
   params: Promise<{ slug: string }>;
 };
 
-export async function generateMetadata({ params }: PageProps) {
+export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const { slug } = await params;
   const product = await getProductBySlug(slug);
 
-  return {
-    title: product ? product.name : "Product",
-  };
+  if (!product) return { title: "Product" };
+  const description = product.shortDescriptionEn || product.shortDescriptionAr;
+  return { title: product.name, description, alternates: { canonical: `/products/${product.slug}` }, openGraph: { title: product.name, description, url: `/products/${product.slug}`, images: [{ url: product.image, alt: `${product.name} product artwork` }] } };
 }
 
 export default async function ProductDetailPage({ params }: PageProps) {
@@ -41,6 +42,7 @@ export default async function ProductDetailPage({ params }: PageProps) {
       <main className="store-shell min-h-screen px-3 py-6 sm:px-5 sm:py-10 lg:px-8">
         <div className="mx-auto max-w-[1440px]">
           <ProductDetails product={product} />
+          <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify({ "@context": "https://schema.org", "@type": "Product", name: product.name, description: product.shortDescriptionEn, image: [`https://tiger-storedz.com${product.image}`], url: `https://tiger-storedz.com/products/${product.slug}`, offers: product.available && product.price > 0 ? { "@type": "Offer", priceCurrency: "DZD", price: product.price, availability: "https://schema.org/InStock", url: `https://tiger-storedz.com/products/${product.slug}` } : { "@type": "Offer", availability: "https://schema.org/OutOfStock" } }) }} />
 
           {relatedProducts.length ? (
             <section className="mt-10">

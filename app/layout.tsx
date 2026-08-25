@@ -9,7 +9,7 @@ const description =
   "Tiger Store يوفر اشتراكات رقمية في الجزائر مثل ChatGPT Plus و Gemini Pro و Canva Pro و CapCut Pro و Adobe Creative Cloud والمزيد.";
 
 export const metadata: Metadata = {
-  metadataBase: new URL("https://digitaldz.shop"),
+  metadataBase: new URL("https://tiger-storedz.com"),
   title: {
     default: "Tiger Store - اشتراكات رقمية في الجزائر",
     template: "%s - Tiger Store",
@@ -23,10 +23,10 @@ export const metadata: Metadata = {
     "CapCut Pro Algeria",
     "Adobe Creative Cloud Algeria",
     "Gemini Pro Algeria",
-    "digitaldz.shop",
+    "tiger-storedz.com",
   ],
   alternates: {
-    canonical: "https://digitaldz.shop",
+    canonical: "https://tiger-storedz.com",
   },
   icons: {
     icon: [{ url: "/icon.png", sizes: "512x512", type: "image/png" }],
@@ -36,7 +36,7 @@ export const metadata: Metadata = {
   openGraph: {
     title: "Tiger Store - اشتراكات رقمية في الجزائر",
     description,
-    url: "https://digitaldz.shop",
+    url: "https://tiger-storedz.com",
     siteName: "Tiger Store",
     images: [
       {

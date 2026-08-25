@@ -19,6 +19,27 @@ export type ProductPriceOption = {
   duration: string;
   durationAr: string;
   available?: boolean;
+  compatibilityAr?: string;
+  compatibilityEn?: string;
+};
+
+export type ProductDetails = {
+  activationTimeAr: string;
+  activationTimeEn: string;
+  activationMethodAr?: string;
+  activationMethodEn?: string;
+  warrantyAr?: string;
+  warrantyEn?: string;
+  accountTypeAr?: string;
+  accountTypeEn?: string;
+  creditsAr?: string;
+  creditsEn?: string;
+  storageAr?: string;
+  storageEn?: string;
+  compatibilityAr?: string;
+  compatibilityEn?: string;
+  noticeAr?: string;
+  noticeEn?: string;
 };
 
 export type Product = {
@@ -43,6 +64,8 @@ export type Product = {
   available: boolean;
   featured: boolean;
   priceOptions?: ProductPriceOption[];
+  details?: ProductDetails;
+  faqs?: { questionAr: string; questionEn: string; answerAr: string; answerEn: string }[];
 };
 
 export type Category = {

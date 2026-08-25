@@ -6,7 +6,7 @@ import { requireAdmin } from "@/lib/admin-auth";
 import { deleteProduct, saveProduct } from "@/lib/admin-store";
 import { getSiteCategories } from "@/lib/categories";
 import { getSupabaseServiceClient } from "@/lib/supabase";
-import { Product, ProductPriceOption } from "@/lib/types";
+import { Product, ProductDetails, ProductPriceOption } from "@/lib/types";
 import { productPriceOptionSchema } from "@/lib/validation";
 
 const supabaseService = getSupabaseServiceClient();
@@ -104,6 +104,15 @@ function parseVariants(value: string): ProductPriceOption[] | undefined {
   }
 }
 
+function parseOptionalJson<T>(value: string): T | undefined {
+  try {
+    const parsed: unknown = JSON.parse(value);
+    return parsed && typeof parsed === "object" ? parsed as T : undefined;
+  } catch {
+    return undefined;
+  }
+}
+
 export async function saveProductAction(formData: FormData) {
   await requireAdmin();
 
@@ -150,6 +159,8 @@ export async function saveProductAction(formData: FormData) {
     available: formData.get("available") === "on",
     featured: formData.get("featured") === "on",
     priceOptions: parseVariants(text(formData, "priceOptions")),
+    details: parseOptionalJson<ProductDetails>(text(formData, "details")),
+    faqs: parseOptionalJson<Product["faqs"]>(text(formData, "faqs")),
   };
 
   await saveProduct(product);

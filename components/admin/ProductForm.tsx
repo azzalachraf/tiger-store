@@ -94,6 +94,8 @@ export function ProductForm({ product }: ProductFormProps) {
     <form action={saveProductAction} encType="multipart/form-data" className="grid gap-5 rounded-md border border-white/10 bg-white/[0.045] p-5 shadow-[0_18px_55px_rgba(0,0,0,0.24)]">
       <input type="hidden" name="id" defaultValue={product?.id ?? ""} />
       <input type="hidden" name="priceOptions" value={serializedVariants} />
+      <input type="hidden" name="details" value={JSON.stringify(product?.details ?? null)} />
+      <input type="hidden" name="faqs" value={JSON.stringify(product?.faqs ?? null)} />
 
       <section className="rounded-md border border-white/10 bg-black/20 p-4">
         <div className="mb-4">

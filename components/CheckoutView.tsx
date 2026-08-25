@@ -28,11 +28,10 @@ type CheckoutViewProps = {
   products: Product[];
   directProductSlug?: string;
   directOption?: string;
-  directPrice?: number;
   settings: SiteSettings;
 };
 
-export function CheckoutView({ products, directProductSlug, directOption, directPrice, settings }: CheckoutViewProps) {
+export function CheckoutView({ products, directProductSlug, directOption, settings }: CheckoutViewProps) {
   const [items, setItems] = useState<CartItem[]>([]);
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethodId>("BaridiMob");
   const [name, setName] = useState("");
@@ -101,7 +100,7 @@ export function CheckoutView({ products, directProductSlug, directOption, direct
       if (!current.length && directProductSlug) {
         const product = products.find((entry) => entry.slug === directProductSlug);
         const offer = product
-          ? getProductOffers(product).find((entry) => entry.label === directOption || entry.price === directPrice) ??
+          ? getProductOffers(product).find((entry) => entry.label === directOption) ??
             getProductOffers(product)[0]
           : undefined;
 
@@ -114,7 +113,7 @@ export function CheckoutView({ products, directProductSlug, directOption, direct
     }, 0);
 
     return () => window.clearTimeout(timer);
-  }, [directOption, directPrice, directProductSlug, products]);
+  }, [directOption, directProductSlug, products]);
 
   const total = useMemo(() => getCartSubtotal(items), [items]);
 
@@ -154,13 +153,12 @@ export function CheckoutView({ products, directProductSlug, directOption, direct
       source: "localStorage",
     };
 
-    saveLocalOrder(order);
-
     const purchaseEventId = trackPurchase(order.id, total, items.map((i) => ({ id: i.productId })));
     const utm = readStoredUtm();
+    let authoritative = { products: items, total };
 
     try {
-      await submitOrderAction({
+      authoritative = await submitOrderAction({
         customerName: name,
         phone,
         email: phone,
@@ -174,11 +172,13 @@ export function CheckoutView({ products, directProductSlug, directOption, direct
         referrer: typeof document !== "undefined" ? document.referrer : undefined,
         eventId: purchaseEventId,
       });
+      saveLocalOrder({ ...order, items: authoritative.products, total: authoritative.total });
     } catch (error) {
       console.error("Failed to save order to Supabase:", error);
+      return;
     }
 
-    const productLines = items
+    const productLines = authoritative.products
       .map(
         (item) =>
           `- ${item.name} | ${item.option} | Qty: ${item.quantity} | Price: ${formatPriceDZD(item.price * item.quantity, locale, currency)}`,
@@ -191,8 +191,8 @@ export function CheckoutView({ products, directProductSlug, directOption, direct
       "Order:",
       productLines,
       "",
-      `Total: ${formatPriceDZD(total, locale, currency)}`,
-      currency === "USD" ? `DZD total: ${formatPriceDZD(total, locale)}` : null,
+      `Total: ${formatPriceDZD(authoritative.total, locale, currency)}`,
+      currency === "USD" ? `DZD total: ${formatPriceDZD(authoritative.total, locale)}` : null,
       `Payment Method: ${paymentMethod}`,
       "",
       "Customer:",
@@ -200,7 +200,7 @@ export function CheckoutView({ products, directProductSlug, directOption, direct
       `Phone: ${phone}`,
       `Notes: ${notes || "None"}`,
       "",
-      "Website: digitaldz.shop",
+      "Website: tiger-storedz.com",
     ].filter(Boolean).join("\n");
 
     const destinationNumber = settings.whatsappNumber.replace(/\D/g, "");

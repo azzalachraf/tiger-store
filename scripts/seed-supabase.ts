@@ -11,6 +11,7 @@
 import { createClient } from "@supabase/supabase-js";
 import { readFileSync } from "fs";
 import { join } from "path";
+import { products as catalogProducts } from "../data/products";
 
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const SUPABASE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
@@ -37,7 +38,9 @@ async function main() {
   };
 
   // --- Products ---
-  const products = store.products ?? [];
+  // Catalogue data is the public source of truth; orders, accounts and settings
+  // remain sourced from the existing admin-store export.
+  const products = catalogProducts;
   if (products.length) {
     console.log(`🛒 Upserting ${products.length} products ...`);
     const { error } = await supabase.from("products").upsert(products, { onConflict: "id" });

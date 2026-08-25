@@ -23,6 +23,34 @@ export const productPriceOptionSchema = z.object({
   duration: z.string().trim().min(1).max(120),
   durationAr: z.string().trim().min(1).max(120),
   available: z.boolean().optional().default(true),
+  compatibilityAr: optionalTextSchema,
+  compatibilityEn: optionalTextSchema,
+});
+
+const productDetailsSchema = z.object({
+  activationTimeAr: z.string().trim().min(1).max(160),
+  activationTimeEn: z.string().trim().min(1).max(160),
+  activationMethodAr: optionalTextSchema,
+  activationMethodEn: optionalTextSchema,
+  warrantyAr: optionalTextSchema,
+  warrantyEn: optionalTextSchema,
+  accountTypeAr: optionalTextSchema,
+  accountTypeEn: optionalTextSchema,
+  creditsAr: optionalTextSchema,
+  creditsEn: optionalTextSchema,
+  storageAr: optionalTextSchema,
+  storageEn: optionalTextSchema,
+  compatibilityAr: optionalTextSchema,
+  compatibilityEn: optionalTextSchema,
+  noticeAr: optionalTextSchema,
+  noticeEn: optionalTextSchema,
+});
+
+const productFaqSchema = z.object({
+  questionAr: z.string().trim().min(1).max(300),
+  questionEn: z.string().trim().min(1).max(300),
+  answerAr: z.string().trim().min(1).max(1200),
+  answerEn: z.string().trim().min(1).max(1200),
 });
 
 const productPriceOptionsSchema = z.preprocess((value) => {
@@ -52,6 +80,8 @@ export const productSchema = z.object({
   available: z.boolean(),
   featured: z.boolean(),
   priceOptions: productPriceOptionsSchema,
+  details: productDetailsSchema.optional(),
+  faqs: z.array(productFaqSchema).max(12).optional(),
 });
 
 export const cartItemSchema = z.object({
