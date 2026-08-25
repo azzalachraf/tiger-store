@@ -36,7 +36,7 @@ export default async function Home() {
     <>
       <Header />
       <main className="store-shell">
-        <Hero products={products} />
+        <Hero />
 
         <section className="mx-auto max-w-[1440px] px-3 py-5 sm:px-5 lg:px-8">
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
