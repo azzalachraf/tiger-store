@@ -5,7 +5,7 @@ import type { ReactNode } from "react";
 import { FormEvent, useEffect, useMemo, useState } from "react";
 import { CheckCircle2, CreditCard, MessageCircle, ShieldCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { CartItem, LocalOrder, Locale, PaymentMethodId, Product, SiteSettings } from "@/lib/types";
+import { CartItem, LocalOrder, PaymentMethodId, Product, SiteSettings } from "@/lib/types";
 import {
   addCartItem,
   createCartItem,
@@ -20,10 +20,9 @@ import { useCurrency } from "@/lib/useCurrency";
 import { submitOrderAction } from "@/app/checkout/actions";
 import { trackInitiateCheckout, trackPurchase } from "@/lib/meta-pixel";
 import { readStoredUtm } from "@/components/PageTracker";
+import { useLocale } from "@/lib/useLocale";
 
 const paymentMethods: PaymentMethodId[] = ["BaridiMob", "CCP", "RedotPay"];
-const productLocale = (): Locale => "en";
-
 type CheckoutViewProps = {
   products: Product[];
   directProductSlug?: string;
@@ -38,7 +37,7 @@ export function CheckoutView({ products, directProductSlug, directOption, settin
   const [phone, setPhone] = useState("");
   const [notes, setNotes] = useState("");
   const { currency } = useCurrency();
-  const locale = productLocale();
+  const { locale } = useLocale();
   const labels = locale === "ar"
     ? {
         eyebrow: "إتمام الطلب",

@@ -1,4 +1,4 @@
-export type Locale = "ar" | "en";
+export type Locale = "ar" | "en" | "fr";
 
 export type DisplayCurrency = "DZD" | "USD";
 

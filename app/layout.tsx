@@ -3,6 +3,7 @@ import type { ReactNode } from "react";
 import { MetaPixelProvider } from "@/components/MetaPixelProvider";
 import { PageTracker } from "@/components/PageTracker";
 import { PerformanceProvider } from "@/components/PerformanceProvider";
+import { ThemeBootstrap } from "@/components/ThemeBootstrap";
 import "./globals.css";
 
 const description =
@@ -65,7 +66,8 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: Readonly<{ children: ReactNode }>) {
   return (
-    <html lang="ar-DZ" dir="rtl" className="dark" data-performance-tier="standard" data-motion="enhanced">
+    <html lang="en" dir="ltr" data-performance-tier="standard" data-motion="enhanced" suppressHydrationWarning>
+      <head><ThemeBootstrap /></head>
       <body>
         <PerformanceProvider>
           {children}

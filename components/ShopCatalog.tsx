@@ -6,8 +6,9 @@ import Link from "next/link";
 import { ChevronDown, ListFilter, Search, SlidersHorizontal } from "lucide-react";
 import { CategoryShowcase } from "@/components/CategoryShowcase";
 import { ProductCard } from "@/components/ProductCard";
-import { Category, Locale, Product } from "@/lib/types";
+import { Category, Product } from "@/lib/types";
 import { cn } from "@/lib/utils";
+import { useLocale } from "@/lib/useLocale";
 
 type SortMode = "featured" | "price-asc" | "price-desc" | "name";
 
@@ -19,8 +20,6 @@ type ShopCatalogProps = {
   initialSale?: boolean;
   initialQuery?: string;
 };
-const productLocale = (): Locale => "en";
-
 export function ShopCatalog({
   products,
   categories,
@@ -35,7 +34,7 @@ export function ShopCatalog({
   const [featuredOnly, setFeaturedOnly] = useState(initialFeatured);
   const [saleOnly, setSaleOnly] = useState(initialSale);
   const [availableOnly, setAvailableOnly] = useState(false);
-  const locale = productLocale();
+  const { locale } = useLocale();
   const labels = locale === "ar"
     ? {
         home: "الرئيسية",

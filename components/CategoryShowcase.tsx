@@ -2,8 +2,9 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { Category, Locale, Product } from "@/lib/types";
+import { Category, Product } from "@/lib/types";
 import { cn } from "@/lib/utils";
+import { useLocale } from "@/lib/useLocale";
 
 type CategoryShowcaseProps = {
   categories: Category[];
@@ -62,10 +63,8 @@ const showcaseGroups = [
     productSlugs: ["hma-vpn", "capcut-pro", "lovable-pro"],
   },
 ];
-const productLocale = (): Locale => "en";
-
 export function CategoryShowcase({ categories, products, className }: CategoryShowcaseProps) {
-  const activeLocale = productLocale();
+  const { locale: activeLocale } = useLocale();
   const availableCategories = new Set(categories.map((category) => category.id));
   const fallbackProducts = products.slice(0, 3);
 
@@ -94,11 +93,11 @@ export function CategoryShowcase({ categories, products, className }: CategorySh
             {activeLocale === "ar" ? "الأقسام" : "Categories"}
           </p>
           <h2 className="mt-1 text-xl font-black text-white sm:text-2xl">
-            {activeLocale === "ar" ? "ابدأ من نوع الاشتراك الذي تحتاجه" : "Browse categories"}
+            {activeLocale === "ar" ? "ابدأ من نوع الاشتراك الذي تحتاجه" : activeLocale === "fr" ? "Parcourir les catégories" : "Browse categories"}
           </h2>
         </div>
         <Link href="/categories" className="shrink-0 text-sm font-black text-tiger-gold">
-          {activeLocale === "ar" ? "عرض الكل" : "View all"}
+          {activeLocale === "ar" ? "عرض الكل" : activeLocale === "fr" ? "Voir tout" : "View all"}
         </Link>
       </div>
 

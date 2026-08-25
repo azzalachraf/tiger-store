@@ -28,7 +28,7 @@ const faqContent = {
 
 export function FaqPreview() {
   const { locale } = useLocale();
-  const content = faqContent[locale];
+  const content = faqContent[locale === "fr" ? "en" : locale];
 
   return (
     <section id="faq" className="mx-auto max-w-[1440px] px-3 py-7 sm:px-5 lg:px-8" dir={locale === "ar" ? "rtl" : "ltr"}>
