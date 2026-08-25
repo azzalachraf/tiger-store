@@ -89,7 +89,7 @@ export function CategoryShowcase({ categories, products, className }: CategorySh
 
   useEffect(() => {
     const track = marqueeRef.current;
-    if (!track || window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    if (!track) return;
     let frame = 0; let last = performance.now(); let offset = 0; let paused = false;
     const direction = document.documentElement.dir === "rtl" ? 1 : -1;
     const setPaused = (value: boolean) => { paused = value; };

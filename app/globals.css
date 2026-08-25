@@ -34,4 +34,3 @@ html[dir="rtl"] .announcement-track { animation-direction: reverse; }
 @media (prefers-reduced-motion: reduce) { .announcement-strip { overflow-x: auto; }.announcement-track { animation: none; }.announcement-track > :last-child { display: none; } }
 .category-marquee-track { display: flex; width: max-content; gap: 1rem; padding-inline: .75rem; will-change: transform; }
 @media (min-width: 1024px) { .category-marquee-track { display: grid; width: auto; grid-template-columns: repeat(7, minmax(0, 1fr)); transform: none !important; } }
-@media (prefers-reduced-motion: reduce) { .category-marquee { overflow-x: auto; }.category-marquee-track > :nth-child(n+8) { display: none; } }
