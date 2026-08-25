@@ -5,6 +5,7 @@ import Link from "next/link";
 import { Category, Product } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { useLocale } from "@/lib/useLocale";
+import { useEffect, useRef } from "react";
 
 type CategoryShowcaseProps = {
   categories: Category[];
@@ -65,6 +66,7 @@ const showcaseGroups = [
 ];
 export function CategoryShowcase({ categories, products, className }: CategoryShowcaseProps) {
   const { locale: activeLocale } = useLocale();
+  const marqueeRef = useRef<HTMLDivElement>(null);
   const availableCategories = new Set(categories.map((category) => category.id));
   const fallbackProducts = products.slice(0, 3);
 
@@ -85,6 +87,19 @@ export function CategoryShowcase({ categories, products, className }: CategorySh
       };
     });
 
+  useEffect(() => {
+    const track = marqueeRef.current;
+    if (!track || window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    let frame = 0; let last = performance.now(); let offset = 0; let paused = false;
+    const direction = document.documentElement.dir === "rtl" ? 1 : -1;
+    const setPaused = (value: boolean) => { paused = value; };
+    const tick = (now: number) => { const width = track.scrollWidth / 2; if (width > 0 && !paused && window.innerWidth < 1024) { offset += direction * ((now - last) * 0.025); if (offset <= -width) offset += width; if (offset >= 0) offset -= width; track.style.transform = `translate3d(${offset}px,0,0)`; } last = now; frame = requestAnimationFrame(tick); };
+    const pause = () => setPaused(true); const resume = () => setPaused(false);
+    track.addEventListener("pointerenter", pause); track.addEventListener("pointerleave", resume); track.addEventListener("focusin", pause); track.addEventListener("focusout", resume);
+    frame = requestAnimationFrame(tick);
+    return () => { cancelAnimationFrame(frame); track.removeEventListener("pointerenter", pause); track.removeEventListener("pointerleave", resume); track.removeEventListener("focusin", pause); track.removeEventListener("focusout", resume); };
+  }, [activeLocale, groups.length]);
+
   return (
     <section className={cn("mx-auto max-w-[1440px] px-3 py-6 sm:px-5 lg:px-8", className)}>
       <div className="mb-4 flex items-end justify-between gap-3">
@@ -102,7 +117,7 @@ export function CategoryShowcase({ categories, products, className }: CategorySh
       </div>
 
       <div className="category-marquee -mx-3 overflow-hidden border-y border-white/8 bg-[#181818] py-5 lg:mx-0 lg:overflow-visible lg:rounded-md lg:border lg:px-4">
-        <div className="category-marquee-track">
+        <div ref={marqueeRef} className="category-marquee-track">
           {groups.map((group) => <CategoryCard key={group.title} group={group} locale={activeLocale} />)}
           {groups.map((group) => <CategoryCard key={`duplicate-${group.title}`} group={group} locale={activeLocale} duplicate />)}
         </div>
