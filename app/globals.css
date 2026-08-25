@@ -32,3 +32,9 @@ body { min-height: 100vh; background: var(--page); color: var(--text); font-fami
 html[dir="rtl"] .announcement-track { animation-direction: reverse; }
 @media (max-width: 640px) { .announcement-strip { height: 38px; }.announcement-row { gap: 1.5rem; padding-inline: .75rem; }.announcement-item { font-size: .6875rem; } }
 @media (prefers-reduced-motion: reduce) { .announcement-strip { overflow-x: auto; }.announcement-track { animation: none; }.announcement-track > :last-child { display: none; } }
+.category-marquee-track { display: flex; width: max-content; gap: 1rem; padding-inline: .75rem; animation: category-scroll 36s linear infinite; }
+.category-marquee:hover .category-marquee-track, .category-marquee:focus-within .category-marquee-track { animation-play-state: paused; }
+@keyframes category-scroll { to { transform: translateX(-50%); } }
+html[dir="rtl"] .category-marquee-track { animation-direction: reverse; }
+@media (min-width: 1024px) { .category-marquee-track { display: grid; width: auto; grid-template-columns: repeat(7, minmax(0, 1fr)); animation: none; } }
+@media (prefers-reduced-motion: reduce) { .category-marquee { overflow-x: auto; }.category-marquee-track { animation: none; }.category-marquee-track > :nth-child(n+8) { display: none; } }

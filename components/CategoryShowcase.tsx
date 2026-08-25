@@ -101,34 +101,16 @@ export function CategoryShowcase({ categories, products, className }: CategorySh
         </Link>
       </div>
 
-      <div className="scrollbar-none -mx-3 flex gap-4 overflow-x-auto border-y border-white/8 bg-[#181818] px-3 py-5 lg:mx-0 lg:grid lg:grid-cols-7 lg:overflow-visible lg:rounded-md lg:border lg:px-4">
-        {groups.map((group) => (
-          <Link
-            key={group.title}
-            href={group.href}
-            className="motion-card group min-w-[150px] rounded-md border border-white/8 bg-[#111] p-3 text-center shadow-[0_14px_30px_rgba(0,0,0,0.28)] hover:border-tiger-ember/55 hover:bg-[#1d1d1d] lg:min-w-0"
-          >
-            <div className="relative mx-auto h-[112px] w-[116px]">
-              <div className="absolute bottom-2 left-1/2 h-9 w-24 -translate-x-1/2 rounded-full bg-tiger-ember/20 blur-sm" />
-              <div className="absolute bottom-0 left-1/2 h-8 w-24 -translate-x-1/2 rounded-2xl bg-[linear-gradient(135deg,#ff7a18,#f6c65b)] opacity-90" />
-              {group.products.map((product, index) => (
-                <div
-                  key={product.id}
-                  className={cn(
-                    "absolute bottom-4 overflow-hidden rounded-xl border border-white/15 bg-black shadow-[0_14px_24px_rgba(0,0,0,0.45)] transition-transform duration-150",
-                    index === 0 && "left-1/2 z-30 h-[92px] w-[74px] -translate-x-1/2 group-hover:scale-[1.04]",
-                    index === 1 && "left-2 z-20 h-[78px] w-[62px] -rotate-[4deg] group-hover:-translate-x-1 group-hover:-rotate-[7deg]",
-                    index === 2 && "right-2 z-10 h-[78px] w-[62px] rotate-[4deg] group-hover:translate-x-1 group-hover:rotate-[7deg]",
-                  )}
-                >
-                  <Image src={product.image} alt={product.name} fill sizes="90px" className="object-contain p-0.5" />
-                </div>
-              ))}
-            </div>
-            <h3 className="mt-2 text-sm font-black leading-5 text-white">{activeLocale === "ar" ? group.titleAr : group.title}</h3>
-          </Link>
-        ))}
+      <div className="category-marquee -mx-3 overflow-hidden border-y border-white/8 bg-[#181818] py-5 lg:mx-0 lg:overflow-visible lg:rounded-md lg:border lg:px-4">
+        <div className="category-marquee-track">
+          {groups.map((group) => <CategoryCard key={group.title} group={group} locale={activeLocale} />)}
+          {groups.map((group) => <CategoryCard key={`duplicate-${group.title}`} group={group} locale={activeLocale} duplicate />)}
+        </div>
       </div>
     </section>
   );
+}
+
+function CategoryCard({ group, locale, duplicate = false }: { group: { title: string; titleAr: string; href: string; products: Product[] }; locale: "ar" | "en" | "fr"; duplicate?: boolean }) {
+  return <Link href={group.href} aria-hidden={duplicate || undefined} tabIndex={duplicate ? -1 : undefined} className={`motion-card group min-w-[150px] rounded-md border border-white/8 bg-[#111] p-3 text-center shadow-[0_14px_30px_rgba(0,0,0,0.28)] hover:border-tiger-ember/55 hover:bg-[#1d1d1d] lg:min-w-0 ${duplicate ? "lg:hidden" : ""}`}><div className="relative mx-auto h-[112px] w-[116px]"><div className="absolute bottom-2 left-1/2 h-9 w-24 -translate-x-1/2 rounded-full bg-tiger-ember/20 blur-sm" /><div className="absolute bottom-0 left-1/2 h-8 w-24 -translate-x-1/2 rounded-2xl bg-[linear-gradient(135deg,#ff7a18,#f6c65b)] opacity-90" />{group.products.map((product, index) => <div key={product.id} className={cn("absolute bottom-4 overflow-hidden rounded-xl border border-white/15 bg-black shadow-[0_14px_24px_rgba(0,0,0,0.45)] transition-transform duration-150", index === 0 && "left-1/2 z-30 h-[92px] w-[74px] -translate-x-1/2 group-hover:scale-[1.04]", index === 1 && "left-2 z-20 h-[78px] w-[62px] -rotate-[4deg] group-hover:-translate-x-1 group-hover:-rotate-[7deg]", index === 2 && "right-2 z-10 h-[78px] w-[62px] rotate-[4deg] group-hover:translate-x-1 group-hover:rotate-[7deg]" )}><Image src={product.image} alt={product.name} fill sizes="90px" className="object-contain p-0.5" /></div>)}</div><h3 className="mt-2 text-sm font-black leading-5 text-white">{locale === "ar" ? group.titleAr : group.title}</h3></Link>;
 }
