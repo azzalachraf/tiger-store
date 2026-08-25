@@ -10,7 +10,8 @@ const faq = (name: string) => [
 ];
 
 function product(input: Omit<Product, "currency" | "details" | "faqs"> & { details?: Partial<NonNullable<Product["details"]>> }): Product {
-  return { ...input, currency: "DZD", details: { ...delivery, ...input.details }, faqs: faq(input.name) };
+  const warranty = input.id === "gemini-pro" ? noWarranty : fullWarranty;
+  return { ...input, currency: "DZD", details: { ...delivery, ...input.details, ...warranty }, faqs: faq(input.name) };
 }
 
 const option = (label: string, labelAr: string, price: number, duration: string, durationAr: string, extras: Partial<ProductPriceOption> = {}): ProductPriceOption => ({ label, labelAr, price, duration, durationAr, available: true, ...extras });
