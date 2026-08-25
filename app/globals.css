@@ -2,20 +2,20 @@
 @tailwind components;
 @tailwind utilities;
 
-:root { --background: 45 10% 96%; --foreground: 0 0% 8%; --card: 0 0% 100%; --card-foreground: 0 0% 8%; --muted: 40 13% 93%; --muted-foreground: 215 8% 38%; --border: 40 8% 85%; --input: 40 8% 85%; --ring: 27 100% 50%; --primary: 27 100% 50%; --primary-foreground: 0 0% 7%; }
-* { border-color: #D9D7D2; }
+:root { --background: 38 14% 89%; --foreground: 0 0% 8%; --card: 38 18% 94%; --card-foreground: 0 0% 8%; --muted: 38 14% 89%; --muted-foreground: 24 6% 38%; --border: 34 16% 86%; --input: 34 16% 86%; --ring: 27 100% 50%; --primary: 27 100% 50%; --primary-foreground: 0 0% 7%; }
+* { border-color: #DDD7CE; }
 html { scroll-behavior: smooth; }
-body { min-height: 100vh; background: #F6F5F2; color: #151515; font-family: "Segoe UI", Arial, sans-serif; text-rendering: optimizeLegibility; }
+body { min-height: 100vh; background: #E7E3DC; color: #151515; font-family: "Segoe UI", Arial, sans-serif; text-rendering: optimizeLegibility; }
 ::selection { background: #FFF1E6; color: #151515; }
-.store-shell { background: #F6F5F2; color: #151515; }
-.store-panel, .premium-card { background: #FFFFFF; border: 1px solid #D9D7D2; box-shadow: 0 8px 24px rgba(21,21,21,.06); color: #151515; }
-.glass-panel { background: #FFFFFF; border: 1px solid #D9D7D2; box-shadow: 0 8px 24px rgba(21,21,21,.06); backdrop-filter: none; }
-.trust-chip { border-color: #D9D7D2; background: #FFFFFF; color: #151515; }.soft-divider { background: #D9D7D2; }
-.store-shell [class*="bg-black"], .store-shell [class*="bg-[#1"], .store-shell [class*="bg-white/["], .store-shell [class*="bg-white/"], .store-shell [class*="bg-[linear-gradient"] { background-color: #FFFFFF !important; background-image: none !important; }
+.store-shell { background: #E7E3DC; color: #151515; }
+.store-panel, .premium-card { background: #F3F0EA; border: 1px solid #DDD7CE; box-shadow: none; color: #151515; }
+.glass-panel { background: #F3F0EA; border: 1px solid #DDD7CE; box-shadow: none; backdrop-filter: none; }
+.trust-chip { border-color: #DDD7CE; background: #F3F0EA; color: #151515; }.soft-divider { background: #DDD7CE; }
+.store-shell [class*="bg-black"], .store-shell [class*="bg-[#1"], .store-shell [class*="bg-white/["], .store-shell [class*="bg-white/"], .store-shell [class*="bg-[linear-gradient"] { background-color: #F3F0EA !important; background-image: none !important; }
 .store-shell [class*="text-white"], .store-shell [class*="text-black"] { color: #151515 !important; }
-.store-shell [class*="text-tiger-gold"] { color: #C54E00 !important; }.store-shell [class*="border-white"] { border-color: #D9D7D2 !important; }
+.store-shell [class*="text-tiger-gold"] { color: #C54E00 !important; }.store-shell [class*="border-white"] { border-color: #DDD7CE !important; }
 .store-shell [class*="text-emerald"] { color: #16803C !important; }.store-shell [class*="text-red"] { color: #C62828 !important; }
-.store-shell input, .store-shell textarea, .store-shell select { background: #FFFFFF !important; border-color: #D9D7D2 !important; color: #151515 !important; }
+.store-shell input, .store-shell textarea, .store-shell select { background: #F3F0EA !important; border-color: #DDD7CE !important; color: #151515 !important; }
 .store-shell input::placeholder, .store-shell textarea::placeholder { color: #5F6368 !important; }.store-shell .bg-tiger-ember { background-color: #FF7300 !important; }
 .text-balance { text-wrap: balance; }.motion-reveal { opacity: 1; }.motion-card,.motion-media,.tap-feedback { transform: translateZ(0); backface-visibility: hidden; }.motion-card { transition: transform 180ms ease,border-color 180ms ease,box-shadow 180ms ease,background-color 180ms ease; }.motion-card:hover { transform: translateY(-2px); }.motion-media { transition: transform 240ms ease; }.group:hover .motion-media { transform: scale(1.02); }.tap-feedback { transition: transform 140ms ease,background-color 140ms ease,border-color 140ms ease; }.tap-feedback:active { transform: scale(.985); }
 .tap-feedback:focus-visible,a:focus-visible,button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible { outline: 3px solid #FF7300; outline-offset: 2px; }

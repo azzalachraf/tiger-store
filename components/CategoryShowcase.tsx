@@ -94,7 +94,7 @@ export function CategoryShowcase({ categories, products, className }: CategorySh
             {activeLocale === "ar" ? "الأقسام" : "Categories"}
           </p>
           <h2 className="mt-1 text-xl font-black text-white sm:text-2xl">
-            {activeLocale === "ar" ? "ابدأ من نوع الاشتراك الذي تحتاجه" : "Start with the subscription type you need"}
+            {activeLocale === "ar" ? "ابدأ من نوع الاشتراك الذي تحتاجه" : "Browse categories"}
           </h2>
         </div>
         <Link href="/categories" className="shrink-0 text-sm font-black text-tiger-gold">

@@ -1,11 +1,11 @@
 import { Product, ProductPriceOption } from "@/lib/types";
 
-const delivery = { activationTimeAr: "خلال 15 دقيقة إلى 12 ساعة بعد الدفع", activationTimeEn: "15 minutes–12 hours after payment" };
+const delivery = { activationTimeAr: "خلال 15 دقيقة إلى 12 ساعة بعد الدفع", activationTimeEn: "15min - 12h after payment" };
 const personal = { activationMethodAr: "يتم التفعيل على حسابك أو بريدك الشخصي", activationMethodEn: "Activated on your personal account/email", accountTypeAr: "حسابك الشخصي", accountTypeEn: "Your personal account" };
 const noWarranty = { warrantyAr: "لا يوجد ضمان بعد التفعيل", warrantyEn: "No warranty after activation" };
 const fullWarranty = { warrantyAr: "ضمان كامل طوال مدة العرض", warrantyEn: "Full warranty for the offer duration" };
 const faq = (name: string) => [
-  { questionAr: "متى يتم التفعيل؟", questionEn: "When is activation completed?", answerAr: "يتم التفعيل خلال 15 دقيقة إلى 12 ساعة بعد تأكيد الدفع.", answerEn: "Activation is completed within 15 minutes–12 hours after payment confirmation." },
+  { questionAr: "متى يتم التفعيل؟", questionEn: "When is activation completed?", answerAr: "يتم التفعيل خلال 15 دقيقة إلى 12 ساعة بعد تأكيد الدفع.", answerEn: "15min - 12h after payment" },
   { questionAr: `كيف يتم تفعيل ${name}؟`, questionEn: `How is ${name} activated?`, answerAr: "تُرسل تفاصيل الطلب المطلوبة فقط، ثم نفعّل الخدمة بالطريقة الموضحة في تفاصيل المنتج.", answerEn: "Share only the order details required, then we activate the service as described on this product page." },
 ];
 

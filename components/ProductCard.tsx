@@ -14,8 +14,8 @@ function priceLabel(product: Product) {
 }
 
 export function ProductCard({ product, compact = false, priority = false }: { product: Product; compact?: boolean; priority?: boolean }) {
-  return <article className="group flex h-full min-w-0 flex-col overflow-hidden rounded-xl border border-[#D9D7D2] bg-white shadow-[0_6px_18px_rgba(21,21,21,.05)] transition-colors hover:border-[#FF7300]">
-    <Link href={`/products/${product.slug}`} className="relative block aspect-[4/5] overflow-hidden bg-[#F6F5F2] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-tiger-ember" aria-label={`View ${product.name}`}>
+  return <article className="group flex h-full min-w-0 flex-col overflow-hidden rounded-xl border border-[#DDD7CE] bg-[#F3F0EA] transition-colors hover:border-[#FF7300]">
+    <Link href={`/products/${product.slug}`} className="relative block aspect-[4/5] overflow-hidden bg-[#E7E3DC] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-tiger-ember" aria-label={`View ${product.name}`}>
       <Image src={product.image} alt={`${product.name} product artwork`} fill sizes="(min-width: 1280px) 23vw, (min-width: 768px) 31vw, 50vw" className="object-contain p-2 transition-transform duration-200 group-hover:scale-[1.02]" priority={priority} loading={priority ? undefined : "lazy"} />
     </Link>
     <div className={`flex flex-1 flex-col ${compact ? "p-3" : "p-4"}`}>
