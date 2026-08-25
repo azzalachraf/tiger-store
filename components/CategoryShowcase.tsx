@@ -4,12 +4,10 @@ import Image from "next/image";
 import Link from "next/link";
 import { Category, Locale, Product } from "@/lib/types";
 import { cn } from "@/lib/utils";
-import { useLocale } from "@/lib/useLocale";
 
 type CategoryShowcaseProps = {
   categories: Category[];
   products: Product[];
-  locale?: Locale;
   className?: string;
 };
 
@@ -64,10 +62,10 @@ const showcaseGroups = [
     productSlugs: ["hma-vpn", "capcut-pro", "lovable-pro"],
   },
 ];
+const productLocale = (): Locale => "en";
 
-export function CategoryShowcase({ categories, products, locale, className }: CategoryShowcaseProps) {
-  const { locale: savedLocale } = useLocale();
-  const activeLocale = locale ?? savedLocale;
+export function CategoryShowcase({ categories, products, className }: CategoryShowcaseProps) {
+  const activeLocale = productLocale();
   const availableCategories = new Set(categories.map((category) => category.id));
   const fallbackProducts = products.slice(0, 3);
 

@@ -5,20 +5,20 @@ import Link from "next/link";
 import { Minus, Plus, ShieldCheck, Trash2 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
-import { CartItem, Product } from "@/lib/types";
+import { CartItem, Locale, Product } from "@/lib/types";
 import { createCartItem, getCartSubtotal, getProductOffers, readCart, writeCart } from "@/lib/cart";
 import { formatPriceDZD } from "@/lib/utils";
 import { useCurrency } from "@/lib/useCurrency";
-import { useLocale } from "@/lib/useLocale";
 
 type CartViewProps = {
   products: Product[];
 };
+const productLocale = (): Locale => "en";
 
 export function CartView({ products }: CartViewProps) {
   const [items, setItems] = useState<CartItem[]>([]);
   const { currency } = useCurrency();
-  const { locale } = useLocale();
+  const locale = productLocale();
   const labels = locale === "ar"
     ? {
         eyebrow: "السلة",

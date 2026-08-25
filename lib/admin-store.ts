@@ -10,6 +10,13 @@ import { getCatalogProductById, getCatalogProductBySlug, products as catalogProd
 
 const supabaseService = getSupabaseServiceClient();
 
+function enrichCatalogProduct(product: Product): Product {
+  const catalogProduct = getCatalogProductById(product.id) ?? getCatalogProductBySlug(product.slug);
+  return catalogProduct
+    ? { ...catalogProduct, ...product, details: product.details ?? catalogProduct.details, faqs: product.faqs ?? catalogProduct.faqs }
+    : product;
+}
+
 /* ------------------------------------------------------------------ */
 /*  Encryption helpers (unchanged – passwords encrypted before DB)    */
 /* ------------------------------------------------------------------ */
@@ -86,7 +93,7 @@ export async function getProducts(): Promise<Product[]> {
     return catalogProducts;
   }
   const stored = productSchema.array().catch([]).parse(data ?? []);
-  return stored.length ? stored : catalogProducts;
+  return stored.length ? stored.map(enrichCatalogProduct) : catalogProducts;
 }
 
 export async function getProductById(id: string): Promise<Product | undefined> {
@@ -107,7 +114,7 @@ export async function getProductById(id: string): Promise<Product | undefined> {
     logger.error("getProductById validation failed", parsed.error, { id });
     return getCatalogProductById(id);
   }
-  return parsed.data;
+  return enrichCatalogProduct(parsed.data);
 }
 
 export async function getProductBySlug(slug: string): Promise<Product | undefined> {
@@ -128,7 +135,7 @@ export async function getProductBySlug(slug: string): Promise<Product | undefine
     logger.error("getProductBySlug validation failed", parsed.error, { slug });
     return getCatalogProductBySlug(slug);
   }
-  return parsed.data;
+  return enrichCatalogProduct(parsed.data);
 }
 
 export async function saveProduct(product: Product) {

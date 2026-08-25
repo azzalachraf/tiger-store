@@ -5,7 +5,7 @@ import type { ReactNode } from "react";
 import { FormEvent, useEffect, useMemo, useState } from "react";
 import { CheckCircle2, CreditCard, MessageCircle, ShieldCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { CartItem, LocalOrder, PaymentMethodId, Product, SiteSettings } from "@/lib/types";
+import { CartItem, LocalOrder, Locale, PaymentMethodId, Product, SiteSettings } from "@/lib/types";
 import {
   addCartItem,
   createCartItem,
@@ -17,12 +17,12 @@ import {
 } from "@/lib/cart";
 import { formatPriceDZD } from "@/lib/utils";
 import { useCurrency } from "@/lib/useCurrency";
-import { useLocale } from "@/lib/useLocale";
 import { submitOrderAction } from "@/app/checkout/actions";
 import { trackInitiateCheckout, trackPurchase } from "@/lib/meta-pixel";
 import { readStoredUtm } from "@/components/PageTracker";
 
 const paymentMethods: PaymentMethodId[] = ["BaridiMob", "CCP", "RedotPay"];
+const productLocale = (): Locale => "en";
 
 type CheckoutViewProps = {
   products: Product[];
@@ -38,7 +38,7 @@ export function CheckoutView({ products, directProductSlug, directOption, settin
   const [phone, setPhone] = useState("");
   const [notes, setNotes] = useState("");
   const { currency } = useCurrency();
-  const { locale } = useLocale();
+  const locale = productLocale();
   const labels = locale === "ar"
     ? {
         eyebrow: "إتمام الطلب",
@@ -143,7 +143,7 @@ export function CheckoutView({ products, directProductSlug, directOption, settin
     if (!items.length) return;
 
     const order: LocalOrder = {
-      id: `local-${Date.now()}`,
+      id: `local-${crypto.randomUUID()}`,
       createdAt: new Date().toISOString(),
       items,
       total,
