@@ -8,7 +8,9 @@ import { AdminAccount, AdminAccountStatus, AdminOrder, Product, SiteSettings } f
 import { adminAccountSchema, adminOrderSchema, productSchema, siteSettingsSchema } from "@/lib/validation";
 import { getCatalogProductById, getCatalogProductBySlug, products as catalogProducts } from "@/data/products";
 
-const supabaseService = getSupabaseServiceClient();
+function supabase() {
+  return getSupabaseServiceClient();
+}
 
 function enrichCatalogProduct(product: Product): Product {
   const catalogProduct = getCatalogProductById(product.id) ?? getCatalogProductBySlug(product.slug);
@@ -83,7 +85,7 @@ const defaultSettings: SiteSettings = {
 /* ------------------------------------------------------------------ */
 
 export async function getProducts(): Promise<Product[]> {
-  const { data, error } = await supabaseService
+  const { data, error } = await supabase()
     .from("products")
     .select("*")
     .order("featured", { ascending: false });
@@ -97,7 +99,7 @@ export async function getProducts(): Promise<Product[]> {
 }
 
 export async function getProductById(id: string): Promise<Product | undefined> {
-  const { data, error } = await supabaseService
+  const { data, error } = await supabase()
     .from("products")
     .select("*")
     .eq("id", id)
@@ -118,7 +120,7 @@ export async function getProductById(id: string): Promise<Product | undefined> {
 }
 
 export async function getProductBySlug(slug: string): Promise<Product | undefined> {
-  const { data, error } = await supabaseService
+  const { data, error } = await supabase()
     .from("products")
     .select("*")
     .eq("slug", slug)
@@ -140,12 +142,22 @@ export async function getProductBySlug(slug: string): Promise<Product | undefine
 
 export async function saveProduct(product: Product) {
   const validatedProduct = productSchema.parse(product);
-  const { error } = await supabaseService.from("products").upsert(validatedProduct, { onConflict: "id" });
+  const client = supabase();
+  const { error } = await client.from("products").upsert(validatedProduct, { onConflict: "id" });
   if (error) throw new Error(`saveProduct failed: ${error.message}`);
+
+  const options = validatedProduct.priceOptions ?? [];
+  if (options.length) {
+    const { error: optionError } = await client.from("product_options").upsert(
+      options.map((option) => ({ product_id: validatedProduct.id, ...option })),
+      { onConflict: "product_id,id" },
+    );
+    if (optionError) throw new Error(`saveProduct options failed: ${optionError.message}`);
+  }
 }
 
 export async function deleteProduct(id: string) {
-  const { error } = await supabaseService.from("products").delete().eq("id", id);
+  const { error } = await supabase().from("products").delete().eq("id", id);
   if (error) throw new Error(`deleteProduct failed: ${error.message}`);
 }
 
@@ -154,7 +166,7 @@ export async function deleteProduct(id: string) {
 /* ------------------------------------------------------------------ */
 
 export async function getOrders(): Promise<AdminOrder[]> {
-  const { data, error } = await supabaseService
+  const { data, error } = await supabase()
     .from("orders")
     .select("*")
     .order("createdAt", { ascending: false });
@@ -167,7 +179,7 @@ export async function getOrders(): Promise<AdminOrder[]> {
 }
 
 export async function getOrderById(id: string): Promise<AdminOrder | undefined> {
-  const { data, error } = await supabaseService
+  const { data, error } = await supabase()
     .from("orders")
     .select("*")
     .eq("id", id)
@@ -189,12 +201,12 @@ export async function getOrderById(id: string): Promise<AdminOrder | undefined> 
 
 export async function saveOrder(order: AdminOrder) {
   const validatedOrder = adminOrderSchema.parse(order);
-  const { error } = await supabaseService.from("orders").upsert(validatedOrder, { onConflict: "id" });
+  const { error } = await supabase().from("orders").upsert(validatedOrder, { onConflict: "id" });
   if (error) throw new Error(`saveOrder failed: ${error.message}`);
 }
 
 export async function deleteOrder(id: string) {
-  const { error } = await supabaseService.from("orders").delete().eq("id", id);
+  const { error } = await supabase().from("orders").delete().eq("id", id);
   if (error) throw new Error(`deleteOrder failed: ${error.message}`);
 }
 
@@ -203,7 +215,7 @@ export async function deleteOrder(id: string) {
 /* ------------------------------------------------------------------ */
 
 export async function getSettings(): Promise<SiteSettings> {
-  const { data, error } = await supabaseService
+  const { data, error } = await supabase()
     .from("settings")
     .select("*")
     .eq("id", "main")
@@ -231,7 +243,7 @@ export async function getSettings(): Promise<SiteSettings> {
 
 export async function saveSettings(settings: SiteSettings) {
   const validatedSettings = siteSettingsSchema.parse(settings);
-  const { error } = await supabaseService
+  const { error } = await supabase()
     .from("settings")
     .upsert({ id: "main", ...validatedSettings }, { onConflict: "id" });
 
@@ -283,7 +295,7 @@ function accountToDbRow(account: AdminAccount): StoredAccount {
 }
 
 export async function getAccounts(): Promise<AdminAccount[]> {
-  const { data, error } = await supabaseService
+  const { data, error } = await supabase()
     .from("accounts")
     .select("*")
     .order("updatedAt", { ascending: false });
@@ -298,7 +310,7 @@ export async function getAccounts(): Promise<AdminAccount[]> {
 
 export async function saveAccount(account: AdminAccount) {
   const validatedAccount = adminAccountSchema.parse(account);
-  const { error } = await supabaseService
+  const { error } = await supabase()
     .from("accounts")
     .upsert(accountToDbRow(validatedAccount), { onConflict: "id" });
 
@@ -307,7 +319,7 @@ export async function saveAccount(account: AdminAccount) {
 
 export async function saveAccounts(accounts: AdminAccount[]) {
   const rows = accounts.map((account) => accountToDbRow(adminAccountSchema.parse(account)));
-  const { error } = await supabaseService
+  const { error } = await supabase()
     .from("accounts")
     .upsert(rows, { onConflict: "id" });
 
@@ -315,7 +327,7 @@ export async function saveAccounts(accounts: AdminAccount[]) {
 }
 
 export async function deleteAccount(id: string) {
-  const { error } = await supabaseService.from("accounts").delete().eq("id", id);
+  const { error } = await supabase().from("accounts").delete().eq("id", id);
   if (error) throw new Error(`deleteAccount failed: ${error.message}`);
 }
 
