@@ -155,6 +155,10 @@ create table if not exists public.marketing_config (
   id text primary key default 'main', meta_pixel_id text not null default '', meta_pixel_enabled boolean not null default false,
   meta_capi_token text not null default '', meta_capi_enabled boolean not null default false, updated_at timestamptz not null default now()
 );
+create table if not exists public.admin_login_attempts (
+  id uuid primary key default gen_random_uuid(), ip_hash text not null, attempted_at timestamptz not null default now()
+);
+create index if not exists admin_login_attempts_window_idx on public.admin_login_attempts (ip_hash, attempted_at desc);
 
 alter table public.products enable row level security;
 alter table public.product_options enable row level security;
@@ -164,9 +168,11 @@ alter table public.orders enable row level security;
 alter table public.accounts enable row level security;
 alter table public.page_events enable row level security;
 alter table public.marketing_config enable row level security;
+alter table public.admin_login_attempts enable row level security;
 -- No anon/authenticated policies: private data is reachable only with the
 -- server-only service role. Do not add public catalog policies without an owner decision.
 revoke all on public.products, public.product_options, public.settings, public.stock_alerts, public.orders, public.accounts, public.page_events, public.marketing_config from anon, authenticated;
+revoke all on public.admin_login_attempts from anon, authenticated;
 
 drop trigger if exists products_set_updated_at on public.products;
 create trigger products_set_updated_at before update on public.products for each row execute function public.set_updated_at();

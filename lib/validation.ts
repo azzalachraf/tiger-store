@@ -1,6 +1,7 @@
 import { z } from "zod";
 
 export const paymentMethodSchema = z.enum(["BaridiMob", "CCP", "RedotPay"]);
+export const adminLoginInputSchema = z.object({ email: z.string().trim().email().max(180), password: z.string().min(1).max(512), next: z.string().trim().max(512).optional() });
 export const orderStatusSchema = z.enum(["pending", "paid", "delivered", "cancelled", "refunded"]);
 export const accountStatusSchema = z.enum(["Available", "Sold", "Expired", "Problem"]);
 export const stockAlertInputSchema = z.object({
