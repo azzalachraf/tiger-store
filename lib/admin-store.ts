@@ -14,9 +14,13 @@ function supabase() {
 
 function enrichCatalogProduct(product: Product): Product {
   const catalogProduct = getCatalogProductById(product.id) ?? getCatalogProductBySlug(product.slug);
+  const stableOptions = product.priceOptions?.map((option, index) => ({
+    ...option,
+    id: option.id || catalogProduct?.priceOptions?.[index]?.id || `${product.id}:option-${index + 1}`,
+  }));
   return catalogProduct
-    ? { ...catalogProduct, ...product, details: product.details ?? catalogProduct.details, faqs: product.faqs ?? catalogProduct.faqs }
-    : product;
+    ? { ...catalogProduct, ...product, duration: product.duration || catalogProduct.duration, durationAr: product.durationAr || catalogProduct.durationAr, priceOptions: stableOptions, details: product.details ?? catalogProduct.details, faqs: product.faqs ?? catalogProduct.faqs }
+    : { ...product, priceOptions: stableOptions };
 }
 
 /* ------------------------------------------------------------------ */

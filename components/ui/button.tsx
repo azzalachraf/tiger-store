@@ -11,8 +11,8 @@ const buttonVariants = cva(
         default:
           "bg-tiger-ember text-[#111111] hover:bg-[#e76800] active:bg-[#d65d00]",
         secondary:
-          "border border-[#DDD7CE] bg-[#F3F0EA] text-[#151515] hover:bg-[#E7E3DC]",
-        ghost: "text-[#151515] hover:bg-[#EFEDE8]",
+          "border border-[var(--border-color)] bg-[var(--surface)] text-[var(--text)] hover:bg-[var(--page)]",
+        ghost: "text-[var(--text)] hover:bg-[var(--page)]",
       },
       size: {
         default: "px-5 py-3",

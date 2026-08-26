@@ -22,13 +22,13 @@ const optionalPositiveNumberSchema = z.preprocess((value) => {
 }, z.coerce.number().int().positive().optional());
 
 export const productPriceOptionSchema = z.object({
-  id: z.string().trim().min(1).max(160),
+  id: z.string().trim().max(160).optional().default(""),
   label: z.string().trim().min(1).max(120),
   labelAr: z.string().trim().min(1).max(120),
   price: z.coerce.number().int().positive(),
   oldPrice: optionalPositiveNumberSchema,
-  duration: z.string().trim().min(1).max(120),
-  durationAr: z.string().trim().min(1).max(120),
+  duration: z.string().trim().max(120),
+  durationAr: z.string().trim().max(120),
   available: z.boolean().optional().default(true),
   compatibilityAr: optionalTextSchema,
   compatibilityEn: optionalTextSchema,
@@ -75,8 +75,8 @@ export const productSchema = z.object({
   price: z.coerce.number().int().nonnegative(),
   oldPrice: optionalPositiveNumberSchema,
   currency: z.literal("DZD"),
-  duration: z.string().trim().min(1).max(120),
-  durationAr: z.string().trim().min(1).max(120),
+  duration: z.string().trim().max(120),
+  durationAr: z.string().trim().max(120),
   shortDescriptionAr: z.string().trim().max(1200),
   shortDescriptionEn: z.string().trim().max(1200),
   featuresAr: z.array(z.string().trim().min(1).max(240)).default([]),

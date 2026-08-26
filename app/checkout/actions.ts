@@ -7,6 +7,7 @@ import { receiptOrderInputSchema } from "@/lib/validation";
 import { getSupabaseServiceClient } from "@/lib/supabase";
 import type { AdminOrder, CartItem, Product, ProductPriceOption } from "@/lib/types";
 import { notifyOwnerOfReceipt } from "@/lib/whatsapp-notifications";
+import { logger } from "@/lib/logger";
 
 const MAX_RECEIPT_BYTES = 5 * 1024 * 1024;
 const receiptTypes = new Map<string, string>([["image/jpeg", "jpg"], ["image/png", "png"], ["image/webp", "webp"]]);
@@ -34,7 +35,7 @@ async function resolveItems(lines: { slug: string; optionId: string; quantity: n
   return items;
 }
 
-export async function submitReceiptOrderAction(formData: FormData) {
+async function createReceiptOrder(formData: FormData) {
   const receipt = formData.get("receipt");
   if (!(receipt instanceof File) || receipt.size === 0 || receipt.size > MAX_RECEIPT_BYTES || !receiptTypes.has(receipt.type)) throw new Error("Upload a PNG, JPG, or WebP receipt no larger than 5 MB.");
   const parsed = receiptOrderInputSchema.parse({
@@ -65,4 +66,13 @@ export async function submitReceiptOrderAction(formData: FormData) {
   await notifyOwnerOfReceipt(order);
   revalidatePath("/admin", "layout");
   return { id: order.id, total: order.total };
+}
+
+export async function submitReceiptOrderAction(formData: FormData) {
+  try {
+    return { ok: true as const, order: await createReceiptOrder(formData) };
+  } catch (error) {
+    logger.error("checkout receipt order failed", error);
+    return { ok: false as const, message: "We could not save the order. Check your information and receipt, then try again." };
+  }
 }
