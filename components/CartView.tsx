@@ -65,9 +65,9 @@ export function CartView({ products }: CartViewProps) {
     updateCart(items.filter((item) => item.id !== itemId));
   }
 
-  function changeVariant(item: CartItem, optionLabel: string) {
+  function changeVariant(item: CartItem, optionId: string) {
     const product = products.find((entry) => entry.id === item.productId);
-    const offer = product ? getProductOffers(product).find((entry) => entry.label === optionLabel) : undefined;
+    const offer = product ? getProductOffers(product).find((entry) => entry.id === optionId) : undefined;
     if (!product || !offer) return;
 
     const replacement = createCartItem(product, offer, item.quantity);
@@ -122,12 +122,12 @@ export function CartView({ products }: CartViewProps) {
 
                         {offers.length > 1 ? (
                           <select
-                            value={item.option}
+                            value={item.optionId}
                             onChange={(event) => changeVariant(item, event.target.value)}
                             className="mt-3 min-h-11 w-full rounded-xl border border-white/10 bg-black px-3 text-sm text-white outline-none focus:border-tiger-ember"
                           >
                             {offers.map((offer) => (
-                              <option key={offer.label} value={offer.label}>
+                              <option key={offer.id} value={offer.id}>
                                 {offer.label} - {formatPriceDZD(offer.price, locale, currency)}
                               </option>
                             ))}

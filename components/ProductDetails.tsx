@@ -12,6 +12,7 @@ import { cn } from "@/lib/utils";
 import { t } from "@/lib/i18n";
 import { useLocale } from "@/lib/useLocale";
 import { trackViewContent } from "@/lib/meta-pixel";
+import { StockAlertForm } from "@/components/StockAlertForm";
 import { detailValue, optionValue, productValue, translateSupport } from "@/lib/product-localization";
 
 type Offer = ProductPriceOption & { key: string };
@@ -19,7 +20,7 @@ const money = formatDzd;
 
 export function ProductDetails({ product }: { product: Product }) {
   const { locale } = useLocale();
-  const offers = useMemo<Offer[]>(() => (product.priceOptions?.length ? product.priceOptions : [{ label: product.duration || "Standard", labelAr: product.durationAr || "Standard", price: product.price, duration: product.duration, durationAr: product.durationAr, available: product.available }]).map((offer) => ({ ...offer, key: offer.label })), [product]);
+  const offers = useMemo<Offer[]>(() => (product.priceOptions?.length ? product.priceOptions : [{ id: `${product.id}:default`, label: product.duration || "Standard", labelAr: product.durationAr || "Standard", price: product.price, duration: product.duration, durationAr: product.durationAr, available: product.available }]).map((offer) => ({ ...offer, key: offer.id })), [product]);
   const [selectedKey, setSelectedKey] = useState(offers[0]?.key ?? "default");
   const selected = offers.find((offer) => offer.key === selectedKey) ?? offers[0];
   const unavailable = !product.available || !selected || selected.available === false;
@@ -28,7 +29,7 @@ export function ProductDetails({ product }: { product: Product }) {
   const info = [
     [t(locale, "duration"), selected && optionValue(selected, locale, "duration")], [t(locale, "compatibility"), selected && (optionValue(selected, locale, "compatibility") || detailValue(details, locale, "compatibility"))], [t(locale, "activationType"), detailValue(details, locale, "activation") || productValue(product, locale, "activation")], [t(locale, "activationTime"), t(locale, "activationMessage")], [t(locale, "warranty"), detailValue(details, locale, "warranty")], ["Account type", detailValue(details, locale, "account")], ["Included credits", detailValue(details, locale, "credits")], ["Storage", detailValue(details, locale, "storage")],
   ].filter((item): item is [string, string] => Boolean(item[1]));
-  const checkoutHref = selected ? `/checkout?product=${encodeURIComponent(product.slug)}&option=${encodeURIComponent(selected.label)}` : "/checkout";
+  const checkoutHref = selected ? `/checkout?product=${encodeURIComponent(product.slug)}&option=${encodeURIComponent(selected.id)}` : "/checkout";
   return <section className="space-y-8" dir={locale === "ar" ? "rtl" : "ltr"}>
     <nav className="text-sm font-bold text-[#5F6368]"><Link href="/" className="hover:text-[#C54E00]">{t(locale, "home")}</Link><span className="mx-2">/</span><Link href={`/categories/${categorySlug(product.category)}`} className="hover:text-[#C54E00]">{product.category}</Link><span className="mx-2">/</span><span className="text-[#151515]" dir="ltr">{product.name}</span></nav>
     <div className="grid gap-6 lg:grid-cols-2 lg:items-start">
@@ -41,7 +42,7 @@ export function ProductDetails({ product }: { product: Product }) {
         <div className="mt-7 border-y border-black/10 py-5"><div className="flex flex-wrap items-end justify-between gap-3"><div><p className="text-xs font-black uppercase tracking-[.14em] text-black/55">{t(locale, "price")}</p><p className="mt-1 text-3xl font-black text-[#d85b00]">{selected && selected.price > 0 ? money(selected.price) : "Price unavailable"}</p></div><p className={`text-sm font-black ${unavailable ? "text-black/45" : "text-emerald-700"}`}>{unavailable ? t(locale, "outOfStock") : t(locale, "inStock")}</p></div></div>
         <div className="mt-5 grid gap-3">{info.map(([label, content]) => <div key={label} className="flex items-start justify-between gap-5 text-sm"><span className="shrink-0 font-bold text-black/50">{label}</span><span className="text-right font-bold leading-6">{content}</span></div>)}</div>
         {detailValue(details, locale, "notice") && <p className="mt-5 border-l-2 border-tiger-ember pl-3 text-sm font-bold leading-6 text-black/70">{detailValue(details, locale, "notice")}</p>}
-        {unavailable ? <Button disabled className="mt-7 min-h-12 w-full rounded-full">{t(locale, "outOfStock")}</Button> : <Button asChild className="mt-7 min-h-12 w-full rounded-full"><Link href={checkoutHref}>{t(locale, "buyNow")}</Link></Button>}
+        {unavailable ? <><Button disabled className="mt-7 min-h-12 w-full rounded-full">{t(locale, "outOfStock")}</Button><StockAlertForm productId={product.id} optionId={selected?.id} /></> : <Button asChild className="mt-7 min-h-12 w-full rounded-full"><Link href={checkoutHref}>{t(locale, "buyNow")}</Link></Button>}
       </aside>
     </div>
     <section className="rounded-xl border border-[var(--border-color)] bg-[var(--surface)] p-5 sm:p-7"><h2 className="text-2xl font-black text-[var(--text)]">{t(locale, "productDetails")}</h2><ul className="mt-5 grid gap-3 sm:grid-cols-2">{(locale === "ar" ? product.featuresAr : product.featuresEn).map((feature) => <li key={feature} className="flex items-center gap-3 text-sm font-bold leading-6 text-[var(--text)]"><CheckCircle2 className="h-4 w-4 shrink-0 text-[#C54E00]" />{translateSupport(feature, locale)}</li>)}</ul></section>

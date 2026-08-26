@@ -10,6 +10,7 @@ export function getProductOffers(product: Product): ProductPriceOption[] {
 
   return [
     {
+      id: `${product.id}:default`,
       label: product.duration,
       labelAr: product.durationAr,
       price: product.price,
@@ -20,19 +21,20 @@ export function getProductOffers(product: Product): ProductPriceOption[] {
   ];
 }
 
-export function getCartItemId(productId: string, option: string) {
-  return `${productId}:${option}`;
+export function getCartItemId(productId: string, optionId: string) {
+  return `${productId}:${optionId}`;
 }
 
 export function createCartItem(product: Product, offer: ProductPriceOption, quantity = 1): CartItem {
   return {
-    id: getCartItemId(product.id, offer.label),
+    id: getCartItemId(product.id, offer.id),
     productId: product.id,
     slug: product.slug,
     name: product.name,
     nameAr: product.nameAr,
     image: product.image,
     option: offer.label,
+    optionId: offer.id,
     optionAr: offer.labelAr,
     duration: offer.duration,
     durationAr: offer.durationAr,

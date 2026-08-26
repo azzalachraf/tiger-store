@@ -87,6 +87,7 @@ function parseVariants(value: string): ProductPriceOption[] | undefined {
     const parsed = JSON.parse(value) as ProductPriceOption[];
     const variants = parsed
       .map((variant) => ({
+        id: String(variant.id || crypto.randomUUID()),
         label: String(variant.label ?? "").trim(),
         labelAr: String(variant.labelAr || variant.label || "").trim(),
         price: Number(variant.price),

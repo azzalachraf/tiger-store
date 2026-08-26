@@ -99,7 +99,7 @@ export function CheckoutView({ products, directProductSlug, directOption, settin
       if (!current.length && directProductSlug) {
         const product = products.find((entry) => entry.slug === directProductSlug);
         const offer = product
-          ? getProductOffers(product).find((entry) => entry.label === directOption) ??
+          ? getProductOffers(product).find((entry) => entry.id === directOption) ??
             getProductOffers(product)[0]
           : undefined;
 

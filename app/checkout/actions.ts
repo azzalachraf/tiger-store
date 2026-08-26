@@ -29,12 +29,12 @@ export async function submitOrderAction(data: {
     const product = await getProductById(submitted.productId);
     if (!product || !product.available) throw new Error("One or more products are unavailable.");
     const offer = product.priceOptions?.length
-      ? product.priceOptions.find((item) => item.label === submitted.option)
-      : { label: product.duration, labelAr: product.durationAr, duration: product.duration, durationAr: product.durationAr, price: product.price, available: product.available };
+      ? product.priceOptions.find((item) => item.id === submitted.optionId)
+      : { id: `${product.id}:default`, label: product.duration, labelAr: product.durationAr, duration: product.duration, durationAr: product.durationAr, price: product.price, available: product.available };
     if (!offer || offer.available === false || offer.price <= 0) throw new Error("One or more selected offers are unavailable.");
     authoritativeProducts.push({
-      id: `${product.id}:${offer.label}`, productId: product.id, slug: product.slug, name: product.name, nameAr: product.nameAr,
-      image: product.image, option: offer.label, optionAr: offer.labelAr, duration: offer.duration, durationAr: offer.durationAr,
+      id: `${product.id}:${offer.id}`, productId: product.id, slug: product.slug, name: product.name, nameAr: product.nameAr,
+      image: product.image, option: offer.label, optionId: offer.id, optionAr: offer.labelAr, duration: offer.duration, durationAr: offer.durationAr,
       price: offer.price, quantity: submitted.quantity,
     });
   }

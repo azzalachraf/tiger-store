@@ -14,9 +14,7 @@ type ProductFormProps = {
   product?: Product;
 };
 
-type EditableVariant = ProductPriceOption & {
-  id: string;
-};
+type EditableVariant = ProductPriceOption;
 
 export function ProductForm({ product }: ProductFormProps) {
   const existingCategory = categories.some((category) => category.id === product?.category);
@@ -27,7 +25,7 @@ export function ProductForm({ product }: ProductFormProps) {
     (product?.priceOptions ?? []).map((option, index) => ({
       ...option,
       available: option.available !== false,
-      id: `${option.label}-${index}`,
+      id: option.id || `${product?.id ?? "product"}:${index}`,
     })),
   );
 
@@ -36,6 +34,7 @@ export function ProductForm({ product }: ProductFormProps) {
     () =>
       JSON.stringify(
         variants.map((variant) => ({
+          id: variant.id,
           label: variant.label,
           labelAr: variant.labelAr,
           duration: variant.duration,
