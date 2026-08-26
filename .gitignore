@@ -1,7 +1,11 @@
 node_modules
 .next
+tsconfig.tsbuildinfo
 out
 dist
+outputs/
+Cards/
+Hero/
 .env
 .env*.local
 *.log
