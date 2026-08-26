@@ -64,7 +64,7 @@ Use optimized `.webp` images where possible. Product image paths are editable fr
 
 ## Data Storage
 
-Development admin storage uses:
+The pre-migration source export remains in:
 
 ```txt
 data/admin-store.json
@@ -76,7 +76,7 @@ This JSON-backed abstraction is in:
 lib/admin-store.ts
 ```
 
-For production, replace that file with Supabase or another database-backed implementation.
+Supabase is the application source of truth for products, settings, orders, stock alerts, and private receipts. Apply `supabase/schema.sql` manually, then follow [the catalogue migration guide](docs/catalogue-migration.md). Do not delete the JSON export until the import is verified.
 
 ## Checkout
 

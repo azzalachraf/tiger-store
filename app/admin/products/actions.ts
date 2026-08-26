@@ -9,15 +9,13 @@ import { getSupabaseServiceClient } from "@/lib/supabase";
 import { Product, ProductDetails, ProductPriceOption } from "@/lib/types";
 import { productPriceOptionSchema } from "@/lib/validation";
 
-const supabaseService = getSupabaseServiceClient();
-
 function text(formData: FormData, key: string) {
   return String(formData.get(key) ?? "").trim();
 }
 
 function numberValue(formData: FormData, key: string) {
   const value = Number(formData.get(key));
-  return Number.isFinite(value) && value > 0 ? value : undefined;
+  return Number.isInteger(value) && value > 0 ? value : undefined;
 }
 
 function fileExtension(file: File) {
@@ -60,7 +58,8 @@ async function saveUploadedProductImage(formData: FormData, slug: string) {
   const bytes = Buffer.from(await uploaded.arrayBuffer());
   const filename = `${safeFileBase(slug)}-${Date.now()}.${extension}`;
 
-  const { error } = await supabaseService.storage
+  const client = getSupabaseServiceClient();
+  const { error } = await client.storage
     .from("product-images")
     .upload(filename, bytes, { contentType: uploaded.type, upsert: true });
 
@@ -68,7 +67,7 @@ async function saveUploadedProductImage(formData: FormData, slug: string) {
     throw new Error(`Image upload failed: ${error.message}`);
   }
 
-  const { data: urlData } = supabaseService.storage
+  const { data: urlData } = client.storage
     .from("product-images")
     .getPublicUrl(filename);
 
