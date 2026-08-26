@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { FormEvent, useEffect, useMemo, useState } from "react";
-import { CheckCircle2, CreditCard, ShieldCheck, Upload } from "lucide-react";
+import { CheckCircle2, Upload } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { addCartItem, createCartItem, getCartSubtotal, getProductOffers, readCart, writeCart } from "@/lib/cart";
 import { submitReceiptOrderAction } from "@/app/checkout/actions";
