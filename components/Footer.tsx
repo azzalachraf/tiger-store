@@ -18,7 +18,7 @@ export function Footer({ disclaimer }: { disclaimer?: string }) {
         <FooterGroup title={t(locale, "explore")} links={[['/shop', t(locale, "shop")], ['/categories', t(locale, "categories")], ['/payment-methods', t(locale, "paymentMethods")], ['/faq', t(locale, "faq")]]} />
         <div>
           <h2 className="font-black">{t(locale, "support")}</h2>
-          <div className="mt-3 grid gap-2 text-sm text-[#F3F0EA]/75"><Link href="/contact" className="hover:text-[#FF7300]">{t(locale, "contact")}</Link><Link href="/refund-policy" className="hover:text-[#FF7300]">{t(locale, "refundPolicy")}</Link><a href="https://www.instagram.com/tigerr_store_dz/" target="_blank" rel="noreferrer" className="hover:text-[#FF7300]">Instagram</a><a href="https://www.facebook.com/people/Tiger-Store/61589903873726/" target="_blank" rel="noreferrer" className="hover:text-[#FF7300]">Facebook</a></div>
+          <div className="mt-3 grid gap-2 text-sm text-[#F3F0EA]/75"><Link href="/contact" className="hover:text-[#FF7300]">{t(locale, "contact")}</Link><Link href="/refund-policy" className="hover:text-[#FF7300]">{t(locale, "refundPolicy")}</Link><Link href="/privacy-policy" className="hover:text-[#FF7300]">{locale === "ar" ? "الخصوصية" : "Privacy"}</Link><a href="https://wa.me/213556974593" className="phone-ltr hover:text-[#FF7300]">+213 556 97 45 93</a><a href="https://www.instagram.com/tigerr_store_dz/" target="_blank" rel="noreferrer" className="hover:text-[#FF7300]">Instagram</a></div>
         </div>
       </div>
       <div className="border-t border-[#F3F0EA]/15 px-3 py-4 text-center text-xs text-[#F3F0EA]/55">{t(locale, "copyright")}</div>

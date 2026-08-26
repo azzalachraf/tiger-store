@@ -102,13 +102,13 @@ export function CartView({ products }: CartViewProps) {
                   <article key={item.id} className="motion-card rounded-md border border-white/10 bg-white/[0.045] p-3 shadow-[0_18px_44px_rgba(0,0,0,0.26)]">
                     <div className="grid grid-cols-[86px_1fr] gap-3 sm:grid-cols-[104px_1fr]">
                       <div className="relative aspect-[4/5] overflow-hidden rounded-xl border border-white/10 bg-black">
-                        <Image src={item.image} alt={item.name} fill sizes="104px" className="object-contain p-1" />
+                        <Image src={item.image} alt={locale === "ar" ? item.nameAr : item.name} fill sizes="104px" className="object-contain p-1" />
                       </div>
                       <div className="min-w-0">
                         <div className="flex items-start justify-between gap-2">
                           <div className="min-w-0">
-                            <h2 className="truncate font-black text-white">{item.name}</h2>
-                            <p className="mt-1 text-xs font-bold text-white/52">{item.option}</p>
+                            <h2 className="truncate font-black text-white">{locale === "ar" ? item.nameAr : item.name}</h2>
+                            <p className="mt-1 text-xs font-bold text-white/52">{locale === "ar" ? item.optionAr : item.option}</p>
                           </div>
                           <button
                             type="button"
@@ -128,7 +128,7 @@ export function CartView({ products }: CartViewProps) {
                           >
                             {offers.map((offer) => (
                               <option key={offer.id} value={offer.id}>
-                                {offer.label} - {formatPriceDZD(offer.price, locale, currency)}
+                                {locale === "ar" ? offer.labelAr : offer.label} - {formatPriceDZD(offer.price, locale, currency)}
                               </option>
                             ))}
                           </select>
@@ -140,7 +140,7 @@ export function CartView({ products }: CartViewProps) {
                               type="button"
                               onClick={() => updateQuantity(item.id, item.quantity - 1)}
                               className="tap-feedback h-10 w-10 text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-tiger-ember"
-                              aria-label="Decrease quantity"
+                              aria-label={locale === "ar" ? "تقليل الكمية" : "Decrease quantity"}
                             >
                               <Minus className="mx-auto h-4 w-4" />
                             </button>
@@ -149,7 +149,7 @@ export function CartView({ products }: CartViewProps) {
                               type="button"
                               onClick={() => updateQuantity(item.id, item.quantity + 1)}
                               className="tap-feedback h-10 w-10 text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-tiger-ember"
-                              aria-label="Increase quantity"
+                              aria-label={locale === "ar" ? "زيادة الكمية" : "Increase quantity"}
                             >
                               <Plus className="mx-auto h-4 w-4" />
                             </button>

@@ -1,22 +1,13 @@
-import Image from "next/image";
+"use client";
+
+import Link from "next/link";
+import { ArrowUpLeft, CheckCircle2 } from "lucide-react";
+import { useLocale } from "@/lib/useLocale";
 
 export function Hero() {
-  return (
-    <section className="border-b border-white/10 bg-[#111]" aria-label="Tiger Store digital subscriptions">
-      <div className="mx-auto max-w-[1440px] px-3 pb-3 pt-1 sm:px-5 sm:pb-5 lg:px-8 lg:pb-6">
-        <div className="overflow-hidden rounded-md border border-white/10 bg-[#f7f0e8] shadow-[0_22px_60px_rgba(0,0,0,0.3)]">
-          <div className="relative aspect-[1672/941]">
-            <Image
-              src="/hero/tiger-store-hero.webp"
-              alt="Tiger Store — اشتراكات رقمية في مكان واحد، featuring AI, design, learning, and software subscriptions"
-              fill
-              priority
-              sizes="(min-width: 1440px) 1440px, (min-width: 1024px) calc(100vw - 64px), (min-width: 640px) calc(100vw - 40px), calc(100vw - 24px)"
-              className="object-contain"
-            />
-          </div>
-        </div>
-      </div>
-    </section>
-  );
+  const { locale } = useLocale();
+  const content = locale === "ar"
+    ? { eyebrow: "اشتراكات رقمية في الجزائر", title: "اختر خطتك بثقة، وخلي الباقي واضح.", body: "عروض رقمية بخيارات واضحة، دفع تحويل يدوي، ورفع وصل إلزامي قبل بدء المراجعة.", cta: "تصفح المنتجات", note: "التفعيل عادةً خلال 15 دقيقة إلى 12 ساعة بعد تأكيد الدفع." }
+    : { eyebrow: "Digital subscriptions in Algeria", title: "Choose your plan with confidence.", body: "Clear digital offers, manual-transfer payment, and a required receipt before review begins.", cta: "Browse products", note: "Activation is usually 15 minutes–12 hours after payment verification." };
+  return <section className="hero-shell" aria-label={content.eyebrow}><div className="mx-auto max-w-[1180px] px-4 py-8 sm:px-6 sm:py-12 lg:px-8 lg:py-16"><div className="hero-card"><div><p className="section-kicker">{content.eyebrow}</p><h1>{content.title}</h1><p className="hero-copy">{content.body}</p><Link href="/shop" className="hero-action">{content.cta}<ArrowUpLeft className="h-4 w-4" aria-hidden="true" /></Link></div><p className="hero-note"><CheckCircle2 className="h-5 w-5 shrink-0 text-[#C54E00]" aria-hidden="true" />{content.note}</p></div></div></section>;
 }

@@ -7,6 +7,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { categorySlug } from "@/lib/categories";
 import { formatDzd } from "@/lib/currency";
+import { addCartItem, createCartItem } from "@/lib/cart";
 import { Product, ProductPriceOption } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { t } from "@/lib/i18n";
@@ -22,6 +23,7 @@ export function ProductDetails({ product }: { product: Product }) {
   const { locale } = useLocale();
   const offers = useMemo<Offer[]>(() => (product.priceOptions?.length ? product.priceOptions : [{ id: `${product.id}:default`, label: product.duration || "Standard", labelAr: product.durationAr || "Standard", price: product.price, duration: product.duration, durationAr: product.durationAr, available: product.available }]).map((offer) => ({ ...offer, key: offer.id })), [product]);
   const [selectedKey, setSelectedKey] = useState(offers[0]?.key ?? "default");
+  const [added, setAdded] = useState(false);
   const selected = offers.find((offer) => offer.key === selectedKey) ?? offers[0];
   const unavailable = !product.available || !selected || selected.available === false;
   const details = product.details;
@@ -30,6 +32,9 @@ export function ProductDetails({ product }: { product: Product }) {
     [t(locale, "duration"), selected && optionValue(selected, locale, "duration")], [t(locale, "compatibility"), selected && (optionValue(selected, locale, "compatibility") || detailValue(details, locale, "compatibility"))], [t(locale, "activationType"), detailValue(details, locale, "activation") || productValue(product, locale, "activation")], [t(locale, "activationTime"), t(locale, "activationMessage")], [t(locale, "warranty"), detailValue(details, locale, "warranty")], [t(locale, "accountType"), detailValue(details, locale, "account")], [t(locale, "includedCredits"), detailValue(details, locale, "credits")], [t(locale, "storage"), detailValue(details, locale, "storage")],
   ].filter((item): item is [string, string] => Boolean(item[1]));
   const checkoutHref = selected ? `/checkout?product=${encodeURIComponent(product.slug)}&option=${encodeURIComponent(selected.id)}` : "/checkout";
+  const isArabic = locale === "ar";
+  const actionCopy = isArabic ? { add: "أضف إلى السلة", added: "تمت الإضافة إلى السلة", payment: "الدفع والتفعيل", paymentBody: "اختر الخطة، أكمل بيانات الطلب، ثم حوّل المبلغ وارفع وصل الدفع. يبدأ التفعيل بعد تأكيد الدفع.", policy: "الضمان والاسترجاع", policyBody: "إذا كان الخلل من طرف Tiger Store ومشمولاً بالضمان، نحاول الاستبدال أولاً. إذا تعذّر ذلك، يُحسب استرجاع الجزء غير المستعمل من الضمان بالدينار الصحيح. المشاكل الناتجة عن العميل غير مشمولة." } : { add: "Add to cart", added: "Added to cart", payment: "Payment and activation", paymentBody: "Choose the plan, complete the order details, then transfer and upload the receipt. Activation begins after payment verification.", policy: "Warranty and refunds", policyBody: "For a Tiger Store-caused covered failure, we attempt replacement first. If impossible, the unused covered period is refunded proportionally in whole DZD. Customer-caused problems are excluded." };
+  function addSelectedToCart() { if (!selected || unavailable) return; addCartItem(createCartItem(product, selected)); setAdded(true); }
   return <section className="space-y-8" dir={locale === "ar" ? "rtl" : "ltr"}>
     <nav className="text-sm font-bold text-[#5F6368]"><Link href="/" className="hover:text-[#C54E00]">{t(locale, "home")}</Link><span className="mx-2">/</span><Link href={`/categories/${categorySlug(product.category)}`} className="hover:text-[#C54E00]">{locale === "ar" ? product.categoryAr : product.category}</Link><span className="mx-2">/</span><span className="text-[#151515]" dir="auto">{locale === "ar" ? product.nameAr : product.name}</span></nav>
     <div className="grid gap-6 lg:grid-cols-2 lg:items-start">
@@ -42,10 +47,11 @@ export function ProductDetails({ product }: { product: Product }) {
         <div className="mt-7 border-y border-black/10 py-5"><div className="flex flex-wrap items-end justify-between gap-3"><div><p className="text-xs font-black tracking-[.14em] text-black/55">{t(locale, "price")}</p><p className="mt-1 text-3xl font-black text-[#d85b00]">{selected && selected.price > 0 ? money(selected.price) : t(locale, "priceUnavailable")}</p></div><p className={`text-sm font-black ${unavailable ? "text-black/45" : "text-emerald-700"}`}>{unavailable ? t(locale, "outOfStock") : t(locale, "inStock")}</p></div></div>
         <div className="mt-5 grid gap-3">{info.map(([label, content]) => <div key={label} className="flex items-start justify-between gap-5 text-sm"><span className="shrink-0 font-bold text-black/50">{label}</span><span className="text-end font-bold leading-6">{content}</span></div>)}</div>
         {detailValue(details, locale, "notice") && <p className="mt-5 border-s-2 border-tiger-ember ps-3 text-sm font-bold leading-6 text-black/70">{detailValue(details, locale, "notice")}</p>}
-        {unavailable ? <><Button disabled className="mt-7 min-h-12 w-full rounded-full">{t(locale, "outOfStock")}</Button><StockAlertForm productSlug={product.slug} optionId={selected?.id} /></> : <Button asChild className="mt-7 min-h-12 w-full rounded-full"><Link href={checkoutHref}>{t(locale, "buyNow")}</Link></Button>}
+        {unavailable ? <><Button disabled className="mt-7 min-h-12 w-full rounded-full">{t(locale, "outOfStock")}</Button><StockAlertForm productSlug={product.slug} optionId={selected?.id} /></> : <div className="mt-7 grid gap-2 sm:grid-cols-2"><Button type="button" onClick={addSelectedToCart} variant="secondary" className="min-h-12 rounded-full">{added ? actionCopy.added : actionCopy.add}</Button><Button asChild className="min-h-12 rounded-full"><Link href={checkoutHref}>{t(locale, "buyNow")}</Link></Button></div>}
       </aside>
     </div>
     <section className="rounded-xl border border-[var(--border-color)] bg-[var(--surface)] p-5 sm:p-7"><h2 className="text-2xl font-black text-[var(--text)]">{t(locale, "productDetails")}</h2><ul className="mt-5 grid gap-3 sm:grid-cols-2">{(locale === "ar" ? product.featuresAr : product.featuresEn).map((feature) => <li key={feature} className="flex items-center gap-3 text-sm font-bold leading-6 text-[var(--text)]"><CheckCircle2 className="h-4 w-4 shrink-0 text-[#C54E00]" />{translateSupport(feature, locale)}</li>)}</ul></section>
+    <section className="grid gap-4 rounded-xl border border-[var(--border-color)] bg-[#FFF2E6] p-5 sm:grid-cols-2 sm:p-7"><article><h2 className="text-lg font-black text-[var(--text)]">{actionCopy.payment}</h2><p className="mt-2 text-sm font-semibold leading-7 text-[var(--muted-text)]">{actionCopy.paymentBody}</p></article><article><h2 className="text-lg font-black text-[var(--text)]">{actionCopy.policy}</h2><p className="mt-2 text-sm font-semibold leading-7 text-[var(--muted-text)]">{actionCopy.policyBody}</p></article></section>
     {product.faqs?.length ? <section className="rounded-xl border border-[var(--border-color)] bg-[var(--surface)] p-5 sm:p-7"><h2 className="text-2xl font-black text-[var(--text)]">{t(locale, "productFaq")}</h2><div className="mt-5 grid gap-3">{product.faqs.map((faq) => <details key={faq.questionEn} className="border-b border-[var(--border-color)] pb-4"><summary className="cursor-pointer font-black text-[var(--text)]">{locale === "ar" ? faq.questionAr : faq.questionEn}</summary><p className="mt-3 text-sm font-semibold leading-7 text-[var(--muted-text)]">{locale === "ar" ? faq.answerAr : faq.answerEn}</p></details>)}</div></section> : null}
   </section>;
 }
