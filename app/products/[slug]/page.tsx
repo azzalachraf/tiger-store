@@ -1,12 +1,14 @@
 import { notFound } from "next/navigation";
+import type { Metadata } from "next";
 import { Footer } from "@/components/Footer";
 import { Header } from "@/components/Header";
 import { ProductCard } from "@/components/ProductCard";
 import { ProductDetails } from "@/components/ProductDetails";
 import { LocalizedText } from "@/components/LocalizedText";
 import { getProductBySlug, getProducts } from "@/lib/admin-store";
+import { categorySlug } from "@/lib/categories";
+import { absoluteUrl, createPageMetadata, serializeJsonLd } from "@/lib/seo";
 import { Product } from "@/lib/types";
-import type { Metadata } from "next";
 
 export const dynamic = "force-dynamic";
 
@@ -14,27 +16,99 @@ type PageProps = {
   params: Promise<{ slug: string }>;
 };
 
+function productDescription(product: Product) {
+  return product.shortDescriptionEn || product.shortDescriptionAr;
+}
+
+function productOffersJsonLd(product: Product, url: string) {
+  const offers = product.priceOptions?.length
+    ? product.priceOptions
+    : [{ label: product.duration, price: product.price, available: product.available }];
+  const availability = product.available
+    ? "https://schema.org/InStock"
+    : "https://schema.org/OutOfStock";
+  const normalizedOffers = offers.map((offer) => ({
+    "@type": "Offer",
+    name: offer.label,
+    priceCurrency: "DZD",
+    price: Math.trunc(offer.price),
+    availability: offer.available === false ? "https://schema.org/OutOfStock" : availability,
+    url,
+  }));
+
+  if (normalizedOffers.length === 1) return normalizedOffers[0];
+
+  const prices = normalizedOffers.map((offer) => offer.price);
+  return {
+    "@type": "AggregateOffer",
+    priceCurrency: "DZD",
+    lowPrice: Math.min(...prices),
+    highPrice: Math.max(...prices),
+    offerCount: normalizedOffers.length,
+    offers: normalizedOffers,
+  };
+}
+
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const { slug } = await params;
   const product = await getProductBySlug(slug);
 
-  if (!product) return { title: "Product" };
-  const description = product.shortDescriptionEn || product.shortDescriptionAr;
-  return { title: product.name, description, alternates: { canonical: `/products/${product.slug}` }, openGraph: { title: product.name, description, url: `/products/${product.slug}`, images: [{ url: product.image, alt: `${product.name} product artwork` }] } };
+  if (!product) {
+    return createPageMetadata({
+      title: "Product Not Found",
+      description: "The requested Tiger Store product is unavailable.",
+      path: "/products",
+      robots: { index: false, follow: false },
+    });
+  }
+
+  const title = product.name;
+  const description = productDescription(product);
+  const path = `/products/${product.slug}`;
+
+  return createPageMetadata({
+    title,
+    description,
+    path,
+    image: product.image,
+    imageAlt: `${product.name} product artwork`,
+  });
 }
 
 export default async function ProductDetailPage({ params }: PageProps) {
   const { slug } = await params;
   const product = await getProductBySlug(slug);
 
-  if (!product) {
-    notFound();
-  }
+  if (!product) notFound();
 
   const products = await getProducts();
-  const relatedProducts = (products as Product[])
+  const relatedProducts = products
     .filter((item) => item.category === product.category && item.id !== product.id)
     .slice(0, 4);
+  const productUrl = absoluteUrl(`/products/${product.slug}`);
+  const productJsonLd = serializeJsonLd({
+    "@context": "https://schema.org",
+    "@type": "Product",
+    name: product.name,
+    description: productDescription(product),
+    image: [absoluteUrl(product.image)],
+    url: productUrl,
+    offers: productOffersJsonLd(product, productUrl),
+  });
+  const breadcrumbJsonLd = serializeJsonLd({
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    itemListElement: [
+      { "@type": "ListItem", position: 1, name: "Home", item: absoluteUrl("/") },
+      {
+        "@type": "ListItem",
+        position: 2,
+        name: product.category,
+        item: absoluteUrl(`/categories/${categorySlug(product.category)}`),
+      },
+      { "@type": "ListItem", position: 3, name: product.name, item: productUrl },
+    ],
+  });
 
   return (
     <>
@@ -42,7 +116,8 @@ export default async function ProductDetailPage({ params }: PageProps) {
       <main className="store-shell min-h-screen px-3 py-6 sm:px-5 sm:py-10 lg:px-8">
         <div className="mx-auto max-w-[1440px]">
           <ProductDetails product={product} />
-          <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify({ "@context": "https://schema.org", "@type": "Product", name: product.name, description: product.shortDescriptionEn, image: [`https://tiger-storedz.com${product.image}`], url: `https://tiger-storedz.com/products/${product.slug}`, offers: product.available && product.price > 0 ? { "@type": "Offer", priceCurrency: "DZD", price: product.price, availability: "https://schema.org/InStock", url: `https://tiger-storedz.com/products/${product.slug}` } : { "@type": "Offer", availability: "https://schema.org/OutOfStock" } }) }} />
+          <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: productJsonLd }} />
+          <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: breadcrumbJsonLd }} />
 
           {relatedProducts.length ? (
             <section className="mt-10">

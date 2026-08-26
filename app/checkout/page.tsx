@@ -2,10 +2,14 @@ import { getProducts, getSettings } from "@/lib/admin-store";
 import { CheckoutView } from "@/components/CheckoutView";
 import { Footer } from "@/components/Footer";
 import { Header } from "@/components/Header";
+import { createPageMetadata } from "@/lib/seo";
 
-export const metadata = {
+export const metadata = createPageMetadata({
   title: "Checkout",
-};
+  description: "Complete your Tiger Store order with your contact details and preferred local payment method.",
+  path: "/checkout",
+  robots: { index: false, follow: false },
+});
 
 type CheckoutPageProps = {
   searchParams: Promise<{ product?: string; option?: string }>;

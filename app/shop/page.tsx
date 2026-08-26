@@ -3,10 +3,13 @@ import { Footer } from "@/components/Footer";
 import { Header } from "@/components/Header";
 import { ShopCatalog } from "@/components/ShopCatalog";
 import { getSiteCategories } from "@/lib/categories";
+import { createPageMetadata } from "@/lib/seo";
 
-export const metadata = {
-  title: "Shop",
-};
+export const metadata = createPageMetadata({
+  title: "Shop Digital Subscriptions",
+  description: "Explore Tiger Store digital subscription plans, product details, prices, and availability in Algeria.",
+  path: "/shop",
+});
 
 export const dynamic = "force-dynamic";
 

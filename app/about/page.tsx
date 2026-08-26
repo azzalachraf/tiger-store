@@ -1,8 +1,11 @@
 import { StaticPage } from "@/components/StaticPage";
+import { createPageMetadata } from "@/lib/seo";
 
-export const metadata = {
-  title: "About",
-};
+export const metadata = createPageMetadata({
+  title: "About Tiger Store",
+  description: "Learn how Tiger Store helps customers in Algeria order digital subscriptions through a clear guest checkout flow.",
+  path: "/about",
+});
 
 export default function AboutPage() {
   return (

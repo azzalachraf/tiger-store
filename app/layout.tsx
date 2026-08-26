@@ -4,63 +4,38 @@ import { MetaPixelProvider } from "@/components/MetaPixelProvider";
 import { PageTracker } from "@/components/PageTracker";
 import { PerformanceProvider } from "@/components/PerformanceProvider";
 import { ThemeBootstrap } from "@/components/ThemeBootstrap";
+import { DEFAULT_OG_IMAGE, SITE_URL } from "@/lib/seo";
 import "./globals.css";
 
 const description =
-  "Tiger Store يوفر اشتراكات رقمية في الجزائر مثل ChatGPT Plus و Gemini Pro و Canva Pro و CapCut Pro و Adobe Creative Cloud والمزيد.";
+  "Digital subscriptions for customers in Algeria, with clear guest checkout and local payment methods.";
 
 export const metadata: Metadata = {
-  metadataBase: new URL("https://tiger-storedz.com"),
+  metadataBase: new URL(SITE_URL),
   title: {
-    default: "Tiger Store - اشتراكات رقمية في الجزائر",
+    default: "Tiger Store | Digital Subscriptions in Algeria",
     template: "%s - Tiger Store",
   },
   description,
-  keywords: [
-    "اشتراكات رقمية الجزائر",
-    "Tiger Store",
-    "ChatGPT Plus Algeria",
-    "Canva Pro Algeria",
-    "CapCut Pro Algeria",
-    "Adobe Creative Cloud Algeria",
-    "Gemini Pro Algeria",
-    "tiger-storedz.com",
-  ],
-  alternates: {
-    canonical: "https://tiger-storedz.com",
-  },
   icons: {
     icon: [{ url: "/icon.png", sizes: "512x512", type: "image/png" }],
     shortcut: "/icon.png",
     apple: [{ url: "/apple-icon.png", sizes: "180x180", type: "image/png" }],
   },
   openGraph: {
-    title: "Tiger Store - اشتراكات رقمية في الجزائر",
+    title: "Tiger Store | Digital Subscriptions in Algeria",
     description,
-    url: "https://tiger-storedz.com",
+    url: "/",
     siteName: "Tiger Store",
-    images: [
-      {
-        url: "/logo/tiger-store-brand.png",
-        width: 640,
-        height: 640,
-        alt: "Tiger Store logo",
-      },
-      {
-        url: "/products/12_ChatGPT_Plus.webp",
-        width: 720,
-        height: 540,
-        alt: "Tiger Store digital subscription preview",
-      },
-    ],
+    images: [{ url: DEFAULT_OG_IMAGE, alt: "Tiger Store digital subscriptions" }],
     locale: "ar_DZ",
     type: "website",
   },
   twitter: {
     card: "summary_large_image",
-    title: "Tiger Store - اشتراكات رقمية في الجزائر",
+    title: "Tiger Store | Digital Subscriptions in Algeria",
     description,
-    images: ["/products/12_ChatGPT_Plus.webp"],
+    images: [DEFAULT_OG_IMAGE],
   },
 };
 

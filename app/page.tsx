@@ -7,8 +7,14 @@ import { Hero } from "@/components/Hero";
 import { ProductCard } from "@/components/ProductCard";
 import { getProducts, getSettings } from "@/lib/admin-store";
 import { getSiteCategories } from "@/lib/categories";
+import { createPageMetadata } from "@/lib/seo";
 
 export const dynamic = "force-dynamic";
+export const metadata = createPageMetadata({
+  title: "Digital Subscriptions in Algeria",
+  description: "Browse digital subscriptions with clear guest checkout and local payment methods for customers in Algeria.",
+  path: "/",
+});
 
 export default async function Home() {
   const products = await getProducts();

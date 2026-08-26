@@ -1,8 +1,11 @@
 import { StaticPage } from "@/components/StaticPage";
+import { createPageMetadata } from "@/lib/seo";
 
-export const metadata = {
-  title: "Privacy",
-};
+export const metadata = createPageMetadata({
+  title: "Privacy Policy",
+  description: "Read how Tiger Store uses the details needed to review orders, prepare activation, and provide support.",
+  path: "/privacy-policy",
+});
 
 export default function PrivacyPolicyPage() {
   return (

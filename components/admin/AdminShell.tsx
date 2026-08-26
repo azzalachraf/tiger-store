@@ -63,7 +63,7 @@ export async function AdminShell({ title, description, children }: AdminShellPro
             </span>
             <span>
               <span className="block text-sm text-white">Tiger Admin</span>
-              <span className="block text-xs font-bold text-tiger-gold">tiger-storedz.com</span>
+              <span className="block text-xs font-bold text-tiger-gold">digitaldz.shop</span>
             </span>
           </Link>
 

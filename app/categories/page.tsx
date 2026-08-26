@@ -5,10 +5,13 @@ import { Header } from "@/components/Header";
 import { LocalizedText } from "@/components/LocalizedText";
 import { getProducts } from "@/lib/admin-store";
 import { getSiteCategories } from "@/lib/categories";
+import { createPageMetadata } from "@/lib/seo";
 
-export const metadata = {
-  title: "Categories",
-};
+export const metadata = createPageMetadata({
+  title: "Digital Subscription Categories",
+  description: "Browse Tiger Store categories for AI, design, education, developer tools, and digital subscriptions.",
+  path: "/categories",
+});
 
 export const dynamic = "force-dynamic";
 

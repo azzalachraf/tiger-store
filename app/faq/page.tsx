@@ -1,12 +1,53 @@
 import { StaticPage } from "@/components/StaticPage";
+import { createPageMetadata, serializeJsonLd } from "@/lib/seo";
 
-export const metadata = {
-  title: "FAQ",
-};
+export const metadata = createPageMetadata({
+  title: "Frequently Asked Questions",
+  description: "Find clear answers about Tiger Store ordering, payment methods, activation, and customer support.",
+  path: "/faq",
+});
+
+const faqSections = [
+  {
+    title: "How do I receive the subscription?",
+    body: "After your order and payment are confirmed, activation details are prepared according to the selected product and plan.",
+  },
+  {
+    title: "How long does activation take?",
+    body: "Activation is usually fast, but timing can vary depending on product availability and the selected subscription.",
+  },
+  {
+    title: "Is there a guarantee?",
+    body: "Yes. Tiger Store provides after-sale support and helps resolve activation problems when they occur.",
+  },
+  {
+    title: "What should I do after payment?",
+    body: "Keep your payment proof and make sure your information is correct, especially the activation email.",
+  },
+  {
+    title: "Do I need an account?",
+    body: "No customer account is required. You can choose a product and complete the order directly.",
+  },
+  {
+    title: "Is payment secure?",
+    body: "Tiger Store supports BaridiMob, CCP, and RedotPay. The correct details are shown during checkout.",
+  },
+];
+
+const faqJsonLd = serializeJsonLd({
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  mainEntity: faqSections.map((section) => ({
+    "@type": "Question",
+    name: section.title,
+    acceptedAnswer: { "@type": "Answer", text: section.body },
+  })),
+});
 
 export default function FaqPage() {
   return (
-    <StaticPage
+    <>
+      <StaticPage
       ar={{
         eyebrow: "الأسئلة الشائعة",
         title: "الأسئلة الشائعة",
@@ -42,33 +83,10 @@ export default function FaqPage() {
         eyebrow: "FAQ",
         title: "Frequently Asked Questions",
         description: "Clear answers about ordering, payment, activation, and support.",
-        sections: [
-          {
-            title: "How do I receive the subscription?",
-            body: "After your order and payment are confirmed, activation details are prepared according to the selected product and plan.",
-          },
-          {
-            title: "How long does activation take?",
-            body: "Activation is usually fast, but timing can vary depending on product availability and the selected subscription.",
-          },
-          {
-            title: "Is there a guarantee?",
-            body: "Yes. Tiger Store provides after-sale support and helps resolve activation problems when they occur.",
-          },
-          {
-            title: "What should I do after payment?",
-            body: "Keep your payment proof and make sure your information is correct, especially the activation email.",
-          },
-          {
-            title: "Do I need an account?",
-            body: "No customer account is required. You can choose a product and complete the order directly.",
-          },
-          {
-            title: "Is payment secure?",
-            body: "Tiger Store supports BaridiMob, CCP, and RedotPay. The correct details are shown during checkout.",
-          },
-        ],
+        sections: faqSections,
       }}
-    />
+      />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: faqJsonLd }} />
+    </>
   );
 }

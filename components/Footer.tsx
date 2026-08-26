@@ -16,7 +16,7 @@ export function Footer({ disclaimer }: { disclaimer?: string }) {
           <div className="mt-3 grid gap-2 text-sm text-[#F3F0EA]/75"><Link href="/contact" className="hover:text-[#FF7300]">Contact</Link><Link href="/refund-policy" className="hover:text-[#FF7300]">Refund policy</Link><a href="https://www.instagram.com/tigerr_store_dz/" target="_blank" rel="noreferrer" className="hover:text-[#FF7300]">Instagram</a><a href="https://www.facebook.com/people/Tiger-Store/61589903873726/" target="_blank" rel="noreferrer" className="hover:text-[#FF7300]">Facebook</a></div>
         </div>
       </div>
-      <div className="border-t border-[#F3F0EA]/15 px-3 py-4 text-center text-xs text-[#F3F0EA]/55">© 2026 Tiger Store · tiger-storedz.com</div>
+      <div className="border-t border-[#F3F0EA]/15 px-3 py-4 text-center text-xs text-[#F3F0EA]/55">© 2026 Tiger Store · digitaldz.shop</div>
     </footer>
   );
 }

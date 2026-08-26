@@ -1,8 +1,11 @@
 import { StaticPage } from "@/components/StaticPage";
+import { createPageMetadata } from "@/lib/seo";
 
-export const metadata = {
-  title: "Terms",
-};
+export const metadata = createPageMetadata({
+  title: "Terms and Conditions",
+  description: "Read Tiger Store’s terms for digital subscription ordering, payment review, and activation.",
+  path: "/terms-and-conditions",
+});
 
 export default function TermsPage() {
   return (

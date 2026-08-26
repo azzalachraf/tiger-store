@@ -6,6 +6,8 @@ import { LocalizedText } from "@/components/LocalizedText";
 import { ProductCard } from "@/components/ProductCard";
 import { getProducts } from "@/lib/admin-store";
 import { categorySlug, getSiteCategories } from "@/lib/categories";
+import { createPageMetadata } from "@/lib/seo";
+import type { Metadata } from "next";
 
 type CategoryPageProps = {
   params: Promise<{ slug: string }>;
@@ -19,14 +21,25 @@ export function generateStaticParams() {
     .map((category) => ({ slug: categorySlug(category.id) }));
 }
 
-export async function generateMetadata({ params }: CategoryPageProps) {
+export async function generateMetadata({ params }: CategoryPageProps): Promise<Metadata> {
   const { slug } = await params;
   const products = await getProducts();
   const category = getSiteCategories(products).find((item) => categorySlug(item.id) === slug);
 
-  return {
-    title: category ? category.name.en : "Category",
-  };
+  if (!category || category.id === "all") {
+    return createPageMetadata({
+      title: "Category Not Found",
+      description: "The requested Tiger Store category is unavailable.",
+      path: "/categories",
+      robots: { index: false, follow: false },
+    });
+  }
+
+  return createPageMetadata({
+    title: `${category.name.en} Digital Subscriptions`,
+    description: `Browse Tiger Store ${category.name.en} digital subscription plans, prices, and availability.`,
+    path: `/categories/${slug}`,
+  });
 }
 
 export default async function CategoryDetailPage({ params }: CategoryPageProps) {

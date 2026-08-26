@@ -1,8 +1,11 @@
 import { StaticPage } from "@/components/StaticPage";
+import { createPageMetadata } from "@/lib/seo";
 
-export const metadata = {
-  title: "Refund Policy",
-};
+export const metadata = createPageMetadata({
+  title: "Refund and Support Policy",
+  description: "Review Tiger Store’s approach to support and activation-related issues for digital subscription orders.",
+  path: "/refund-policy",
+});
 
 const content = {
   eyebrow: "Refund",

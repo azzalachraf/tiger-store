@@ -199,7 +199,7 @@ export function CheckoutView({ products, directProductSlug, directOption, settin
       `Phone: ${phone}`,
       `Notes: ${notes || "None"}`,
       "",
-      "Website: tiger-storedz.com",
+      "Website: digitaldz.shop",
     ].filter(Boolean).join("\n");
 
     const destinationNumber = settings.whatsappNumber.replace(/\D/g, "");

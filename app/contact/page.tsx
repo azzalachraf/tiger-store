@@ -4,10 +4,13 @@ import type { ReactNode } from "react";
 import { Footer } from "@/components/Footer";
 import { Header } from "@/components/Header";
 import { LocalizedText } from "@/components/LocalizedText";
+import { createPageMetadata } from "@/lib/seo";
 
-export const metadata = {
-  title: "Contact",
-};
+export const metadata = createPageMetadata({
+  title: "Contact Tiger Store",
+  description: "Contact Tiger Store on WhatsApp or Instagram for help with digital subscription orders in Algeria.",
+  path: "/contact",
+});
 
 const contactCards = [
   {
@@ -34,7 +37,7 @@ const contactCards = [
   },
   {
     title: "Website",
-    text: "tiger-storedz.com",
+    text: "digitaldz.shop",
     button: <LocalizedText ar="تصفح المتجر" en="Browse Store" />,
     href: "/shop",
     logo: "/logo/tiger-store-ui.png",

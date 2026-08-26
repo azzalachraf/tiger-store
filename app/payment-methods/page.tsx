@@ -4,10 +4,13 @@ import { Footer } from "@/components/Footer";
 import { Header } from "@/components/Header";
 import { LocalizedText } from "@/components/LocalizedText";
 import { getSettings } from "@/lib/admin-store";
+import { createPageMetadata } from "@/lib/seo";
 
-export const metadata = {
-  title: "Payment",
-};
+export const metadata = createPageMetadata({
+  title: "Payment Methods",
+  description: "Review Tiger Store payment methods: BaridiMob, CCP, and RedotPay for digital subscription orders.",
+  path: "/payment-methods",
+});
 
 const methodMeta = [
   {

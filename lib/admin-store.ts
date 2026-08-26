@@ -64,7 +64,7 @@ const defaultSettings: SiteSettings = {
   whatsappNumber: "+213 556 97 45 93",
   instagramUrl: "https://www.instagram.com/tigerr_store_dz/",
   facebookUrl: "https://www.facebook.com/people/Tiger-Store/61589903873726/",
-  domainText: "tiger-storedz.com",
+  domainText: "digitaldz.shop",
   baridiMobRip: "00799999004414930471",
   ccpDetails: "Payment details will be confirmed after order submission.",
   redotPayDetails: "Payment details will be confirmed after order submission.",
