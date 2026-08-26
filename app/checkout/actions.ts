@@ -73,6 +73,7 @@ export async function submitReceiptOrderAction(formData: FormData) {
     return { ok: true as const, order: await createReceiptOrder(formData) };
   } catch (error) {
     logger.error("checkout receipt order failed", error);
-    return { ok: false as const, message: "We could not save the order. Check your information and receipt, then try again." };
+    const code = error instanceof Error && error.message === "Enter a valid Algerian mobile number." ? "invalid_phone" : "save_failed";
+    return { ok: false as const, code };
   }
 }
