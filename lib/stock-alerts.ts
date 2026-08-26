@@ -1,5 +1,6 @@
 import "server-only";
 
+import { getProductBySlug } from "@/lib/admin-store";
 import { getSupabaseServiceClient } from "@/lib/supabase";
 
 const recentRequests = new Map<string, number>();
@@ -12,10 +13,19 @@ export function normalizeAlgerianPhone(value: string) {
   return `+213${national}`;
 }
 
-export async function createStockAlert(input: { productId: string; optionId?: string; phone: string }) {
+export async function createStockAlert(input: { productSlug: string; optionId?: string; phone: string }) {
   const phone = normalizeAlgerianPhone(input.phone);
   if (!phone) throw new Error("Enter a valid Algerian mobile number.");
-  const key = `${input.productId}:${input.optionId ?? "default"}:${phone}`;
+  const product = await getProductBySlug(input.productSlug);
+  if (!product) throw new Error("This product is no longer available.");
+  const option = product.priceOptions?.length
+    ? product.priceOptions.find((item) => item.id === input.optionId)
+    : { id: `${product.id}:default`, available: product.available };
+  if (!option || (product.available && option.available !== false)) {
+    throw new Error("Availability alerts can only be requested for unavailable offers.");
+  }
+
+  const key = `${product.id}:${option.id}:${phone}`;
   const now = Date.now();
   if ((recentRequests.get(key) ?? 0) + REQUEST_COOLDOWN_MS > now) {
     return { created: false, duplicate: true };
@@ -26,8 +36,8 @@ export async function createStockAlert(input: { productId: string; optionId?: st
   const { data: existing, error: existingError } = await supabase
     .from("stock_alerts")
     .select("id")
-    .eq("product_id", input.productId)
-    .eq("option_id", input.optionId ?? "default")
+    .eq("product_id", product.id)
+    .eq("option_id", option.id)
     .eq("phone", phone)
     .eq("status", "pending")
     .maybeSingle();
@@ -36,8 +46,8 @@ export async function createStockAlert(input: { productId: string; optionId?: st
 
   const { error } = await supabase.from("stock_alerts").insert({
     id: crypto.randomUUID(),
-    product_id: input.productId,
-    option_id: input.optionId ?? "default",
+    product_id: product.id,
+    option_id: option.id,
     phone,
     status: "pending",
   });
