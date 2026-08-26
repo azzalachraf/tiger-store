@@ -227,12 +227,7 @@ export async function getSettings(): Promise<SiteSettings> {
   }
 
   if (!data) {
-    // First run – try to insert defaults (ignore errors if table missing)
-    try {
-      await saveSettings(defaultSettings);
-    } catch {
-      // Table may not exist yet during build
-    }
+    // Reads must remain read-only until the owner runs the one-off migration.
     return defaultSettings;
   }
 
