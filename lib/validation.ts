@@ -3,6 +3,11 @@ import { z } from "zod";
 export const paymentMethodSchema = z.enum(["BaridiMob", "CCP", "RedotPay"]);
 export const orderStatusSchema = z.enum(["pending", "paid", "delivered", "cancelled", "refunded"]);
 export const accountStatusSchema = z.enum(["Available", "Sold", "Expired", "Problem"]);
+export const stockAlertInputSchema = z.object({
+  productId: z.string().trim().min(1).max(160),
+  optionId: z.string().trim().min(1).max(160).optional(),
+  phone: z.string().trim().min(6).max(40),
+});
 
 const optionalTextSchema = z.preprocess((value) => {
   if (value === null || value === undefined) return undefined;
@@ -16,6 +21,7 @@ const optionalPositiveNumberSchema = z.preprocess((value) => {
 }, z.coerce.number().positive().optional());
 
 export const productPriceOptionSchema = z.object({
+  id: z.string().trim().min(1).max(160),
   label: z.string().trim().min(1).max(120),
   labelAr: z.string().trim().min(1).max(120),
   price: z.coerce.number().positive(),
@@ -92,6 +98,7 @@ export const cartItemSchema = z.object({
   nameAr: z.string().trim().min(1).max(180),
   image: z.string().trim().min(1).max(2000),
   option: z.string().trim().min(1).max(160),
+  optionId: z.string().trim().min(1).max(160),
   optionAr: z.string().trim().min(1).max(160),
   duration: z.string().trim().min(1).max(160),
   durationAr: z.string().trim().min(1).max(160),

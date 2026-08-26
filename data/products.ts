@@ -14,7 +14,7 @@ function product(input: Omit<Product, "currency" | "details" | "faqs"> & { detai
   return { ...input, currency: "DZD", details: { ...delivery, ...input.details, ...warranty }, faqs: faq(input.name) };
 }
 
-const option = (label: string, labelAr: string, price: number, duration: string, durationAr: string, extras: Partial<ProductPriceOption> = {}): ProductPriceOption => ({ label, labelAr, price, duration, durationAr, available: true, ...extras });
+const option = (label: string, labelAr: string, price: number, duration: string, durationAr: string, extras: Partial<ProductPriceOption> = {}): ProductPriceOption => ({ id: label.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, ""), label, labelAr, price, duration, durationAr, available: true, ...extras });
 
 export const products: Product[] = [
   product({ id: "gemini-pro", slug: "gemini-pro", name: "Gemini AI Pro", nameAr: "Gemini AI Pro", category: "AI", categoryAr: "الذكاء الاصطناعي", price: 900, duration: "18 months", durationAr: "18 شهراً", shortDescriptionAr: "اشتراك Gemini AI Pro يُفعّل على بريد Gmail الشخصي.", shortDescriptionEn: "Gemini AI Pro activated on your personal Gmail account.", featuresAr: ["مدة 18 شهراً", "سعة تخزين 5 تيرابايت", "يتطلب حساب Gmail"], featuresEn: ["18-month duration", "5 TB storage", "Gmail account required"], activationTypeAr: "دعوة إلى Gmail الشخصي", activationTypeEn: "Invitation to personal Gmail", image: "/products/gemini-ai-pro.webp", available: true, featured: true, details: { ...personal, ...noWarranty, storageAr: "5 تيرابايت", storageEn: "5 TB", compatibilityAr: "يتطلب Gmail", compatibilityEn: "Gmail required" } }),

@@ -12,6 +12,7 @@ export type Currency = "DZD";
 export type ProductCategory = string;
 
 export type ProductPriceOption = {
+  id: string;
   label: string;
   labelAr: string;
   price: number;
@@ -87,6 +88,7 @@ export type CartItem = {
   nameAr: string;
   image: string;
   option: string;
+  optionId: string;
   optionAr: string;
   duration: string;
   durationAr: string;
