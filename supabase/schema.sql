@@ -130,6 +130,8 @@ alter table public.orders add column if not exists utm_source text;
 alter table public.orders add column if not exists utm_medium text;
 alter table public.orders add column if not exists utm_campaign text;
 alter table public.orders add column if not exists referrer text;
+alter table public.orders add column if not exists "receiptPath" text;
+alter table public.orders add column if not exists "receiptUploadedAt" text;
 alter table public.orders alter column total type integer using round(total)::integer;
 alter table public.orders drop constraint if exists orders_total_nonnegative;
 alter table public.orders add constraint orders_total_nonnegative check (total >= 0);

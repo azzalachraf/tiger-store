@@ -11,6 +11,9 @@ const serverEnvSchema = z.object({
   SUPABASE_SERVICE_ROLE_KEY: z.string().min(32, "SUPABASE_SERVICE_ROLE_KEY is required"),
   NEXT_PUBLIC_META_PIXEL_ID: z.string().optional().default(""),
   META_CONVERSIONS_API_TOKEN: z.string().optional().default(""),
+  WHATSAPP_ACCESS_TOKEN: z.string().optional().default(""),
+  WHATSAPP_PHONE_NUMBER_ID: z.string().optional().default(""),
+  WHATSAPP_OWNER_PHONE: z.string().optional().default(""),
 });
 
 let cachedEnv: z.infer<typeof serverEnvSchema> | null = null;

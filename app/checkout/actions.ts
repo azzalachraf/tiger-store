@@ -1,99 +1,68 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { saveOrder } from "@/lib/admin-store";
-import { AdminOrder, CartItem, PaymentMethodId } from "@/lib/types";
-import { sendConversionEvent } from "@/lib/meta-capi";
-import { getMarketingConfig } from "@/lib/marketing-store";
-import { recordPageEvent } from "@/lib/page-events";
-import { checkoutOrderInputSchema } from "@/lib/validation";
-import { getProductById } from "@/lib/admin-store";
+import { getProductBySlug, saveOrder } from "@/lib/admin-store";
+import { normalizeAlgerianPhone } from "@/lib/stock-alerts";
+import { receiptOrderInputSchema } from "@/lib/validation";
+import { getSupabaseServiceClient } from "@/lib/supabase";
+import type { AdminOrder, CartItem, Product, ProductPriceOption } from "@/lib/types";
+import { notifyOwnerOfReceipt } from "@/lib/whatsapp-notifications";
 
-export async function submitOrderAction(data: {
-  customerName: string;
-  phone: string;
-  email: string;
-  products: CartItem[];
-  paymentMethod: PaymentMethodId;
-  total: number;
-  notes?: string;
-  utm_source?: string;
-  utm_medium?: string;
-  utm_campaign?: string;
-  referrer?: string;
-  eventId?: string;
-}) {
-  const parsed = checkoutOrderInputSchema.parse(data);
-  const authoritativeProducts: CartItem[] = [];
-  for (const submitted of parsed.products) {
-    const product = await getProductById(submitted.productId);
-    if (!product || !product.available) throw new Error("One or more products are unavailable.");
-    const offer = product.priceOptions?.length
-      ? product.priceOptions.find((item) => item.id === submitted.optionId)
-      : { id: `${product.id}:default`, label: product.duration, labelAr: product.durationAr, duration: product.duration, durationAr: product.durationAr, price: product.price, available: product.available };
-    if (!offer || offer.available === false || offer.price <= 0) throw new Error("One or more selected offers are unavailable.");
-    authoritativeProducts.push({
-      id: `${product.id}:${offer.id}`, productId: product.id, slug: product.slug, name: product.name, nameAr: product.nameAr,
-      image: product.image, option: offer.label, optionId: offer.id, optionAr: offer.labelAr, duration: offer.duration, durationAr: offer.durationAr,
-      price: offer.price, quantity: submitted.quantity,
-    });
+const MAX_RECEIPT_BYTES = 5 * 1024 * 1024;
+const receiptTypes = new Map<string, string>([["image/jpeg", "jpg"], ["image/png", "png"], ["image/webp", "webp"]]);
+
+function hasReceiptMagic(bytes: Uint8Array, type: string) {
+  if (type === "image/png") return bytes.length >= 8 && bytes[0] === 0x89 && bytes[1] === 0x50 && bytes[2] === 0x4e && bytes[3] === 0x47;
+  if (type === "image/jpeg") return bytes.length >= 3 && bytes[0] === 0xff && bytes[1] === 0xd8 && bytes[2] === 0xff;
+  return type === "image/webp" && bytes.length >= 12 && String.fromCharCode(...bytes.slice(8, 12)) === "WEBP";
+}
+
+function offerFor(product: Product, optionId: string): ProductPriceOption | undefined {
+  if (product.priceOptions?.length) return product.priceOptions.find((option) => option.id === optionId);
+  const defaultOffer: ProductPriceOption = { id: `${product.id}:default`, label: product.duration, labelAr: product.durationAr, duration: product.duration, durationAr: product.durationAr, price: product.price, oldPrice: product.oldPrice, available: product.available };
+  return optionId === defaultOffer.id ? defaultOffer : undefined;
+}
+
+async function resolveItems(lines: { slug: string; optionId: string; quantity: number }[]) {
+  const items: CartItem[] = [];
+  for (const line of lines) {
+    const product = await getProductBySlug(line.slug);
+    const offer = product ? offerFor(product, line.optionId) : undefined;
+    if (!product || !product.available || !offer || offer.available === false || offer.price <= 0) throw new Error("One or more selected products are no longer available.");
+    items.push({ id: `${product.id}:${offer.id}`, productId: product.id, slug: product.slug, name: product.name, nameAr: product.nameAr, image: product.image, option: offer.label, optionId: offer.id, optionAr: offer.labelAr, duration: offer.duration, durationAr: offer.durationAr, price: offer.price, quantity: line.quantity });
   }
-  const expectedTotal = authoritativeProducts.reduce((sum, item) => sum + item.price * item.quantity, 0);
+  return items;
+}
 
-  const order: AdminOrder = {
-    id: crypto.randomUUID(),
-    customerName: parsed.customerName,
-    phone: parsed.phone,
-    email: parsed.email || parsed.phone,
-    products: authoritativeProducts,
-    paymentMethod: parsed.paymentMethod,
-    total: expectedTotal,
-    notes: parsed.notes,
-    status: "pending",
-    createdAt: new Date().toISOString(),
-    utm_source: parsed.utm_source,
-    utm_medium: parsed.utm_medium,
-    utm_campaign: parsed.utm_campaign,
-    referrer: parsed.referrer,
-  };
+export async function submitReceiptOrderAction(formData: FormData) {
+  const receipt = formData.get("receipt");
+  if (!(receipt instanceof File) || receipt.size === 0 || receipt.size > MAX_RECEIPT_BYTES || !receiptTypes.has(receipt.type)) throw new Error("Upload a PNG, JPG, or WebP receipt no larger than 5 MB.");
+  const parsed = receiptOrderInputSchema.parse({
+    customerName: formData.get("customerName"), phone: formData.get("phone"), notes: formData.get("notes"), paymentMethod: formData.get("paymentMethod"),
+    lines: JSON.parse(String(formData.get("lines") ?? "[]")),
+  });
+  const phone = normalizeAlgerianPhone(parsed.phone);
+  if (!phone) throw new Error("Enter a valid Algerian mobile number.");
+  const bytes = new Uint8Array(await receipt.arrayBuffer());
+  if (!hasReceiptMagic(bytes, receipt.type)) throw new Error("The receipt file does not match its image type.");
 
-  await saveOrder(order);
+  const products = await resolveItems(parsed.lines);
+  const total = products.reduce((sum, item) => sum + item.price * item.quantity, 0);
+  const id = `TS-${crypto.randomUUID().replaceAll("-", "").slice(0, 10).toUpperCase()}`;
+  const extension = receiptTypes.get(receipt.type)!;
+  const receiptPath = `orders/${id}/${crypto.randomUUID()}.${extension}`;
+  const storage = getSupabaseServiceClient().storage.from("receipts");
+  const uploaded = await storage.upload(receiptPath, bytes, { contentType: receipt.type, upsert: false });
+  if (uploaded.error) throw new Error("Unable to store the receipt. Please try again.");
 
-  // Record purchase_completed funnel event
+  const order: AdminOrder = { id, customerName: parsed.customerName, phone, email: "", products, paymentMethod: parsed.paymentMethod, total, notes: parsed.notes, status: "pending", createdAt: new Date().toISOString(), receiptPath, receiptUploadedAt: new Date().toISOString() };
   try {
-    await recordPageEvent({
-      event_type: "purchase_completed",
-      session_id: undefined,
-      utm_source: parsed.utm_source,
-      utm_medium: parsed.utm_medium,
-      utm_campaign: parsed.utm_campaign,
-    });
+    await saveOrder(order);
   } catch {
-    // Non-critical
+    await storage.remove([receiptPath]);
+    throw new Error("Unable to save the order. Please try again.");
   }
-
-  // Fire Meta Conversions API event (server-side)
-  try {
-    const config = await getMarketingConfig();
-    if (config.meta_capi_enabled && config.meta_pixel_id && config.meta_capi_token) {
-      await sendConversionEvent({
-        pixelId: config.meta_pixel_id,
-        accessToken: config.meta_capi_token,
-        eventName: "Purchase",
-        eventId: parsed.eventId || `server-${order.id}`,
-        email: order.email,
-        phone: parsed.phone,
-        value: expectedTotal,
-        currency: "DZD",
-        contentIds: authoritativeProducts.map((p) => p.productId),
-        orderId: order.id,
-        numItems: parsed.products.length,
-      });
-    }
-  } catch {
-    // Non-critical — don't fail the order
-  }
-
+  await notifyOwnerOfReceipt(order);
   revalidatePath("/admin", "layout");
-  return { id: order.id, products: authoritativeProducts, total: expectedTotal };
+  return { id: order.id, total: order.total };
 }

@@ -1,4 +1,4 @@
-import { getOrders } from "@/lib/admin-store";
+import { getOrders, getReceiptSignedUrl } from "@/lib/admin-store";
 import type { ReactNode } from "react";
 import { saveOrderStatusAction, deleteOrderAction, addManualOrderAction } from "@/app/admin/orders/actions";
 import { Trash2, Plus, ShoppingBag, Clock3, CheckCircle2 } from "lucide-react";
@@ -13,6 +13,7 @@ export const metadata = {
 
 export default async function AdminOrdersPage() {
   const orders = await getOrders();
+  const receiptLinks = await Promise.all(orders.map((order) => getReceiptSignedUrl(order.receiptPath)));
   const pending = orders.filter((order) => order.status === "pending").length;
   const completed = orders.filter((order) => order.status === "paid" || order.status === "delivered").length;
 
@@ -61,7 +62,7 @@ export default async function AdminOrdersPage() {
 
       {orders.length ? (
         <div className="grid gap-4">
-          {orders.map((order) => (
+          {orders.map((order, index) => (
             <form key={order.id} action={saveOrderStatusAction} className="rounded-md border border-white/10 bg-white/[0.045] p-5 shadow-[0_18px_55px_rgba(0,0,0,0.22)]">
               <input type="hidden" name="id" value={order.id} />
               <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
@@ -80,28 +81,21 @@ export default async function AdminOrdersPage() {
                 <Info label="Email" value={order.email || "-"} />
                 <Info label="Payment" value={order.paymentMethod} />
                 <Info label="Date" value={new Date(order.createdAt).toLocaleString("en-US")} />
-                <Info label="Products" value={order.products.length ? `${order.products.length} item(s)` : "Manual order"} />
+                <Info label="Products" value={order.products.length ? order.products.map((item) => `${item.name} — ${item.option} ×${item.quantity}`).join("\n") : "Manual order"} />
                 <Info label="Notes" value={order.notes || "-"} />
+                <Info label="Receipt" value={receiptLinks[index] ? "Receipt uploaded" : "No receipt"} />
               </div>
 
-              <div className="mt-4 grid gap-3 md:grid-cols-[220px_1fr]">
-                <label className="grid gap-2 text-sm font-bold text-white">
-                  Status
-                  <select name="status" defaultValue={order.status} className="min-h-11 rounded-xl border border-white/10 bg-black/45 px-3 text-white outline-none focus:border-tiger-ember">
-                    <option value="pending">pending</option>
-                    <option value="paid">paid</option>
-                    <option value="delivered">delivered</option>
-                    <option value="cancelled">cancelled</option>
-                    <option value="refunded">refunded</option>
-                  </select>
-                </label>
+              {receiptLinks[index] ? <a href={receiptLinks[index]} target="_blank" rel="noreferrer" className="mt-4 inline-flex min-h-11 items-center rounded-xl bg-white px-4 font-black text-black">Open private receipt</a> : null}
+
+              <div className="mt-4 grid gap-3 md:grid-cols-[1fr]">
                 <label className="grid gap-2 text-sm font-bold text-white">
                   Admin notes
                   <input name="adminNotes" defaultValue={order.adminNotes ?? ""} className="min-h-11 rounded-xl border border-white/10 bg-black/45 px-3 text-white outline-none focus:border-tiger-ember" />
                 </label>
               </div>
               <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
-                <button type="submit" className="min-h-11 rounded-xl bg-tiger-ember px-5 font-black text-black transition-colors hover:bg-tiger-gold">Save Order</button>
+                <div className="flex flex-wrap gap-2">{(["pending", "paid", "delivered", "cancelled"] as const).map((status) => <button key={status} type="submit" name="status" value={status} className={`min-h-11 rounded-xl px-4 font-black ${order.status === status ? "bg-tiger-ember text-black" : "border border-white/15 text-white"}`}>{status}</button>)}</div>
                 <button formAction={deleteOrderAction} className="flex min-h-11 items-center justify-center rounded-xl border border-red-500/20 bg-red-500/10 px-5 font-bold text-red-300 transition-colors hover:bg-red-500/20">
                   <Trash2 className="mr-2 h-4 w-4" /> Delete Order
                 </button>

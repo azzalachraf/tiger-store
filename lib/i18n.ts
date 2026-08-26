@@ -8,3 +8,12 @@ const strings: Record<Key, Record<Locale, string>> = {
   viewProduct: { en: "View product", fr: "Voir le produit", ar: "عرض المنتج" }, fromPrice: { en: "From", fr: "À partir de", ar: "من" }, priceVaries: { en: "Price depends on the selected plan.", fr: "Le prix dépend de l’offre choisie.", ar: "السعر يتغير حسب الخطة المختارة." }, productArtwork: { en: "Product artwork", fr: "Visuel du produit", ar: "صورة المنتج" }, productFaq: { en: "Frequently asked questions", fr: "Questions fréquentes", ar: "أسئلة شائعة" },
 };
 export function t(locale: Locale, key: Key) { return strings[key][locale]; }
+
+export function productFaqEntries(locale: Locale, name: string, nameAr: string) {
+  const isArabic = locale === "ar";
+  const productName = isArabic ? nameAr : name;
+  return [
+    { question: isArabic ? "متى يتم التفعيل؟" : "When is activation completed?", answer: isArabic ? "يبدأ التفعيل عادة خلال 15 دقيقة إلى 12 ساعة بعد تأكيد الدفع ووصول وصل التحويل." : "Activation usually begins within 15 minutes–12 hours after payment verification and receipt upload." },
+    { question: isArabic ? `كيف يتم تفعيل ${productName}؟` : `How is ${productName} activated?`, answer: isArabic ? "نطلب فقط المعلومات الضرورية للتفعيل، ثم نفعّل الخدمة بالطريقة الموضحة في تفاصيل المنتج." : "We request only the information needed for activation, then activate the service as described in the product details." },
+  ];
+}

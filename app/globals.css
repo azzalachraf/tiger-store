@@ -5,6 +5,11 @@
 :root { --background: 38 14% 89%; --foreground: 0 0% 8%; --card: 38 18% 94%; --card-foreground: 0 0% 8%; --muted: 38 14% 89%; --muted-foreground: 24 6% 38%; --border: 34 16% 86%; --input: 34 16% 86%; --ring: 27 100% 50%; --primary: 27 100% 50%; --primary-foreground: 0 0% 7%; }
 html { --page: #FFF8F1; --surface: #FFFFFF; --border-color: #E8DED1; --text: #17120F; --muted-text: #655D55; color-scheme: light; }
 html.dark { --page: #11100F; --surface: #1B1917; --border-color: #2D2925; --text: #F5F2ED; --muted-text: #BDB6AD; --background: 24 5% 6%; --foreground: 38 20% 95%; --card: 24 6% 10%; --card-foreground: 38 20% 95%; --muted: 24 5% 6%; --muted-foreground: 27 12% 73%; --border: 24 9% 16%; --input: 24 9% 16%; color-scheme: dark; }
+html.dark .store-shell h1,html.dark .store-shell h2,html.dark .store-shell h3,html.dark .store-shell h4,html.dark .store-shell p,html.dark .store-shell label,html.dark .store-shell summary,html.dark .store-shell li,html.dark .store-shell span { color: var(--text); }
+html.dark .store-shell .text-\[\#C54E00\],html.dark .store-shell .text-tiger-gold,html.dark .store-shell .text-\[\#d85b00\] { color: #FF8A3D !important; }
+html.dark .store-shell .text-emerald-700,html.dark .store-shell .text-\[\#16803C\] { color: #61D889 !important; }
+html.dark .store-shell .text-\[\#C62828\] { color: #FF8B8B !important; }
+html.dark .trust-section--quiet { background: #2A1B12; }
 * { border-color: #DDD7CE; }
 body { min-height: 100vh; background: var(--page); color: var(--text); font-family: var(--font-arabic), "Segoe UI", Arial, sans-serif; text-rendering: optimizeLegibility; }
 ::selection { background: #FFF1E6; color: #151515; }

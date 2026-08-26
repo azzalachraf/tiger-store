@@ -123,6 +123,22 @@ export const adminOrderSchema = z.object({
   utm_medium: optionalTextSchema,
   utm_campaign: optionalTextSchema,
   referrer: optionalTextSchema,
+  receiptPath: optionalTextSchema,
+  receiptUploadedAt: optionalTextSchema,
+});
+
+export const checkoutLineSchema = z.object({
+  slug: z.string().trim().min(1).max(160).regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/),
+  optionId: z.string().trim().min(1).max(160),
+  quantity: z.coerce.number().int().min(1).max(20),
+});
+
+export const receiptOrderInputSchema = z.object({
+  customerName: z.string().trim().min(2).max(160),
+  phone: z.string().trim().min(6).max(60),
+  notes: optionalTextSchema,
+  paymentMethod: paymentMethodSchema,
+  lines: z.array(checkoutLineSchema).min(1).max(20),
 });
 
 export const checkoutOrderInputSchema = z.object({

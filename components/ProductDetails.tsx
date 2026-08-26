@@ -10,7 +10,7 @@ import { formatDzd } from "@/lib/currency";
 import { addCartItem, createCartItem } from "@/lib/cart";
 import { Product, ProductPriceOption } from "@/lib/types";
 import { cn } from "@/lib/utils";
-import { t } from "@/lib/i18n";
+import { productFaqEntries, t } from "@/lib/i18n";
 import { useLocale } from "@/lib/useLocale";
 import { trackViewContent } from "@/lib/meta-pixel";
 import { StockAlertForm } from "@/components/StockAlertForm";
@@ -52,6 +52,6 @@ export function ProductDetails({ product }: { product: Product }) {
     </div>
     <section className="rounded-xl border border-[var(--border-color)] bg-[var(--surface)] p-5 sm:p-7"><h2 className="text-2xl font-black text-[var(--text)]">{t(locale, "productDetails")}</h2><ul className="mt-5 grid gap-3 sm:grid-cols-2">{(locale === "ar" ? product.featuresAr : product.featuresEn).map((feature) => <li key={feature} className="flex items-center gap-3 text-sm font-bold leading-6 text-[var(--text)]"><CheckCircle2 className="h-4 w-4 shrink-0 text-[#C54E00]" />{translateSupport(feature, locale)}</li>)}</ul></section>
     <section className="grid gap-4 rounded-xl border border-[var(--border-color)] bg-[#FFF2E6] p-5 sm:grid-cols-2 sm:p-7"><article><h2 className="text-lg font-black text-[var(--text)]">{actionCopy.payment}</h2><p className="mt-2 text-sm font-semibold leading-7 text-[var(--muted-text)]">{actionCopy.paymentBody}</p></article><article><h2 className="text-lg font-black text-[var(--text)]">{actionCopy.policy}</h2><p className="mt-2 text-sm font-semibold leading-7 text-[var(--muted-text)]">{actionCopy.policyBody}</p></article></section>
-    {product.faqs?.length ? <section className="rounded-xl border border-[var(--border-color)] bg-[var(--surface)] p-5 sm:p-7"><h2 className="text-2xl font-black text-[var(--text)]">{t(locale, "productFaq")}</h2><div className="mt-5 grid gap-3">{product.faqs.map((faq) => <details key={faq.questionEn} className="border-b border-[var(--border-color)] pb-4"><summary className="cursor-pointer font-black text-[var(--text)]">{locale === "ar" ? faq.questionAr : faq.questionEn}</summary><p className="mt-3 text-sm font-semibold leading-7 text-[var(--muted-text)]">{locale === "ar" ? faq.answerAr : faq.answerEn}</p></details>)}</div></section> : null}
+    <section className="rounded-xl border border-[var(--border-color)] bg-[var(--surface)] p-5 sm:p-7"><h2 className="text-2xl font-black text-[var(--text)]">{t(locale, "productFaq")}</h2><div className="mt-5 grid gap-3">{productFaqEntries(locale, product.name, product.nameAr).map((faq) => <details key={faq.question} className="border-b border-[var(--border-color)] pb-4"><summary className="cursor-pointer font-black text-[var(--text)]">{faq.question}</summary><p className="mt-3 text-sm font-semibold leading-7 text-[var(--muted-text)]">{faq.answer}</p></details>)}</div></section>
   </section>;
 }

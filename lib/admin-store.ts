@@ -205,6 +205,16 @@ export async function saveOrder(order: AdminOrder) {
   if (error) throw new Error(`saveOrder failed: ${error.message}`);
 }
 
+export async function getReceiptSignedUrl(receiptPath?: string) {
+  if (!receiptPath) return undefined;
+  const { data, error } = await supabase().storage.from("receipts").createSignedUrl(receiptPath, 60 * 10);
+  if (error) {
+    logger.error("getReceiptSignedUrl failed", error);
+    return undefined;
+  }
+  return data.signedUrl;
+}
+
 export async function deleteOrder(id: string) {
   const { error } = await supabase().from("orders").delete().eq("id", id);
   if (error) throw new Error(`deleteOrder failed: ${error.message}`);

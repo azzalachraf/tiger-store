@@ -132,6 +132,8 @@ export type AdminOrder = {
   utm_medium?: string;
   utm_campaign?: string;
   referrer?: string;
+  receiptPath?: string;
+  receiptUploadedAt?: string;
 };
 
 export type AdminAccountStatus = "Available" | "Sold" | "Expired" | "Problem";
