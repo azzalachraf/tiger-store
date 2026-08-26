@@ -31,7 +31,8 @@ body { min-height: 100vh; background: var(--page); color: var(--text); font-fami
 .category-card { display: block; min-width: 0; border: 1px solid var(--border-color); border-radius: 1rem; background: var(--surface); padding: .75rem; }
 @media (min-width: 640px) { .category-list { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
 @media (min-width: 1024px) { .category-list { grid-template-columns: repeat(7, minmax(0, 1fr)); } }
-.hero-shell { background: #17120F; color: #FFF8F1; }
+.hero-shell { background: var(--page); color: var(--text); }
+html.dark .hero-shell { background: #17120F; color: #FFF8F1; }
 .hero-card { display: grid; gap: 1.5rem; border: 1px solid rgba(255, 248, 241, .18); border-radius: 1.25rem; padding: 1.5rem; background: linear-gradient(135deg, #211914, #17120F); }
 .hero-card h1 { max-width: 18ch; margin-top: .6rem; font-size: clamp(2rem, 8vw, 4.25rem); line-height: 1.1; font-weight: 900; letter-spacing: -.04em; }
 .hero-copy { max-width: 54ch; margin-top: 1rem; color: rgba(255,248,241,.78); font-size: 1rem; line-height: 1.8; }
