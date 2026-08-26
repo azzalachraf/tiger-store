@@ -6,6 +6,12 @@ dist
 outputs/
 Cards/
 Hero/
+.turbo/
+coverage/
+test-results/
+playwright-report/
+.vercel/output/
+.env.local
 .env
 .env*.local
 *.log
@@ -13,3 +19,7 @@ dev-server.log
 vercel
 
 .vercel
+receipts/
+uploads/receipts/
+*.receipt
+*.receipt.*
