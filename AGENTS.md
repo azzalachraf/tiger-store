@@ -21,6 +21,16 @@ Customers pay by manual transfer without buyer protection. Every UX and copy dec
 * Never invent reviews, order counts, guarantees, delivery times, social proof, or availability.
 * Do not change these decisions without asking the owner.
 
+## Fulfillment, warranty, and refunds
+
+* Activation usually takes 15 minutes–12 hours after payment verification.
+* Receipt upload is mandatory.
+* Warranty duration is defined per product/plan.
+* For a Tiger Store-caused covered failure, attempt replacement first.
+* If replacement is impossible, calculate the refund using integer DZD and remaining covered days: `refund = floor(price_paid × remaining_covered_days ÷ total_covered_days)`.
+* Customer-caused problems are excluded.
+* Preserve and normalize all 24 Supabase products; never delete remote-only products.
+
 ## Data and security
 
 * Store money as integer DZD values. Never use floats or a currency library.
