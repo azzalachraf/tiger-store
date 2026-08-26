@@ -1,43 +1,12 @@
 import Image from "next/image";
 import Link from "next/link";
 import { ReactNode } from "react";
-import {
-  BarChart3,
-  Boxes,
-  CreditCard,
-  ExternalLink,
-  GitBranch,
-  ImageIcon,
-  KeyRound,
-  LayoutDashboard,
-  LogOut,
-  Megaphone,
-  PackagePlus,
-  Settings,
-  ShoppingBag,
-  Target,
-  TrendingUp,
-  Users,
-} from "lucide-react";
+import { Boxes, CreditCard, ExternalLink, LayoutDashboard, LogOut, Settings, ShoppingBag } from "lucide-react";
 import { logoutAction } from "@/app/admin/login/actions";
 import { requireAdmin } from "@/lib/admin-auth";
 import { Button } from "@/components/ui/button";
 
-const adminNav = [
-  { href: "/admin", label: "Dashboard", icon: LayoutDashboard, group: "Business" },
-  { href: "/admin/statistics", label: "Statistics", icon: TrendingUp, group: "Business" },
-  { href: "/admin/customers", label: "Customers", icon: Users, group: "Business" },
-  { href: "/admin/orders", label: "Orders", icon: ShoppingBag, group: "Operations" },
-  { href: "/admin/products", label: "Products", icon: Boxes, group: "Operations" },
-  { href: "/admin/products/new", label: "New Product", icon: PackagePlus, group: "Operations" },
-  { href: "/admin/accounts", label: "Accounts", icon: KeyRound, group: "Operations" },
-  { href: "/admin/marketing/meta", label: "Meta Pixel", icon: Megaphone, group: "Marketing" },
-  { href: "/admin/marketing/funnel", label: "Sales Funnel", icon: GitBranch, group: "Marketing" },
-  { href: "/admin/marketing/attribution", label: "Attribution", icon: Target, group: "Marketing" },
-  { href: "/admin/payment-methods", label: "Payment Methods", icon: CreditCard, group: "Settings" },
-  { href: "/admin/banners", label: "Banners", icon: ImageIcon, group: "Settings" },
-  { href: "/admin/settings", label: "Settings", icon: Settings, group: "Settings" },
-];
+const adminNav = [{ href: "/admin", label: "Overview", icon: LayoutDashboard, group: "Store" }, { href: "/admin/products", label: "Products", icon: Boxes, group: "Store" }, { href: "/admin/orders", label: "Orders", icon: ShoppingBag, group: "Store" }, { href: "/admin/payment-methods", label: "Payment methods", icon: CreditCard, group: "Store" }, { href: "/admin/stock-alerts", label: "Stock alerts", icon: Boxes, group: "Store" }, { href: "/admin/settings", label: "Store settings", icon: Settings, group: "Store" }];
 
 const groupedNav = adminNav.reduce<Record<string, typeof adminNav>>((groups, item) => {
   groups[item.group] = [...(groups[item.group] ?? []), item];
@@ -86,10 +55,6 @@ export async function AdminShell({ title, description, children }: AdminShellPro
 
       <div className="mx-auto grid max-w-[1500px] gap-5 px-3 py-5 sm:px-5 lg:grid-cols-[270px_1fr] lg:px-8">
         <aside className="h-fit rounded-md border border-white/10 bg-[linear-gradient(180deg,rgba(32,32,32,0.96),rgba(16,16,16,0.98))] p-3 shadow-[0_20px_60px_rgba(0,0,0,0.3)] lg:sticky lg:top-5">
-          <div className="mb-3 flex items-center gap-2 rounded-md border border-tiger-ember/20 bg-tiger-ember/10 px-3 py-2 text-xs font-black text-tiger-gold">
-            <BarChart3 className="h-4 w-4" />
-            Admin Workspace
-          </div>
           <nav className="scrollbar-none flex gap-2 overflow-x-auto lg:grid lg:overflow-visible" aria-label="Admin navigation">
             {Object.entries(groupedNav).map(([group, items]) => (
               <div key={group} className="contents lg:block">
