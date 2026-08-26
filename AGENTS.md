@@ -16,7 +16,10 @@ Customers pay by manual transfer without buyer protection. Every UX and copy dec
 * Payments: BaridiMob, CCP, and RedotPay.
 * A receipt screenshot is uploaded during checkout.
 * Supabase is the source of truth for orders, products, settings, stock alerts, and private receipt storage.
-* Orders are managed through Telegram.
+* Orders are managed through the secure admin panel.
+* After checkout, the server will notify the owner through WhatsApp Business Cloud API.
+* Customers stay on an internal thank-you page and are never redirected to WhatsApp.
+* WhatsApp integration and checkout changes require their own approved phase.
 * Customer communication uses WhatsApp at `+213 556 97 45 93` and Instagram.
 * Never invent reviews, order counts, guarantees, delivery times, social proof, or availability.
 * Do not change these decisions without asking the owner.
