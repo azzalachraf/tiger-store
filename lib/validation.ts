@@ -4,7 +4,7 @@ export const paymentMethodSchema = z.enum(["BaridiMob", "CCP", "RedotPay"]);
 export const orderStatusSchema = z.enum(["pending", "paid", "delivered", "cancelled", "refunded"]);
 export const accountStatusSchema = z.enum(["Available", "Sold", "Expired", "Problem"]);
 export const stockAlertInputSchema = z.object({
-  productId: z.string().trim().min(1).max(160),
+  productSlug: z.string().trim().min(1).max(160).regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/),
   optionId: z.string().trim().min(1).max(160).optional(),
   phone: z.string().trim().min(6).max(40),
 });
@@ -18,13 +18,13 @@ const optionalTextSchema = z.preprocess((value) => {
 const optionalPositiveNumberSchema = z.preprocess((value) => {
   if (value === null || value === undefined || value === "") return undefined;
   return value;
-}, z.coerce.number().positive().optional());
+}, z.coerce.number().int().positive().optional());
 
 export const productPriceOptionSchema = z.object({
   id: z.string().trim().min(1).max(160),
   label: z.string().trim().min(1).max(120),
   labelAr: z.string().trim().min(1).max(120),
-  price: z.coerce.number().positive(),
+  price: z.coerce.number().int().positive(),
   oldPrice: optionalPositiveNumberSchema,
   duration: z.string().trim().min(1).max(120),
   durationAr: z.string().trim().min(1).max(120),
@@ -71,7 +71,7 @@ export const productSchema = z.object({
   nameAr: z.string().trim().min(1).max(180),
   category: z.string().trim().min(1).max(80),
   categoryAr: z.string().trim().min(1).max(120),
-  price: z.coerce.number().nonnegative(),
+  price: z.coerce.number().int().nonnegative(),
   oldPrice: optionalPositiveNumberSchema,
   currency: z.literal("DZD"),
   duration: z.string().trim().min(1).max(120),
@@ -102,7 +102,7 @@ export const cartItemSchema = z.object({
   optionAr: z.string().trim().min(1).max(160),
   duration: z.string().trim().min(1).max(160),
   durationAr: z.string().trim().min(1).max(160),
-  price: z.coerce.number().nonnegative(),
+  price: z.coerce.number().int().nonnegative(),
   quantity: z.coerce.number().int().positive().max(20),
 });
 
@@ -113,7 +113,7 @@ export const adminOrderSchema = z.object({
   email: z.string().trim().max(180),
   products: z.array(cartItemSchema).default([]),
   paymentMethod: paymentMethodSchema,
-  total: z.coerce.number().nonnegative(),
+  total: z.coerce.number().int().nonnegative(),
   notes: optionalTextSchema,
   status: orderStatusSchema,
   createdAt: z.string().trim().min(1).max(80),
@@ -130,7 +130,7 @@ export const checkoutOrderInputSchema = z.object({
   email: z.string().trim().max(180),
   products: z.array(cartItemSchema).min(1).max(20),
   paymentMethod: paymentMethodSchema,
-  total: z.coerce.number().nonnegative(),
+  total: z.coerce.number().int().nonnegative(),
   notes: optionalTextSchema,
   utm_source: optionalTextSchema,
   utm_medium: optionalTextSchema,
@@ -157,7 +157,7 @@ export const adminAccountSchema = z.object({
   emailPassword: z.string().max(500),
   chatgptPassword: z.string().max(500),
   dateCreated: z.string().trim().min(1).max(40),
-  price: z.coerce.number().nonnegative(),
+  price: z.coerce.number().int().nonnegative(),
   notes: optionalTextSchema,
   status: accountStatusSchema,
   updatedAt: z.string().trim().min(1).max(80),

@@ -11,7 +11,13 @@ const faq = (name: string) => [
 
 function product(input: Omit<Product, "currency" | "details" | "faqs"> & { details?: Partial<NonNullable<Product["details"]>> }): Product {
   const warranty = input.id === "gemini-pro" ? noWarranty : fullWarranty;
-  return { ...input, currency: "DZD", details: { ...delivery, ...input.details, ...warranty }, faqs: faq(input.name) };
+  const priceOptions = input.priceOptions?.map((item) => ({
+    ...item,
+    // Option IDs are submitted by the browser and resolved again on the server.
+    // Prefixing them makes an option stable and unambiguous across the catalogue.
+    id: item.id.startsWith(`${input.id}:`) ? item.id : `${input.id}:${item.id}`,
+  }));
+  return { ...input, priceOptions, currency: "DZD", details: { ...delivery, ...input.details, ...warranty }, faqs: faq(input.name) };
 }
 
 const option = (label: string, labelAr: string, price: number, duration: string, durationAr: string, extras: Partial<ProductPriceOption> = {}): ProductPriceOption => ({ id: label.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, ""), label, labelAr, price, duration, durationAr, available: true, ...extras });
