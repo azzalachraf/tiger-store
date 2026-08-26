@@ -1,5 +1,4 @@
 import Image from "next/image";
-import Link from "next/link";
 import { Footer } from "@/components/Footer";
 import { Header } from "@/components/Header";
 import { LocalizedText } from "@/components/LocalizedText";
@@ -80,29 +79,6 @@ export default async function PaymentMethodsPage() {
           </div>
         </section>
 
-        <section className="mx-auto max-w-[1200px] px-3 pb-12 sm:px-5 lg:px-8">
-          <div className="rounded-3xl border border-white/10 bg-[#202020] p-6 sm:p-7">
-            <div className="grid gap-5 md:grid-cols-[1fr_auto] md:items-center">
-              <div>
-                <p className="text-xs font-black uppercase tracking-[0.18em] text-tiger-gold">
-                  <LocalizedText ar="دفع آمن" en="Secure checkout" />
-                </p>
-                <h2 className="mt-2 text-2xl font-black text-white">
-                  <LocalizedText ar="اختر المنتج ثم أكمل الطلب بطريقة دفع جزائرية." en="Choose a product and complete your order with an Algerian payment method." />
-                </h2>
-                <p className="mt-2 max-w-2xl text-sm leading-7 text-white/62">
-                  <LocalizedText ar="BaridiMob وCCP وRedotPay متاحة لطلبات الاشتراكات الرقمية." en="BaridiMob, CCP, and RedotPay are available for digital subscription orders." />
-                </p>
-              </div>
-              <Link
-                href="/shop"
-                className="inline-flex min-h-12 items-center justify-center rounded-full bg-tiger-ember px-6 text-sm font-black text-black transition-colors duration-150 hover:bg-tiger-gold"
-              >
-                <LocalizedText ar="تصفح المتجر" en="Browse Store" />
-              </Link>
-            </div>
-          </div>
-        </section>
       </main>
       <Footer />
     </>

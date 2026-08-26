@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
+import { cookies } from "next/headers";
 import { Footer } from "@/components/Footer";
 import { Header } from "@/components/Header";
 import { ProductCard } from "@/components/ProductCard";
@@ -16,8 +17,8 @@ type PageProps = {
   params: Promise<{ slug: string }>;
 };
 
-function productDescription(product: Product) {
-  return product.shortDescriptionEn || product.shortDescriptionAr;
+function productDescription(product: Product, locale: "ar" | "en" | "fr" = "ar") {
+  return locale === "ar" ? product.shortDescriptionAr || product.shortDescriptionEn : product.shortDescriptionEn || product.shortDescriptionAr;
 }
 
 function productOffersJsonLd(product: Product, url: string) {
@@ -52,6 +53,8 @@ function productOffersJsonLd(product: Product, url: string) {
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const { slug } = await params;
   const product = await getProductBySlug(slug);
+  const savedLocale = (await cookies()).get("tiger-store-locale")?.value;
+  const locale = savedLocale === "en" || savedLocale === "fr" ? savedLocale : "ar";
 
   if (!product) {
     return createPageMetadata({
@@ -62,8 +65,8 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     });
   }
 
-  const title = product.name;
-  const description = productDescription(product);
+  const title = locale === "ar" ? product.nameAr : product.name;
+  const description = productDescription(product, locale);
   const path = `/products/${product.slug}`;
 
   return createPageMetadata({
@@ -71,13 +74,15 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     description,
     path,
     image: product.image,
-    imageAlt: `${product.name} product artwork`,
+    imageAlt: `${title} — ${locale === "ar" ? "صورة المنتج" : "Product artwork"}`,
   });
 }
 
 export default async function ProductDetailPage({ params }: PageProps) {
   const { slug } = await params;
   const product = await getProductBySlug(slug);
+  const savedLocale = (await cookies()).get("tiger-store-locale")?.value;
+  const locale = savedLocale === "en" || savedLocale === "fr" ? savedLocale : "ar";
 
   if (!product) notFound();
 
@@ -89,8 +94,8 @@ export default async function ProductDetailPage({ params }: PageProps) {
   const productJsonLd = serializeJsonLd({
     "@context": "https://schema.org",
     "@type": "Product",
-    name: product.name,
-    description: productDescription(product),
+    name: locale === "ar" ? product.nameAr : product.name,
+    description: productDescription(product, locale),
     image: [absoluteUrl(product.image)],
     url: productUrl,
     offers: productOffersJsonLd(product, productUrl),
@@ -99,14 +104,14 @@ export default async function ProductDetailPage({ params }: PageProps) {
     "@context": "https://schema.org",
     "@type": "BreadcrumbList",
     itemListElement: [
-      { "@type": "ListItem", position: 1, name: "Home", item: absoluteUrl("/") },
+      { "@type": "ListItem", position: 1, name: locale === "ar" ? "الرئيسية" : "Home", item: absoluteUrl("/") },
       {
         "@type": "ListItem",
         position: 2,
-        name: product.category,
+        name: locale === "ar" ? product.categoryAr : product.category,
         item: absoluteUrl(`/categories/${categorySlug(product.category)}`),
       },
-      { "@type": "ListItem", position: 3, name: product.name, item: productUrl },
+      { "@type": "ListItem", position: 3, name: locale === "ar" ? product.nameAr : product.name, item: productUrl },
     ],
   });
 
