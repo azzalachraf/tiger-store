@@ -3,20 +3,19 @@
 import { useEffect, useMemo, useState } from "react";
 import { ArrowDown, ArrowUp, ImageUp, Plus, Trash2 } from "lucide-react";
 import { saveProductAction } from "@/app/admin/products/actions";
-import defaultCategories from "@/data/categories.json";
 import { Product, Category, ProductPriceOption } from "@/lib/types";
 import { calculateDiscount } from "@/lib/utils";
 
-const categories = (defaultCategories as Category[]).filter((category) => category.id !== "all");
 const customCategoryValue = "__custom";
 
 type ProductFormProps = {
   product?: Product;
+  categories: Category[];
 };
 
 type EditableVariant = ProductPriceOption;
 
-export function ProductForm({ product }: ProductFormProps) {
+export function ProductForm({ product, categories }: ProductFormProps) {
   const existingCategory = categories.some((category) => category.id === product?.category);
   const [categoryMode, setCategoryMode] = useState(existingCategory || !product ? product?.category ?? "AI" : customCategoryValue);
   const [imagePath, setImagePath] = useState(product?.image ?? "/products/");

@@ -1,148 +1,77 @@
-import { getAnalytics, formatCurrency } from "@/lib/analytics";
+import Link from "next/link";
+import type { ReactNode } from "react";
+import { AlertCircle, CheckCircle2, Package, ShoppingBag } from "lucide-react";
 import { AdminShell } from "@/components/admin/AdminShell";
-import {
-  DollarSign,
-  TrendingUp,
-  ShoppingBag,
-  Clock,
-  CheckCircle2,
-  XCircle,
-  Package,
-  Key,
-  Users,
-  AlertTriangle,
-  BarChart3,
-  Banknote,
-  RotateCcw,
-} from "lucide-react";
-import {
-  StatCard,
-  RevenueLineChart,
-  PaymentMethodPieChart,
-  OrderStatusChart,
-  TopProductsTable,
-  AccountStockBars,
-  ActivityFeed,
-  ExportButton,
-} from "@/components/admin/DashboardCharts";
+import { getOrders, getProducts } from "@/lib/admin-store";
+import { getSiteCategories } from "@/lib/categories";
+import { formatPriceDZD } from "@/lib/utils";
 
 export const dynamic = "force-dynamic";
 
 export const metadata = {
-  title: "Admin Dashboard",
+  title: "Admin Overview",
 };
 
 export default async function AdminDashboardPage() {
-  const a = await getAnalytics();
+  const [orders, products] = await Promise.all([getOrders(), getProducts()]);
+  const pending = orders.filter((order) => order.status === "pending").length;
+  const fulfilled = orders.filter((order) => order.status === "paid" || order.status === "delivered").length;
+  const availableProducts = products.filter((product) => product.available).length;
+  const categories = getSiteCategories(products).filter((category) => category.id !== "all");
 
   return (
-    <AdminShell title="Dashboard" description="Business overview and key metrics at a glance.">
-      {/* ── Revenue Cards ── */}
-      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        <StatCard
-          icon={<DollarSign className="h-5 w-5" />}
-          label="Total Revenue"
-          value={formatCurrency(a.totalRevenue)}
-          trend={a.revenueGrowthPercent}
-          trendLabel="vs last month"
-        />
-        <StatCard
-          icon={<TrendingUp className="h-5 w-5" />}
-          label="Monthly Revenue"
-          value={formatCurrency(a.monthlyRevenue)}
-        />
-        <StatCard
-          icon={<Banknote className="h-5 w-5" />}
-          label="Today"
-          value={formatCurrency(a.todayRevenue)}
-        />
-        <StatCard
-          icon={<BarChart3 className="h-5 w-5" />}
-          label="Avg. Order Value"
-          value={formatCurrency(a.averageOrderValue)}
-        />
-      </div>
+    <AdminShell title="نظرة عامة" description="طلباتك، المنتجات المتوفرة، والأقسام الحقيقية في مكان واحد.">
+      <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+        <Summary href="/admin/orders" label="طلبات بانتظار المراجعة" value={pending} icon={<AlertCircle className="h-5 w-5" />} tone="amber" />
+        <Summary href="/admin/orders" label="طلبات مؤكدة أو مسلّمة" value={fulfilled} icon={<CheckCircle2 className="h-5 w-5" />} tone="green" />
+        <Summary href="/admin/products" label="منتجات متوفرة" value={availableProducts} icon={<Package className="h-5 w-5" />} tone="orange" />
+        <Summary href="/admin/products" label="أقسام الكتالوج" value={categories.length} icon={<ShoppingBag className="h-5 w-5" />} tone="orange" />
+      </section>
 
-      {/* ── Order & Customer Cards ── */}
-      <div className="mt-4 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        <StatCard
-          icon={<ShoppingBag className="h-5 w-5" />}
-          label="Total Orders"
-          value={a.totalOrders}
-        />
-        <StatCard
-          icon={<CheckCircle2 className="h-5 w-5" />}
-          label="Completed"
-          value={a.completedOrders}
-        />
-        <StatCard
-          icon={<Clock className="h-5 w-5" />}
-          label="Pending"
-          value={a.pendingOrders}
-        />
-        <StatCard
-          icon={<Users className="h-5 w-5" />}
-          label="Total Customers"
-          value={a.customerCount}
-        />
-      </div>
-
-      {/* ── Business Intelligence Row ── */}
-      <div className="mt-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        <div className="rounded-2xl border border-white/10 bg-white/[0.045] p-5">
-          <p className="text-xs font-bold uppercase tracking-wider text-white/40">Products Sold</p>
-          <p className="mt-2 text-2xl font-extrabold text-tiger-gold">{a.productsSold}</p>
+      <section className="mt-5 rounded-md border border-white/10 bg-white/[0.045] p-5 shadow-[0_18px_55px_rgba(0,0,0,0.22)]">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <h2 className="text-xl font-black text-white">أحدث الطلبات</h2>
+            <p className="mt-1 text-sm text-white/55">تظهر هنا الطلبات المحفوظة في Supabase فقط.</p>
+          </div>
+          <Link href="/admin/orders" className="rounded-xl bg-tiger-ember px-4 py-2 text-sm font-black text-black">كل الطلبات</Link>
         </div>
-        <div className="rounded-2xl border border-white/10 bg-white/[0.045] p-5">
-          <p className="text-xs font-bold uppercase tracking-wider text-white/40">Returning Customers</p>
-          <p className="mt-2 text-2xl font-extrabold text-tiger-gold">{a.returningCustomers}</p>
+
+        {orders.length ? (
+          <div className="mt-4 grid gap-3">
+            {orders.slice(0, 5).map((order) => (
+              <Link key={order.id} href="/admin/orders" className="grid gap-2 rounded-xl border border-white/10 bg-black/25 p-4 transition-colors hover:border-tiger-ember/40 sm:grid-cols-[1fr_auto_auto] sm:items-center">
+                <div>
+                  <p className="font-black text-white">{order.id}</p>
+                  <p className="mt-1 text-sm text-white/55">{order.customerName || "طلب يدوي"} · {order.paymentMethod}</p>
+                </div>
+                <p className="font-black text-tiger-gold">{formatPriceDZD(order.total, "en")}</p>
+                <Status status={order.status} />
+              </Link>
+            ))}
+          </div>
+        ) : (
+          <p className="mt-4 rounded-xl border border-white/10 bg-black/25 p-4 text-sm text-white/60">لا توجد طلبات بعد.</p>
+        )}
+      </section>
+
+      <section className="mt-5 rounded-md border border-white/10 bg-white/[0.045] p-5">
+        <h2 className="text-xl font-black text-white">أقسام المتجر الحالية</h2>
+        <p className="mt-1 text-sm text-white/55">تُستخرج تلقائياً من المنتجات الحالية، بدون أقسام قديمة أو فارغة.</p>
+        <div className="mt-4 flex flex-wrap gap-2">
+          {categories.map((category) => <span key={category.id} className="rounded-full border border-white/10 bg-black/25 px-3 py-2 text-sm font-bold text-white/75">{category.name.ar} <span className="text-white/40">/ {category.name.en}</span></span>)}
         </div>
-        <div className="rounded-2xl border border-white/10 bg-white/[0.045] p-5">
-          <p className="text-xs font-bold uppercase tracking-wider text-white/40">Repeat Purchase Rate</p>
-          <p className="mt-2 text-2xl font-extrabold text-tiger-gold">{a.repeatPurchaseRate.toFixed(1)}%</p>
-        </div>
-        <div className="rounded-2xl border border-white/10 bg-white/[0.045] p-5">
-          <p className="text-xs font-bold uppercase tracking-wider text-white/40">Customer Lifetime Value</p>
-          <p className="mt-2 text-2xl font-extrabold text-tiger-gold">{formatCurrency(a.customerLifetimeValue)}</p>
-        </div>
-      </div>
-
-      {/* ── More Insights ── */}
-      <div className="mt-4 grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
-        <StatCard icon={<XCircle className="h-5 w-5" />} label="Cancelled" value={a.cancelledOrders} />
-        <StatCard icon={<RotateCcw className="h-5 w-5" />} label="Refunded" value={a.refundedOrders} />
-        <StatCard icon={<Package className="h-5 w-5" />} label="Total Products" value={a.totalProducts} />
-        <StatCard icon={<Key className="h-5 w-5" />} label="Available Accounts" value={a.availableAccounts} />
-        <StatCard icon={<AlertTriangle className="h-5 w-5" />} label="Low Stock" value={a.lowStockWarnings} />
-      </div>
-
-      {/* ── Revenue Chart + Payment Methods ── */}
-      <div className="mt-6 grid gap-4 lg:grid-cols-3">
-        <div className="lg:col-span-2">
-          <RevenueLineChart data={a.revenueByDay} />
-        </div>
-        <PaymentMethodPieChart data={a.revenueByPaymentMethod} />
-      </div>
-
-      {/* ── Order Status + Top Products ── */}
-      <div className="mt-4 grid gap-4 lg:grid-cols-2">
-        <OrderStatusChart data={a.ordersByStatus} />
-        <TopProductsTable products={a.topProducts} />
-      </div>
-
-      {/* ── Account Stock + Activity Feed ── */}
-      <div className="mt-4 grid gap-4 lg:grid-cols-2">
-        <AccountStockBars data={a.accountStock} />
-        <ActivityFeed activities={a.recentActivity} />
-      </div>
-
-      {/* ── Export Buttons ── */}
-      <div className="mt-6 flex flex-wrap gap-3">
-        <ExportButton href="/admin/statistics/export?type=orders" label="Export Orders" />
-        <ExportButton href="/admin/statistics/export?type=products" label="Export Products" />
-        <ExportButton href="/admin/statistics/export?type=accounts" label="Export Accounts" />
-        <ExportButton href="/admin/statistics/export?type=revenue" label="Export Revenue" />
-      </div>
+      </section>
     </AdminShell>
   );
+}
+
+function Summary({ href, label, value, icon, tone }: { href: string; label: string; value: number; icon: ReactNode; tone: "amber" | "green" | "orange" }) {
+  const toneClass = tone === "green" ? "text-emerald-300" : tone === "amber" ? "text-amber-300" : "text-tiger-ember";
+  return <Link href={href} className="rounded-md border border-white/10 bg-white/[0.045] p-4 transition-colors hover:border-tiger-ember/40"><div className={toneClass}>{icon}</div><p className="mt-3 text-xs font-black text-white/45">{label}</p><p className="mt-1 text-3xl font-black text-white">{value}</p></Link>;
+}
+
+function Status({ status }: { status: string }) {
+  const labels: Record<string, string> = { pending: "قيد المراجعة", paid: "مدفوع", delivered: "تم التسليم", cancelled: "ملغى", refunded: "مسترجع" };
+  return <span className="rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs font-black text-white/75">{labels[status] ?? status}</span>;
 }

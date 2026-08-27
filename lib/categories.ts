@@ -12,8 +12,10 @@ export function categorySlug(id: string) {
 export function getSiteCategories(products: Product[] = []): Category[] {
   const categories = new Map<string, Category>();
 
-  for (const category of defaultCategories as Category[]) {
-    categories.set(category.id, category);
+  if (!products.length) {
+    for (const category of defaultCategories as Category[]) {
+      categories.set(category.id, category);
+    }
   }
 
   for (const product of products) {

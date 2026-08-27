@@ -15,8 +15,8 @@ type CategoryPageProps = {
 
 export const dynamic = "force-dynamic";
 
-export function generateStaticParams() {
-  return getSiteCategories()
+export async function generateStaticParams() {
+  return getSiteCategories(await getProducts())
     .filter((category) => category.id !== "all")
     .map((category) => ({ slug: categorySlug(category.id) }));
 }

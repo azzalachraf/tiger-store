@@ -1,7 +1,8 @@
 import { notFound } from "next/navigation";
-import { getProductById } from "@/lib/admin-store";
+import { getProductById, getProducts } from "@/lib/admin-store";
 import { AdminShell } from "@/components/admin/AdminShell";
 import { ProductForm } from "@/components/admin/ProductForm";
+import { getSiteCategories } from "@/lib/categories";
 
 export const dynamic = "force-dynamic";
 
@@ -25,9 +26,11 @@ export default async function EditProductPage({ params }: EditProductPageProps) 
     notFound();
   }
 
+  const categories = getSiteCategories(await getProducts()).filter((category) => category.id !== "all");
+
   return (
     <AdminShell title={`تعديل ${product.nameAr}`} description="القيم الحالية معروضة من seed data.">
-      <ProductForm product={product} />
+      <ProductForm product={product} categories={categories} />
     </AdminShell>
   );
 }

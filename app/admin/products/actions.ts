@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { requireAdmin } from "@/lib/admin-auth";
-import { deleteProduct, saveProduct } from "@/lib/admin-store";
+import { deleteProduct, getProducts, saveProduct } from "@/lib/admin-store";
 import { getSiteCategories } from "@/lib/categories";
 import { getSupabaseServiceClient } from "@/lib/supabase";
 import { Product, ProductDetails, ProductPriceOption } from "@/lib/types";
@@ -122,7 +122,7 @@ export async function saveProductAction(formData: FormData) {
   if (!category) {
     throw new Error("Please choose or enter a product category.");
   }
-  const categoryConfig = getSiteCategories().find((entry) => entry.id === category);
+  const categoryConfig = getSiteCategories(await getProducts()).find((entry) => entry.id === category);
   const categoryAr = selectedCategory === "__custom"
     ? text(formData, "customCategoryAr") || category
     : categoryConfig?.name.ar || category;
