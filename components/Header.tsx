@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { BadgeCheck, Clock3, Globe2, Headphones, Menu, Moon, ReceiptText, Search, ShoppingCart, Sun, X } from "lucide-react";
+import { Globe2, Menu, Moon, Search, ShoppingCart, Sun, X } from "lucide-react";
 import { useEffect, useState } from "react";
 import { readCart } from "@/lib/cart";
 import { t } from "@/lib/i18n";
@@ -10,27 +10,6 @@ import { useLocale } from "@/lib/useLocale";
 import { useTheme } from "@/lib/useTheme";
 
 const links = [["/shop", "shop"], ["/categories", "categories"], ["/payment-methods", "payment"], ["/faq", "faq"], ["/contact", "support"]] as const;
-
-const reassuranceItems = {
-  ar: [
-    [ReceiptText, "تحويل يدوي فقط"],
-    [BadgeCheck, "وصل الدفع إلزامي"],
-    [Clock3, "التفعيل بعد تأكيد الدفع"],
-    [Headphones, "متابعة الطلب والدعم"],
-  ],
-  en: [
-    [ReceiptText, "Manual transfer only"],
-    [BadgeCheck, "Receipt upload is required"],
-    [Clock3, "Activation after payment verification"],
-    [Headphones, "Order follow-up and support"],
-  ],
-  fr: [
-    [ReceiptText, "Virement manuel uniquement"],
-    [BadgeCheck, "Reçu de paiement obligatoire"],
-    [Clock3, "Activation après vérification du paiement"],
-    [Headphones, "Suivi de commande et assistance"],
-  ],
-} as const;
 
 export function Header() {
   const [menuOpen, setMenuOpen] = useState(false);
@@ -49,13 +28,6 @@ export function Header() {
   }, []);
 
   return <header className="sticky top-0 z-50 border-b border-[var(--border-color)] bg-[var(--surface)]/95 text-[var(--text)] backdrop-blur">
-    <div className="border-b border-white/10 bg-[#211914] text-[#FFF8F1]" aria-label={locale === "ar" ? "معلومات الطلب" : "Ordering information"}>
-      <div className="order-strip" role="presentation">
-        <div className="order-strip__track">
-          {[...reassuranceItems[locale], ...reassuranceItems[locale]].map(([Icon, label], index) => <span key={`${label}-${index}`} className="inline-flex shrink-0 items-center gap-2 whitespace-nowrap"><Icon className="h-4 w-4 text-[#FF9A4A]" aria-hidden="true" />{label}</span>)}
-        </div>
-      </div>
-    </div>
     <div className="mx-auto flex min-h-16 max-w-[1180px] items-center gap-2 px-4 sm:px-6 lg:min-h-[72px] lg:px-8">
       <Link href="/" className="relative h-10 w-24 shrink-0 sm:w-28" aria-label="Tiger Store"><Image src="/logo/tiger-store-ui.png" alt="Tiger Store" fill sizes="112px" className="object-contain object-start" priority /></Link>
       <nav className="hidden flex-1 items-center justify-center gap-1 lg:flex" aria-label={t(locale, "menu")}>{links.map(([href, key]) => <Link key={href} href={href} className="rounded-full px-3 py-2 text-sm font-bold hover:bg-[#FFF2E6] hover:text-[#C54E00]">{t(locale, key)}</Link>)}</nav>
