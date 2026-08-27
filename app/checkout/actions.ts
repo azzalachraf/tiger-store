@@ -6,6 +6,7 @@ import { normalizeAlgerianPhone } from "@/lib/stock-alerts";
 import { receiptOrderInputSchema } from "@/lib/validation";
 import { getSupabaseServiceClient } from "@/lib/supabase";
 import type { AdminOrder, CartItem, Product, ProductPriceOption } from "@/lib/types";
+import { notifyTelegramOfOrder } from "@/lib/telegram-notifications";
 import { notifyOwnerOfReceipt } from "@/lib/whatsapp-notifications";
 import { logger } from "@/lib/logger";
 
@@ -64,6 +65,7 @@ async function createReceiptOrder(formData: FormData) {
     throw new Error("Unable to save the order. Please try again.");
   }
   await notifyOwnerOfReceipt(order);
+  await notifyTelegramOfOrder(order);
   revalidatePath("/admin", "layout");
   return { id: order.id, total: order.total };
 }

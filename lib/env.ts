@@ -14,6 +14,9 @@ const serverEnvSchema = z.object({
   WHATSAPP_ACCESS_TOKEN: z.string().optional().default(""),
   WHATSAPP_PHONE_NUMBER_ID: z.string().optional().default(""),
   WHATSAPP_OWNER_PHONE: z.string().optional().default(""),
+  TELEGRAM_BOT_TOKEN: z.string().optional().default(""),
+  TELEGRAM_CHAT_ID: z.string().optional().default(""),
+  TELEGRAM_ADMIN_IDS: z.string().optional().default(""),
 });
 
 let cachedEnv: z.infer<typeof serverEnvSchema> | null = null;
