@@ -23,6 +23,10 @@ function enrichCatalogProduct(product: Product): Product {
     : { ...product, priceOptions: stableOptions };
 }
 
+function isMissingProductOptionsTable(error: { code?: string; message?: string } | null) {
+  return error?.code === "PGRST205" || error?.message?.includes("public.product_options") === true;
+}
+
 /* ------------------------------------------------------------------ */
 /*  Encryption helpers (unchanged – passwords encrypted before DB)    */
 /* ------------------------------------------------------------------ */
@@ -156,7 +160,15 @@ export async function saveProduct(product: Product) {
       options.map((option) => ({ product_id: validatedProduct.id, ...option })),
       { onConflict: "product_id,id" },
     );
-    if (optionError) throw new Error(`saveProduct options failed: ${optionError.message}`);
+    // The deployed catalog already persists variants in products.priceOptions.
+    // Keep product editing functional on projects where the optional normalized
+    // product_options table has not yet been applied.
+    if (optionError && !isMissingProductOptionsTable(optionError)) {
+      throw new Error(`saveProduct options failed: ${optionError.message}`);
+    }
+    if (optionError) {
+      logger.warn("product_options table is unavailable; saved variants in products.priceOptions only", { productId: validatedProduct.id });
+    }
   }
 }
 
