@@ -10,7 +10,7 @@ import type { CartItem, PaymentMethodId, Product, SiteSettings } from "@/lib/typ
 import { formatPriceDZD } from "@/lib/utils";
 import { useLocale } from "@/lib/useLocale";
 
-const paymentMethods: PaymentMethodId[] = ["BaridiMob", "CCP", "RedotPay"];
+const paymentMethods: PaymentMethodId[] = ["BaridiMob", "Binance", "RedotPay"];
 type Step = "details" | "payment" | "receipt" | "complete";
 
 export function CheckoutView({ products, directProductSlug, directOption, settings }: { products: Product[]; directProductSlug?: string; directOption?: string; settings: SiteSettings }) {
@@ -32,7 +32,9 @@ export function CheckoutView({ products, directProductSlug, directOption, settin
 
   useEffect(() => { const timer = window.setTimeout(() => { let current = readCart(); if (!current.length && directProductSlug) { const product = products.find((entry) => entry.slug === directProductSlug); const offer = product ? getProductOffers(product).find((entry) => entry.id === directOption) ?? getProductOffers(product)[0] : undefined; if (product && offer) current = addCartItem(createCartItem(product, offer)); } const repaired = current.map((item) => { const product = products.find((entry) => entry.slug === item.slug); const offers = product ? getProductOffers(product) : []; const offer = offers.find((entry) => entry.id === item.optionId) ?? offers.find((entry) => entry.label === item.option || entry.labelAr === item.optionAr); return product && offer ? createCartItem(product, offer, item.quantity) : item; }); if (repaired.some((item, index) => item !== current[index])) writeCart(repaired); setItems(repaired); }, 0); return () => window.clearTimeout(timer); }, [directOption, directProductSlug, products]);
   const total = useMemo(() => getCartSubtotal(items), [items]);
-  const instructions = paymentMethod === "BaridiMob" ? `RIP: ${settings.baridiMobRip}` : paymentMethod === "CCP" ? settings.ccpDetails : settings.redotPayDetails;
+  // `ccpDetails` is retained as the existing Supabase settings column until a future
+  // database migration renames it. Its customer-facing payment method is Binance.
+  const instructions = paymentMethod === "BaridiMob" ? `RIP: ${settings.baridiMobRip}` : paymentMethod === "Binance" ? settings.ccpDetails : settings.redotPayDetails;
   const lines = items.map(({ slug, optionId, quantity }) => ({ slug, optionId, quantity }));
 
   function progress(event: FormEvent<HTMLFormElement>) { event.preventDefault(); setError(""); if (step === "details") setStep("payment"); else if (step === "payment") setStep("receipt"); }

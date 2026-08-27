@@ -7,12 +7,12 @@ import { useLocale } from "@/lib/useLocale";
 const copy = {
   ar: {
     processEyebrow: "كيف يتم الطلب", processTitle: "خطوات واضحة من الاختيار إلى التفعيل", processDescription: "لا يوجد دفع إلكتروني داخل الموقع. راجع التفاصيل وارفع وصل التحويل في الطلب.", paymentLink: "اطّلع على طرق الدفع",
-    steps: [["1", "اختر المنتج والخطة", "اطّلع على ما يشمله العرض والسعر النهائي حسب الخطة."], ["2", "حوّل المبلغ وارفع الوصل", "استخدم BaridiMob أو CCP أو RedotPay ثم أرفق صورة الوصل."], ["3", "نراجع ونفعّل الطلب", "يكون التفعيل عادةً خلال 15 دقيقة إلى 12 ساعة بعد تأكيد الدفع."]],
+    steps: [["1", "اختر المنتج والخطة", "اطّلع على ما يشمله العرض والسعر النهائي حسب الخطة."], ["2", "حوّل المبلغ وارفع الوصل", "استخدم BaridiMob أو Binance أو RedotPay ثم أرفق صورة الوصل."], ["3", "نراجع ونفعّل الطلب", "يكون التفعيل عادةً خلال 15 دقيقة إلى 12 ساعة بعد تأكيد الدفع."]],
     trustEyebrow: "قبل أن تطلب", trustTitle: "ما نلتزم به بوضوح", trust: [["دعم ومتابعة", "نوضح لك المعلومات المطلوبة ونبقى متاحين لمتابعة الطلب."], ["ضمان حسب العرض", "مدة الضمان المعروضة في صفحة المنتج أو الخطة هي المرجع."], ["حل عادل عند خطأ من طرفنا", "نحاول الاستبدال أولاً، ثم نرد الجزء غير المستعمل من مدة الضمان إذا تعذّر ذلك."], ["استرجاع محسوب", "يُحسب الاسترجاع بالدينار الصحيح حسب الأيام المتبقية من التغطية. المشاكل الناتجة عن العميل غير مشمولة."]],
   },
   en: {
     processEyebrow: "How ordering works", processTitle: "Clear steps from selection to activation", processDescription: "There is no online payment inside the site. Review the details and upload your transfer receipt with the order.", paymentLink: "View payment methods",
-    steps: [["1", "Choose product and plan", "Review what the offer includes and the final price for the selected plan."], ["2", "Transfer and upload receipt", "Use BaridiMob, CCP, or RedotPay, then attach a receipt screenshot."], ["3", "We review and activate", "Activation is usually 15 minutes–12 hours after payment verification."]],
+    steps: [["1", "Choose product and plan", "Review what the offer includes and the final price for the selected plan."], ["2", "Transfer and upload receipt", "Use BaridiMob, Binance, or RedotPay, then attach a receipt screenshot."], ["3", "We review and activate", "Activation is usually 15 minutes–12 hours after payment verification."]],
     trustEyebrow: "Before you order", trustTitle: "What we state clearly", trust: [["Support and follow-up", "We explain the required information and remain available to follow up on the order."], ["Warranty per offer", "The warranty shown on the product or plan is the reference."], ["Fair resolution for our error", "We attempt replacement first; if impossible, we refund the unused covered period proportionally."], ["Calculated refund", "Refunds use whole DZD and remaining covered days. Customer-caused problems are excluded."]],
   },
 } as const;

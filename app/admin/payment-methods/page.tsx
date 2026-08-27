@@ -21,7 +21,7 @@ export default async function AdminPaymentMethodsPage() {
         <input type="hidden" name="promoHeadings" value={settings.promoHeadings.join("\n")} />
         <input type="hidden" name="footerDisclaimer" value={settings.footerDisclaimer} />
         <PaymentAdminCard name="BaridiMob RIP" field="baridiMobRip" value={settings.baridiMobRip} />
-        <PaymentAdminCard name="CCP" field="ccpDetails" value={settings.ccpDetails} textarea />
+        <PaymentAdminCard name="Binance" field="ccpDetails" value={settings.ccpDetails} textarea />
         <PaymentAdminCard name="RedotPay" field="redotPayDetails" value={settings.redotPayDetails} textarea />
         <button type="submit" className="min-h-12 rounded-xl bg-tiger-ember px-5 font-extrabold text-black">
           حفظ طرق الدفع

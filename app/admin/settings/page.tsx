@@ -19,7 +19,7 @@ export default async function AdminSettingsPage() {
         <AdminField name="instagramUrl" label="Instagram URL" defaultValue={settings.instagramUrl} />
         <AdminField name="facebookUrl" label="Facebook URL" defaultValue={settings.facebookUrl} />
         <AdminField name="baridiMobRip" label="BaridiMob RIP" defaultValue={settings.baridiMobRip} />
-        <TextArea name="ccpDetails" label="CCP details" defaultValue={settings.ccpDetails} />
+        <TextArea name="ccpDetails" label="Binance details" defaultValue={settings.ccpDetails} />
         <TextArea name="redotPayDetails" label="RedotPay details" defaultValue={settings.redotPayDetails} />
         <TextArea name="promoHeadings" label="Homepage promo headings - one per line" defaultValue={settings.promoHeadings.join("\n")} />
         <TextArea name="footerDisclaimer" label="Footer disclaimer" defaultValue={settings.footerDisclaimer} />

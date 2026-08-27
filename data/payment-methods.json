@@ -5,9 +5,9 @@
     "description": { "ar": "الدفع عبر BaridiMob.", "en": "Pay with BaridiMob." }
   },
   {
-    "id": "CCP",
-    "name": "CCP",
-    "description": { "ar": "Payment details will be confirmed after order submission.", "en": "Payment details will be confirmed after order submission." }
+    "id": "Binance",
+    "name": "Binance",
+    "description": { "ar": "تظهر تفاصيل التحويل عبر Binance عند إتمام الطلب.", "en": "Binance transfer details appear during checkout." }
   },
   {
     "id": "RedotPay",

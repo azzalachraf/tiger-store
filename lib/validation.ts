@@ -1,6 +1,7 @@
 import { z } from "zod";
 
-export const paymentMethodSchema = z.enum(["BaridiMob", "CCP", "RedotPay"]);
+export const paymentMethodSchema = z.enum(["BaridiMob", "Binance", "RedotPay"]);
+const storedPaymentMethodSchema = z.enum(["BaridiMob", "Binance", "RedotPay", "CCP"]);
 export const adminLoginInputSchema = z.object({ email: z.string().trim().email().max(180), password: z.string().min(1).max(512), next: z.string().trim().max(512).optional() });
 export const orderStatusSchema = z.enum(["pending", "paid", "delivered", "cancelled", "refunded"]);
 export const accountStatusSchema = z.enum(["Available", "Sold", "Expired", "Problem"]);
@@ -113,7 +114,7 @@ export const adminOrderSchema = z.object({
   phone: z.string().trim().min(1).max(60),
   email: z.string().trim().max(180),
   products: z.array(cartItemSchema).default([]),
-  paymentMethod: paymentMethodSchema,
+  paymentMethod: storedPaymentMethodSchema,
   total: z.coerce.number().int().nonnegative(),
   notes: optionalTextSchema,
   status: orderStatusSchema,

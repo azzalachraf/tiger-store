@@ -96,7 +96,11 @@ export type CartItem = {
   quantity: number;
 };
 
-export type PaymentMethodId = "BaridiMob" | "CCP" | "RedotPay";
+/** Payment methods available for new orders. */
+export type PaymentMethodId = "BaridiMob" | "Binance" | "RedotPay";
+
+/** CCP remains parseable solely for historic orders created before the payment update. */
+export type StoredPaymentMethodId = PaymentMethodId | "CCP";
 
 export type LocalOrder = {
   id: string;
@@ -122,7 +126,7 @@ export type AdminOrder = {
   phone: string;
   email: string;
   products: CartItem[];
-  paymentMethod: PaymentMethodId;
+  paymentMethod: StoredPaymentMethodId;
   total: number;
   notes?: string;
   status: AdminOrderStatus;

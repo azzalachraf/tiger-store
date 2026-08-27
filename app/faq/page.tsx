@@ -30,7 +30,7 @@ const faqSections = [
   },
   {
     title: "Is payment secure?",
-    body: "Tiger Store supports BaridiMob, CCP, and RedotPay. The correct details are shown during checkout.",
+    body: "Tiger Store supports BaridiMob, Binance, and RedotPay. The correct details are shown during checkout.",
   },
 ];
 
@@ -75,7 +75,7 @@ export default function FaqPage() {
           },
           {
             title: "هل الدفع آمن؟",
-            body: "طرق الدفع المعتمدة في المتجر هي BaridiMob وCCP وRedotPay مع عرض التفاصيل المناسبة أثناء إتمام الطلب.",
+            body: "طرق الدفع المعتمدة في المتجر هي BaridiMob وBinance وRedotPay مع عرض التفاصيل المناسبة أثناء إتمام الطلب.",
           },
         ],
       }}

@@ -43,7 +43,7 @@ export async function addManualOrderAction(formData: FormData) {
   const status = orderStatusSchema.parse(text(formData, "status") || "paid");
   const customerName = text(formData, "customerName") || "Manual Order";
   const notes = text(formData, "notes");
-  const paymentMethod = paymentMethodSchema.catch("CCP" as PaymentMethodId).parse(text(formData, "paymentMethod") || "CCP");
+  const paymentMethod = paymentMethodSchema.catch("BaridiMob" as PaymentMethodId).parse(text(formData, "paymentMethod") || "BaridiMob");
 
   if (!Number.isFinite(total) || total <= 0) {
     throw new Error("Manual order total must be greater than 0.");

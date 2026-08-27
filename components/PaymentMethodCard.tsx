@@ -7,7 +7,7 @@ type PaymentMethodCardProps = {
 
 const paymentLogos: Record<string, string> = {
   BaridiMob: "/logos/payments/baridimob.png",
-  CCP: "/logos/payments/algerie-poste.svg",
+  Binance: "/logos/payments/binance.svg",
   RedotPay: "/logos/payments/redotpay.svg",
 };
 

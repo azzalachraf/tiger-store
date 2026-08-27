@@ -50,8 +50,10 @@ export function Header() {
 
   return <header className="sticky top-0 z-50 border-b border-[var(--border-color)] bg-[var(--surface)]/95 text-[var(--text)] backdrop-blur">
     <div className="border-b border-white/10 bg-[#211914] text-[#FFF8F1]" aria-label={locale === "ar" ? "معلومات الطلب" : "Ordering information"}>
-      <div className="mx-auto flex max-w-[1180px] items-center gap-5 overflow-x-auto px-4 py-2 text-xs font-bold sm:px-6 lg:px-8 scrollbar-none">
-        {reassuranceItems[locale].map(([Icon, label]) => <span key={label} className="inline-flex shrink-0 items-center gap-2 whitespace-nowrap"><Icon className="h-4 w-4 text-[#FF9A4A]" aria-hidden="true" />{label}</span>)}
+      <div className="order-strip" role="presentation">
+        <div className="order-strip__track">
+          {[...reassuranceItems[locale], ...reassuranceItems[locale]].map(([Icon, label], index) => <span key={`${label}-${index}`} className="inline-flex shrink-0 items-center gap-2 whitespace-nowrap"><Icon className="h-4 w-4 text-[#FF9A4A]" aria-hidden="true" />{label}</span>)}
+        </div>
       </div>
     </div>
     <div className="mx-auto flex min-h-16 max-w-[1180px] items-center gap-2 px-4 sm:px-6 lg:min-h-[72px] lg:px-8">

@@ -41,9 +41,9 @@ export default async function AdminOrdersPage() {
           </label>
           <label className="grid gap-1 text-sm font-bold text-white">
             Payment
-            <select name="paymentMethod" defaultValue="CCP" className="min-h-11 rounded-xl border border-white/10 bg-black/45 px-3 text-white outline-none focus:border-tiger-ember">
+            <select name="paymentMethod" defaultValue="BaridiMob" className="min-h-11 rounded-xl border border-white/10 bg-black/45 px-3 text-white outline-none focus:border-tiger-ember">
               <option value="BaridiMob">BaridiMob</option>
-              <option value="CCP">CCP</option>
+              <option value="Binance">Binance</option>
               <option value="RedotPay">RedotPay</option>
             </select>
           </label>
