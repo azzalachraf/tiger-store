@@ -132,3 +132,8 @@ Important: local JSON writes are not durable on Vercel serverless deployments. U
 - Lightweight UI with no aggressive popups, countdowns, sliders, or heavy animations
 - Product cards use `next/image`
 - Product grids lazy-load thumbnails
+# Tiger Store
+
+## Telegram operations foundation
+
+The private Telegram registration, owner/admin roles, webhook verification, and operations-schema setup are documented in [`docs/telegram-operations.md`](docs/telegram-operations.md). Apply the SQL migrations manually, configure the documented server-only variables, and register the webhook only after deployment. No product price, receipt, customer data, token, or code is trusted from Telegram input.

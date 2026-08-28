@@ -2,9 +2,9 @@
 
 import { revalidatePath } from "next/cache";
 import { getOrderById, getProductBySlug, saveOrder } from "@/lib/admin-store";
-import { AdminOrder, PaymentMethodId, Product, ProductPriceOption } from "@/lib/types";
+import { AdminOrder, Product, ProductPriceOption } from "@/lib/types";
 import { requireAdmin } from "@/lib/admin-auth";
-import { orderStatusSchema, paymentMethodSchema, productCheckoutLinkIssueSchema, warrantyIssueSchema } from "@/lib/validation";
+import { manualOrderInputSchema, orderStatusSchema, productCheckoutLinkIssueSchema, warrantyIssueSchema } from "@/lib/validation";
 import { createWarrantyLink } from "@/lib/warranty";
 import { createProductCheckoutLink } from "@/lib/product-checkout-link";
 import { redirect } from "next/navigation";
@@ -48,26 +48,26 @@ export async function deleteOrderAction(formData: FormData) {
 
 export async function addManualOrderAction(formData: FormData) {
   await requireAdmin();
-  const total = Number(formData.get("total") ?? 0);
-  const status = orderStatusSchema.parse(text(formData, "status") || "paid");
-  const customerName = text(formData, "customerName") || "Manual Order";
-  const notes = text(formData, "notes");
-  const paymentMethod = paymentMethodSchema.catch("BaridiMob" as PaymentMethodId).parse(text(formData, "paymentMethod") || "BaridiMob");
-
-  if (!Number.isFinite(total) || total <= 0) {
-    throw new Error("Manual order total must be greater than 0.");
-  }
+  const input = manualOrderInputSchema.parse({
+    customerName: text(formData, "customerName"),
+    total: text(formData, "total"),
+    status: text(formData, "status") || "paid",
+    paymentMethod: text(formData, "paymentMethod") || "BaridiMob",
+    notes: text(formData, "notes") || undefined,
+  });
 
   const order: AdminOrder = {
     id: crypto.randomUUID(),
-    customerName,
-    phone: "",
+    customerName: input.customerName,
+    // The existing AdminOrder model requires a non-empty phone number. A
+    // manual sale intentionally has no customer contact record.
+    phone: "manual",
     email: "",
     products: [],
-    paymentMethod,
-    total,
-    notes,
-    status,
+    paymentMethod: input.paymentMethod,
+    total: input.total,
+    notes: input.notes,
+    status: input.status,
     createdAt: new Date().toISOString(),
   };
 
