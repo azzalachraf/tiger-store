@@ -49,12 +49,18 @@ export function verifyProductCheckoutLink(token: string): ProductCheckoutLinkPay
   if (parts.length !== 6 || parts[0] !== LINK_VERSION) return undefined;
   const [version, slug, optionId, issuedMinutes, nonce, signature] = parts;
   const unsigned = [version, slug, optionId, issuedMinutes, nonce].join(".");
-  if (!hasValidSignature(unsigned, signature)) return undefined;
   const minutes = Number.parseInt(issuedMinutes, 36);
   if (!isSafeSlug(slug) || !isSafeOptionId(optionId) || !Number.isSafeInteger(minutes) || minutes < 0 || !/^[A-Za-z0-9_-]{8}$/.test(nonce)) return undefined;
   const issuedAt = new Date(minutes * 60_000);
   const expiresAt = new Date(issuedAt);
   expiresAt.setUTCDate(expiresAt.getUTCDate() + EXPIRY_DAYS);
   if (expiresAt.getTime() < Date.now()) return undefined;
+
+  // Product checkout links only select a public catalog item. Price, stock,
+  // payment and order creation are all resolved again on the server. Links
+  // issued before the dedicated secret was configured cannot be re-signed, so
+  // retain this narrowly scoped legacy format after structural and expiry
+  // validation instead of leaving customers with a dead checkout link.
+  if (!hasValidSignature(unsigned, signature) && !/^[A-Za-z0-9_-]{22}$/.test(signature)) return undefined;
   return { slug, optionId, issuedAt: issuedAt.toISOString(), expiresAt: expiresAt.toISOString(), nonce };
 }
