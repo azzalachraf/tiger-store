@@ -240,6 +240,10 @@ export type WarrantyCertificateStatus = "active" | "claimed" | "replaced" | "ref
 export type PaymentRecordStatus = "pending" | "verified" | "rejected" | "refunded";
 export type CommissionStatus = "pending" | "approved" | "paid" | "void";
 
+export type SnapchatOperationStatus = "active" | "completed" | "cancelled";
+export type SnapchatPlanMonths = 1 | 2 | 3 | 6 | 12;
+export type SnapchatRedeemCardType = "try_24" | "try_48" | "inr_100" | "try_115" | "try_229" | "inr_199" | "inr_298";
+
 export type FunnelStep = {
   label: string;
   count: number;

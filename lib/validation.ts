@@ -19,7 +19,26 @@ export const telegramWebhookUpdateSchema = z.object({
     }),
     chat: z.object({ id: z.number().int(), type: z.string().max(32) }),
   }).optional(),
+  callback_query: z.object({
+    id: z.string().trim().min(1).max(128),
+    data: z.string().trim().min(1).max(64),
+    from: z.object({
+      id: z.number().int().positive(),
+      is_bot: z.boolean(),
+      first_name: z.string().max(256).optional(),
+      username: z.string().max(64).optional(),
+      language_code: z.string().max(16).optional(),
+    }),
+    message: z.object({ chat: z.object({ id: z.number().int(), type: z.string().max(32) }) }).optional(),
+  }).optional(),
 }).strict();
+export const snapchatPlanSchema = z.union([z.literal(1), z.literal(2), z.literal(3), z.literal(6), z.literal(12)]);
+export const snapchatCardTypeSchema = z.enum(["try_24", "try_48", "inr_100", "try_115", "try_229", "inr_199", "inr_298"]);
+export const snapchatCallbackDataSchema = z.union([
+  z.tuple([z.literal("sc"), snapchatPlanSchema]),
+  z.tuple([z.literal("sc"), snapchatPlanSchema, snapchatCardTypeSchema]),
+  z.tuple([z.literal("op"), z.string().uuid(), z.enum(["complete", "cancel"])]),
+]);
 export const manualOrderInputSchema = z.object({
   customerName: z.string().trim().min(1).max(160),
   total: z.coerce.number().int().positive().max(10_000_000),

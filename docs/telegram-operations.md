@@ -34,6 +34,24 @@ node -e "console.log(require('crypto').randomBytes(32).toString('base64url'))"
 
 Only the verified database identity with role `owner` can approve registrations. Operations commands sent in groups are ignored so registration IDs are not exposed publicly.
 
+## Snapchat redeem-card operations
+
+Redeem inventory has one owner-controlled source: the existing Google Sheet **Redeem cards 2**, tab **Gift Card Inventory**. The application reads it using a dedicated Google service account with Viewer access; it never writes, changes a status, or uploads a code to that sheet.
+
+The sheet contains repeating `Code` / boolean `Status` pairs. The heading above each pair must be exactly one of `24 TRY`, `48 TRY`, `100 INR`, `115 TRY`, `229 TRY`, `199 INR`, or `298 INR`. `TRUE` means available. The owner adds cards in that sheet, then privately runs `/sync_cards`.
+
+Set `GOOGLE_REDEEM_SHEET_ID`, `GOOGLE_REDEEM_SHEET_TAB`, `GOOGLE_SERVICE_ACCOUNT_EMAIL`, and `GOOGLE_SERVICE_ACCOUNT_PRIVATE_KEY`. Share the sheet with the service-account email as **Viewer**. Do not use a public sheet or an API key.
+
+An approved admin privately sends `/snapchat`, selects a plan and then an allowed card type:
+
+- 1 month: `24 TRY` or `48 TRY`
+- 2 months: `100 INR`
+- 3 months: `115 TRY`
+- 6 months: `229 TRY`
+- 12 months: `199 INR` or `298 INR`
+
+The database claims a single card with `FOR UPDATE SKIP LOCKED`, then returns the decrypted code only in that admin's private Telegram chat. Multiple admins can work at once without receiving the same code. **Complete** permanently consumes the card; **Cancel** returns it to available inventory. Admins can only complete or cancel operations they themselves created. The owner gets a private low-stock warning whenever a synchronization finds fewer than five available cards of a type.
+
 ## Webhook registration after deployment
 
 Do this only after the deployment contains this route and the environment variables are configured. Replace the placeholders locally; never paste a real token into a public terminal recording.

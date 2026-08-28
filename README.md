@@ -1,5 +1,9 @@
 # Tiger Store
 
+## Private Telegram operations
+
+The owner-maintained Google Sheet is the only source for Snapchat redeem-card uploads. See [Telegram operations setup](docs/telegram-operations.md) for the service-account setup, owner approval flow, and private card-operation commands. No code is stored or logged in plaintext.
+
 Tiger Store is a mobile-first Next.js App Router storefront for digital subscriptions in Algeria at `digitaldz.shop`.
 
 The site uses Arabic RTL by default, generated product thumbnails from `public/products`, WhatsApp-only checkout, and an admin-only dashboard. There are no customer accounts and no online payment gateway.

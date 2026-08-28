@@ -1,6 +1,6 @@
 import { timingSafeEqual } from "node:crypto";
 import { getServerEnv } from "@/lib/env";
-import { handleTelegramOperationsMessage } from "@/lib/telegram-operations";
+import { handleTelegramOperationsCallback, handleTelegramOperationsMessage } from "@/lib/telegram-operations";
 import { telegramWebhookUpdateSchema } from "@/lib/validation";
 
 export const runtime = "nodejs";
@@ -22,7 +22,17 @@ export async function POST(request: Request) {
   }
 
   const parsed = telegramWebhookUpdateSchema.safeParse(await request.json().catch(() => undefined));
-  if (!parsed.success || !parsed.data.message) return Response.json({ ok: true });
+  if (!parsed.success) return Response.json({ ok: true });
+
+  if (parsed.data.callback_query) {
+    const callback = parsed.data.callback_query;
+    if (callback.from.is_bot) return Response.json({ ok: true });
+    try {
+      await handleTelegramOperationsCallback({ callbackId: callback.id, chatId: callback.message?.chat.id, chatType: callback.message?.chat.type, userId: callback.from.id, firstName: callback.from.first_name, username: callback.from.username, languageCode: callback.from.language_code, data: callback.data });
+    } catch { return Response.json({ ok: false }, { status: 500 }); }
+    return Response.json({ ok: true });
+  }
+  if (!parsed.data.message) return Response.json({ ok: true });
 
   const message = parsed.data.message;
   if (message.from.is_bot) return Response.json({ ok: true });

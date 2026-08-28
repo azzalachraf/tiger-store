@@ -8,7 +8,8 @@
     "start": "next start",
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
-    "migrate:admin-store": "tsx scripts/migrate-admin-store-to-supabase.ts"
+    "migrate:admin-store": "tsx scripts/migrate-admin-store-to-supabase.ts",
+    "test:snapchat-operations": "tsx scripts/test-snapchat-operations.ts"
   },
   "dependencies": {
     "@radix-ui/react-slot": "^1.1.2",
