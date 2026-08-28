@@ -1,7 +1,7 @@
 import { z } from "zod";
 
-export const paymentMethodSchema = z.enum(["BaridiMob", "Binance", "RedotPay"]);
-const storedPaymentMethodSchema = z.enum(["BaridiMob", "Binance", "RedotPay", "CCP"]);
+export const paymentMethodSchema = z.enum(["BaridiMob", "Binance", "RedotPay", "Flexy"]);
+const storedPaymentMethodSchema = z.enum(["BaridiMob", "Binance", "RedotPay", "Flexy", "CCP"]);
 export const adminLoginInputSchema = z.object({ email: z.string().trim().email().max(180), password: z.string().min(1).max(512), next: z.string().trim().max(512).optional() });
 export const orderStatusSchema = z.enum(["pending", "paid", "delivered", "cancelled", "refunded"]);
 export const warrantyIssueSchema = z.object({
@@ -15,6 +15,10 @@ export const directWarrantyIssueSchema = z.object({
   coveredDays: z.coerce.number().int().min(1).max(3650),
   amountPaid: z.coerce.number().int().positive().max(10_000_000),
   paymentMethod: paymentMethodSchema,
+});
+export const productCheckoutLinkIssueSchema = z.object({
+  slug: z.string().trim().min(1).max(160).regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/),
+  optionId: z.string().trim().min(1).max(160),
 });
 export const warrantyClaimSchema = z.object({
   recipientName: z.string().trim().min(2).max(160),

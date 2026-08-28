@@ -1,11 +1,12 @@
 import { getOrders, getProducts, getReceiptSignedUrl } from "@/lib/admin-store";
 import type { ReactNode } from "react";
-import { saveOrderStatusAction, deleteOrderAction, addManualOrderAction, createDirectWarrantyLinkAction, createWarrantyLinkAction } from "@/app/admin/orders/actions";
+import { saveOrderStatusAction, deleteOrderAction, addManualOrderAction, createProductCheckoutLinkAction, createWarrantyLinkAction } from "@/app/admin/orders/actions";
 import { Trash2, Plus, ShoppingBag, Clock3, CheckCircle2, ShieldCheck, Copy } from "lucide-react";
 import { AdminShell } from "@/components/admin/AdminShell";
 import { formatPriceDZD } from "@/lib/utils";
 import { absoluteUrl } from "@/lib/seo";
 import { verifyWarrantyLink } from "@/lib/warranty";
+import { verifyProductCheckoutLink } from "@/lib/product-checkout-link";
 
 export const dynamic = "force-dynamic";
 
@@ -13,10 +14,12 @@ export const metadata = {
   title: "Admin Orders",
 };
 
-export default async function AdminOrdersPage({ searchParams }: { searchParams: Promise<{ warranty?: string }> }) {
-  const warrantyToken = (await searchParams).warranty;
+export default async function AdminOrdersPage({ searchParams }: { searchParams: Promise<{ warranty?: string; checkout?: string }> }) {
+  const { warranty: warrantyToken, checkout: checkoutToken } = await searchParams;
   const warrantyPayload = warrantyToken ? verifyWarrantyLink(warrantyToken) : undefined;
   const warrantyLink = warrantyPayload && warrantyToken ? absoluteUrl(`/warranty/${warrantyToken}`) : undefined;
+  const checkoutPayload = checkoutToken ? verifyProductCheckoutLink(checkoutToken) : undefined;
+  const checkoutLink = checkoutPayload && checkoutToken ? `https://tiger-storedz.com/p/${checkoutToken}` : undefined;
   const [orders, products] = await Promise.all([getOrders(), getProducts()]);
   const receiptLinks = await Promise.all(orders.map((order) => getReceiptSignedUrl(order.receiptPath)));
   const pending = orders.filter((order) => order.status === "pending").length;
@@ -66,28 +69,39 @@ export default async function AdminOrdersPage({ searchParams }: { searchParams: 
       </section>
 
       <details className="mb-6 rounded-md border border-tiger-ember/25 bg-white/[0.045] p-5 shadow-[0_18px_55px_rgba(0,0,0,0.2)]">
-        <summary className="cursor-pointer list-none text-lg font-black text-white"><span className="flex items-center gap-2"><ShieldCheck className="h-5 w-5 text-tiger-ember" /> Create link for an off-site sale</span></summary>
-        <p className="mt-3 max-w-3xl text-sm font-semibold leading-6 text-white/60">Use this when a sale arrived through messages. It does not create an order yet. When the customer completes the private link, a delivered order is created automatically with the selected plan and exact paid amount.</p>
+        <summary className="cursor-pointer list-none text-lg font-black text-white"><span className="flex items-center gap-2"><ShieldCheck className="h-5 w-5 text-tiger-ember" /> Generate product payment link</span></summary>
+        <p className="mt-3 max-w-3xl text-sm font-semibold leading-6 text-white/60">Use this for a message sale. Pick the product and plan, then send the private link. The customer enters their details, selects a payment method, and uploads the receipt. Their order appears here as pending for review.</p>
         <div className="mt-4 grid gap-3 lg:grid-cols-2">
           {products.flatMap((product) => {
             const offers = product.priceOptions?.length ? product.priceOptions : [{ id: `${product.id}:default`, label: product.duration, labelAr: product.durationAr, price: product.price }];
             return offers.map((offer) => (
-              <form key={`${product.id}-${offer.id}`} action={createDirectWarrantyLinkAction} className="flex flex-wrap items-end gap-3 rounded-xl border border-white/10 bg-black/25 p-3">
+              <form key={`${product.id}-${offer.id}`} action={createProductCheckoutLinkAction} className="flex flex-wrap items-end gap-3 rounded-xl border border-white/10 bg-black/25 p-3">
                 <input type="hidden" name="slug" value={product.slug} />
                 <input type="hidden" name="optionId" value={offer.id} />
                 <div className="min-w-0 flex-1">
                   <p className="truncate text-sm font-black text-white">{product.name}</p>
                   <p className="mt-1 text-xs font-semibold text-white/55">{offer.label}</p>
                 </div>
-                <label className="grid gap-1 text-xs font-bold text-white/75">Paid DA<input name="amountPaid" type="number" min="1" step="1" defaultValue={offer.price} required className="h-10 w-28 rounded-lg border border-white/10 bg-black px-2 text-sm font-bold text-white outline-none focus:border-tiger-ember" /></label>
-                <label className="grid gap-1 text-xs font-bold text-white/75">Days<input name="coveredDays" type="number" min="1" max="3650" defaultValue="365" required className="h-10 w-20 rounded-lg border border-white/10 bg-black px-2 text-sm font-bold text-white outline-none focus:border-tiger-ember" /></label>
-                <label className="grid gap-1 text-xs font-bold text-white/75">Payment<select name="paymentMethod" defaultValue="BaridiMob" className="h-10 rounded-lg border border-white/10 bg-black px-2 text-sm font-bold text-white outline-none focus:border-tiger-ember"><option value="BaridiMob">BaridiMob</option><option value="Binance">Binance</option><option value="RedotPay">RedotPay</option></select></label>
-                <button type="submit" className="inline-flex min-h-10 items-center gap-2 rounded-lg bg-tiger-ember px-3 text-sm font-black text-black"><ShieldCheck className="h-4 w-4" /> Create link</button>
+                <p className="text-sm font-black text-tiger-gold">{formatPriceDZD(offer.price, "en")}</p>
+                <button type="submit" className="inline-flex min-h-10 items-center gap-2 rounded-lg bg-tiger-ember px-3 text-sm font-black text-black"><ShieldCheck className="h-4 w-4" /> Create payment link</button>
               </form>
             ));
           })}
         </div>
       </details>
+
+      {checkoutPayload && checkoutLink ? (
+        <section className="mb-6 rounded-md border border-tiger-ember/40 bg-tiger-ember/10 p-5 shadow-[0_18px_55px_rgba(0,0,0,0.2)]">
+          <div className="flex flex-wrap items-start justify-between gap-3">
+            <div>
+              <p className="flex items-center gap-2 text-sm font-black text-tiger-gold"><ShieldCheck className="h-4 w-4" /> Payment link ready</p>
+              <p className="mt-1 text-sm font-semibold leading-6 text-white/70">Send this link to the customer. The final price is resolved from the selected product plan on the server; the customer chooses payment and uploads their receipt.</p>
+            </div>
+            <a href={checkoutLink} target="_blank" rel="noreferrer" className="inline-flex min-h-11 items-center gap-2 rounded-xl bg-tiger-ember px-4 text-sm font-black text-black"><Copy className="h-4 w-4" /> Open payment link</a>
+          </div>
+          <p className="mt-4 overflow-x-auto rounded-xl border border-white/10 bg-black/35 p-3 font-mono text-xs text-white/80" dir="ltr">{checkoutLink}</p>
+        </section>
+      ) : null}
 
       {warrantyPayload && warrantyLink ? (
         <section className="mb-6 rounded-md border border-tiger-ember/40 bg-tiger-ember/10 p-5 shadow-[0_18px_55px_rgba(0,0,0,0.2)]">

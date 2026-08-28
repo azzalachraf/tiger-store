@@ -97,7 +97,7 @@ export type CartItem = {
 };
 
 /** Payment methods available for new orders. */
-export type PaymentMethodId = "BaridiMob" | "Binance" | "RedotPay";
+export type PaymentMethodId = "BaridiMob" | "Binance" | "RedotPay" | "Flexy";
 
 /** CCP remains parseable solely for historic orders created before the payment update. */
 export type StoredPaymentMethodId = PaymentMethodId | "CCP";

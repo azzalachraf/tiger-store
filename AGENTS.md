@@ -13,7 +13,7 @@ Customers pay by manual transfer without buyer protection. Every UX and copy dec
 * No customer accounts or login.
 * Guest checkout only.
 * No online payment gateway.
-* Payments: BaridiMob, Binance, and RedotPay.
+* Payments: BaridiMob, Binance, and RedotPay. Flexy is available only for Snapchat Plus checkout links.
 * A receipt screenshot is uploaded during checkout.
 * Supabase is the source of truth for orders, products, settings, stock alerts, and private receipt storage.
 * Orders are managed through the secure admin panel.

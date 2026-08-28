@@ -49,6 +49,9 @@ async function createReceiptOrder(formData: FormData) {
   if (!hasReceiptMagic(bytes, receipt.type)) throw new Error("The receipt file does not match its image type.");
 
   const products = await resolveItems(parsed.lines);
+  if (parsed.paymentMethod === "Flexy" && (products.length !== 1 || products[0].slug !== "snapchat-plus")) {
+    throw new Error("Flexy is available only for Snapchat Plus.");
+  }
   const total = products.reduce((sum, item) => sum + item.price * item.quantity, 0);
   const id = `TS-${crypto.randomUUID().replaceAll("-", "").slice(0, 10).toUpperCase()}`;
   const extension = receiptTypes.get(receipt.type)!;

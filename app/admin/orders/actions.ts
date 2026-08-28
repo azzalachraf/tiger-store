@@ -4,8 +4,9 @@ import { revalidatePath } from "next/cache";
 import { getOrderById, getProductBySlug, saveOrder } from "@/lib/admin-store";
 import { AdminOrder, PaymentMethodId, Product, ProductPriceOption } from "@/lib/types";
 import { requireAdmin } from "@/lib/admin-auth";
-import { directWarrantyIssueSchema, orderStatusSchema, paymentMethodSchema, warrantyIssueSchema } from "@/lib/validation";
-import { createDirectWarrantyLink, createWarrantyLink } from "@/lib/warranty";
+import { orderStatusSchema, paymentMethodSchema, productCheckoutLinkIssueSchema, warrantyIssueSchema } from "@/lib/validation";
+import { createWarrantyLink } from "@/lib/warranty";
+import { createProductCheckoutLink } from "@/lib/product-checkout-link";
 import { redirect } from "next/navigation";
 
 function text(formData: FormData, key: string) {
@@ -89,18 +90,15 @@ export async function createWarrantyLinkAction(formData: FormData) {
   redirect(`/admin/orders?warranty=${encodeURIComponent(token)}`);
 }
 
-export async function createDirectWarrantyLinkAction(formData: FormData) {
+export async function createProductCheckoutLinkAction(formData: FormData) {
   await requireAdmin();
-  const input = directWarrantyIssueSchema.parse({
+  const input = productCheckoutLinkIssueSchema.parse({
     slug: text(formData, "slug"),
     optionId: text(formData, "optionId"),
-    coveredDays: text(formData, "coveredDays"),
-    amountPaid: text(formData, "amountPaid"),
-    paymentMethod: text(formData, "paymentMethod"),
   });
   const product = await getProductBySlug(input.slug);
   const offer = product ? findOffer(product, input.optionId) : undefined;
-  if (!product || !offer) throw new Error("The selected product plan is no longer available.");
-  const token = createDirectWarrantyLink(input);
-  redirect(`/admin/orders?warranty=${encodeURIComponent(token)}`);
+  if (!product || !product.available || !offer || offer.available === false || offer.price <= 0) throw new Error("The selected product plan is no longer available.");
+  const token = createProductCheckoutLink(input);
+  redirect(`/admin/orders?checkout=${encodeURIComponent(token)}`);
 }
