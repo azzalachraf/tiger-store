@@ -6,7 +6,9 @@ This foundation keeps Telegram identities, roles and all operations data private
 
 1. In the Supabase SQL editor, apply [`supabase/schema.sql`](../supabase/schema.sql) if it has not already been applied.
 2. Apply [`supabase/migrations/2026-08-28-operations-foundation.sql`](../supabase/migrations/2026-08-28-operations-foundation.sql).
-3. Verify that every new table has RLS enabled and that `anon` and `authenticated` have no privileges.
+3. Apply [`supabase/migrations/2026-08-28-snapchat-redeem-operations.sql`](../supabase/migrations/2026-08-28-snapchat-redeem-operations.sql).
+4. Apply [`supabase/migrations/2026-08-28-snapchat-order-warranties.sql`](../supabase/migrations/2026-08-28-snapchat-order-warranties.sql).
+5. Verify that every new table has RLS enabled and that `anon` and `authenticated` have no privileges.
 
 The migration is additive and does not alter catalog rows, existing orders, private receipts, accounts, or the current signed warranty-link flow.
 
@@ -51,6 +53,10 @@ An approved admin privately sends `/snapchat`, selects a plan and then an allowe
 - 12 months: `199 INR` or `298 INR`
 
 The database claims a single card with `FOR UPDATE SKIP LOCKED`, then returns the decrypted code only in that admin's private Telegram chat. Multiple admins can work at once without receiving the same code. **Complete** permanently consumes the card; **Cancel** returns it to available inventory. Admins can only complete or cancel operations they themselves created. The owner gets a private low-stock warning whenever a synchronization finds fewer than five available cards of a type.
+
+Completing a Snapchat operation atomically creates a delivered Tiger Store order, a pending zero-DZD commission record (the owner sets the real commission later), and a single-use public warranty form link. Revenue is taken from the server-resolved Snapchat catalog option; no browser price is involved. The sale remains counted with customer details marked incomplete until the customer submits the form.
+
+The customer link is private and non-indexed. It collects name, username, activation platform, phone, and email in Arabic or English, then shows a review step. Submission is irreversible; later visits show only the certificate. The PDF is French, contains no phone or email, and uses the official Tiger Store logo. `100 INR` and `199 INR` require acknowledgement of the Arabic balance warning before the PDF route becomes available; their expiry adds seven days before the subscription duration. All other card types use the subscription duration directly.
 
 ## Webhook registration after deployment
 

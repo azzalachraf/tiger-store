@@ -100,7 +100,7 @@ export type CartItem = {
 export type PaymentMethodId = "BaridiMob" | "Binance" | "RedotPay" | "Flexy";
 
 /** CCP remains parseable solely for historic orders created before the payment update. */
-export type StoredPaymentMethodId = PaymentMethodId | "CCP";
+export type StoredPaymentMethodId = PaymentMethodId | "CCP" | "Telegram";
 
 export type LocalOrder = {
   id: string;

@@ -8,6 +8,7 @@ Cards/
 Hero/
 .turbo/
 coverage/
+tmp/
 test-results/
 playwright-report/
 .vercel/output/

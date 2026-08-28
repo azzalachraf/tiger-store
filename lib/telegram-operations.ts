@@ -7,6 +7,8 @@ import type { TelegramInterfaceLocale, TelegramRole } from "@/lib/types";
 import { snapchatCallbackDataSchema } from "@/lib/validation";
 import { cardLabel, cardsForPlan, snapchatCardTypes, type SnapchatCardType, type SnapchatPlanMonths } from "@/lib/snapchat-cards";
 import { claimSnapchatCard, finishSnapchatOperation, syncRedeemInventory } from "@/lib/snapchat-operations";
+import { completeSnapchatSale } from "@/lib/telegram-warranty";
+import { absoluteUrl } from "@/lib/seo";
 
 type TelegramIdentity = {
   userId: string;
@@ -180,8 +182,13 @@ export async function handleTelegramOperationsCallback(input: {
   if (selected[0] === "op") {
     const [, operationId, outcome] = selected;
     try {
-      await finishSnapchatOperation(operationId, identity.userId, outcome === "complete" ? "completed" : "cancelled");
-      await reply(String(input.chatId), textFor(locale, outcome === "complete" ? "تم إكمال العملية واستهلاك البطاقة." : "تم إلغاء العملية وإرجاع البطاقة للمخزون.", outcome === "complete" ? "Operation completed and the card is consumed." : "Operation cancelled and the card is available again."));
+      if (outcome === "complete") {
+        const sale = await completeSnapchatSale({ operationId, adminTelegramUserId: identity.userId });
+        await reply(String(input.chatId), textFor(locale, `تم إكمال البيع. أرسل رابط الضمان الخاص للعميل:\n${absoluteUrl(`/w/${sale.token}`)}`, `Sale completed. Send this private warranty link to the customer:\n${absoluteUrl(`/w/${sale.token}`)}`));
+      } else {
+        await finishSnapchatOperation(operationId, identity.userId, "cancelled");
+        await reply(String(input.chatId), textFor(locale, "تم إلغاء العملية وإرجاع البطاقة للمخزون.", "Operation cancelled and the card is available again."));
+      }
     } catch {
       await reply(String(input.chatId), textFor(locale, "هذه العملية غير متاحة لك أو تمت معالجتها.", "This operation is unavailable to you or was already handled."));
     }

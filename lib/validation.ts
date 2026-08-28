@@ -46,7 +46,7 @@ export const manualOrderInputSchema = z.object({
   paymentMethod: paymentMethodSchema,
   notes: z.string().trim().max(1200).optional(),
 });
-const storedPaymentMethodSchema = z.enum(["BaridiMob", "Binance", "RedotPay", "Flexy", "CCP"]);
+const storedPaymentMethodSchema = z.enum(["BaridiMob", "Binance", "RedotPay", "Flexy", "CCP", "Telegram"]);
 export const adminLoginInputSchema = z.object({ email: z.string().trim().email().max(180), password: z.string().min(1).max(512), next: z.string().trim().max(512).optional() });
 export const orderStatusSchema = z.enum(["pending", "paid", "delivered", "cancelled", "refunded"]);
 export const warrantyIssueSchema = z.object({
@@ -71,6 +71,13 @@ export const warrantyClaimSchema = z.object({
 });
 export const directWarrantyClaimSchema = warrantyClaimSchema.extend({
   phone: z.string().trim().min(6).max(60),
+});
+export const telegramWarrantyFormSchema = z.object({
+  name: z.string().trim().min(2).max(160),
+  username: z.string().trim().min(2).max(80),
+  platform: z.string().trim().min(2).max(80),
+  phone: z.string().trim().min(6).max(40),
+  email: z.string().trim().email().max(180),
 });
 export const accountStatusSchema = z.enum(["Available", "Sold", "Expired", "Problem"]);
 export const stockAlertInputSchema = z.object({

@@ -1,0 +1,6 @@
+import { NextResponse } from "next/server";
+import { getTelegramWarranty } from "@/lib/telegram-warranty";
+import { getOrderById } from "@/lib/admin-store";
+import { createTelegramWarrantyPdf } from "@/lib/telegram-warranty-pdf";
+export const runtime = "nodejs";
+export async function GET(_request: Request,{params}:{params:Promise<{token:string}>}){const {token}=await params;const warranty=await getTelegramWarranty(token);const order=warranty?await getOrderById(warranty.order_id):undefined;const item=order?.products[0];if(!warranty||!order||!item||!warranty.customer_details_complete||(warranty.balance_warning_required&&!warranty.balance_warning_acknowledged_at))return new NextResponse("Not found",{status:404});const pdf=await createTelegramWarrantyPdf({certificateCode:warranty.certificate_code,orderCode:order.id,name:warranty.recipient_name,username:warranty.customer_username??"",platform:warranty.activation_platform??"",plan:item.option,startsAt:warranty.starts_at,endsAt:warranty.ends_at});const body=new ArrayBuffer(pdf.byteLength);new Uint8Array(body).set(pdf);return new NextResponse(body,{headers:{"Content-Type":"application/pdf","Content-Disposition":`attachment; filename="${warranty.certificate_code}.pdf"`,"Cache-Control":"private, no-store"}});}
