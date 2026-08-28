@@ -4,7 +4,9 @@ import { revalidatePath } from "next/cache";
 import { getOrderById, saveOrder } from "@/lib/admin-store";
 import { AdminOrder, PaymentMethodId } from "@/lib/types";
 import { requireAdmin } from "@/lib/admin-auth";
-import { orderStatusSchema, paymentMethodSchema } from "@/lib/validation";
+import { orderStatusSchema, paymentMethodSchema, warrantyIssueSchema } from "@/lib/validation";
+import { createWarrantyLink } from "@/lib/warranty";
+import { redirect } from "next/navigation";
 
 function text(formData: FormData, key: string) {
   return String(formData.get(key) ?? "").trim();
@@ -64,4 +66,19 @@ export async function addManualOrderAction(formData: FormData) {
 
   await saveOrder(order);
   revalidatePath("/admin", "layout");
+}
+
+export async function createWarrantyLinkAction(formData: FormData) {
+  await requireAdmin();
+  const input = warrantyIssueSchema.parse({
+    orderId: text(formData, "orderId"),
+    itemIndex: text(formData, "itemIndex"),
+    coveredDays: text(formData, "coveredDays"),
+  });
+  const order = await getOrderById(input.orderId);
+  if (!order || order.status !== "delivered" || !order.products[input.itemIndex]) {
+    throw new Error("A warranty link can only be issued for a delivered order item.");
+  }
+  const token = createWarrantyLink(input);
+  redirect(`/admin/orders?warranty=${encodeURIComponent(token)}`);
 }

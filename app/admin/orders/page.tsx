@@ -1,7 +1,7 @@
 import { getOrders, getReceiptSignedUrl } from "@/lib/admin-store";
 import type { ReactNode } from "react";
-import { saveOrderStatusAction, deleteOrderAction, addManualOrderAction } from "@/app/admin/orders/actions";
-import { Trash2, Plus, ShoppingBag, Clock3, CheckCircle2 } from "lucide-react";
+import { saveOrderStatusAction, deleteOrderAction, addManualOrderAction, createWarrantyLinkAction } from "@/app/admin/orders/actions";
+import { Trash2, Plus, ShoppingBag, Clock3, CheckCircle2, ShieldCheck, Copy } from "lucide-react";
 import { AdminShell } from "@/components/admin/AdminShell";
 import { formatPriceDZD } from "@/lib/utils";
 
@@ -11,7 +11,8 @@ export const metadata = {
   title: "Admin Orders",
 };
 
-export default async function AdminOrdersPage() {
+export default async function AdminOrdersPage({ searchParams }: { searchParams: Promise<{ warranty?: string }> }) {
+  const warrantyToken = (await searchParams).warranty;
   const orders = await getOrders();
   const receiptLinks = await Promise.all(orders.map((order) => getReceiptSignedUrl(order.receiptPath)));
   const pending = orders.filter((order) => order.status === "pending").length;
@@ -60,11 +61,23 @@ export default async function AdminOrdersPage() {
         </form>
       </section>
 
+      {warrantyToken ? (
+        <section className="mb-6 rounded-md border border-tiger-ember/40 bg-tiger-ember/10 p-5 shadow-[0_18px_55px_rgba(0,0,0,0.2)]">
+          <div className="flex flex-wrap items-start justify-between gap-3">
+            <div>
+              <p className="flex items-center gap-2 text-sm font-black text-tiger-gold"><ShieldCheck className="h-4 w-4" /> Warranty link ready</p>
+              <p className="mt-1 text-sm font-semibold leading-6 text-white/70">Send this private link to the customer after delivery. They complete the certificate form themselves.</p>
+            </div>
+            <a href={`/warranty/${warrantyToken}`} target="_blank" rel="noreferrer" className="inline-flex min-h-11 items-center gap-2 rounded-xl bg-tiger-ember px-4 text-sm font-black text-black"><Copy className="h-4 w-4" /> Open warranty link</a>
+          </div>
+          <p className="mt-4 overflow-x-auto rounded-xl border border-white/10 bg-black/35 p-3 font-mono text-xs text-white/80" dir="ltr">/warranty/{warrantyToken}</p>
+        </section>
+      ) : null}
+
       {orders.length ? (
         <div className="grid gap-4">
           {orders.map((order, index) => (
-            <form key={order.id} action={saveOrderStatusAction} className="rounded-md border border-white/10 bg-white/[0.045] p-5 shadow-[0_18px_55px_rgba(0,0,0,0.22)]">
-              <input type="hidden" name="id" value={order.id} />
+            <article key={order.id} className="rounded-md border border-white/10 bg-white/[0.045] p-5 shadow-[0_18px_55px_rgba(0,0,0,0.22)]">
               <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
                 <div>
                   <div className="flex flex-wrap items-center gap-2">
@@ -88,19 +101,43 @@ export default async function AdminOrdersPage() {
 
               {receiptLinks[index] ? <a href={receiptLinks[index]} target="_blank" rel="noreferrer" className="mt-4 inline-flex min-h-11 items-center rounded-xl bg-white px-4 font-black text-black">Open private receipt</a> : null}
 
-              <div className="mt-4 grid gap-3 md:grid-cols-[1fr]">
-                <label className="grid gap-2 text-sm font-bold text-white">
-                  Admin notes
-                  <input name="adminNotes" defaultValue={order.adminNotes ?? ""} className="min-h-11 rounded-xl border border-white/10 bg-black/45 px-3 text-white outline-none focus:border-tiger-ember" />
-                </label>
-              </div>
-              <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
-                <div className="flex flex-wrap gap-2">{(["pending", "paid", "delivered", "cancelled"] as const).map((status) => <button key={status} type="submit" name="status" value={status} className={`min-h-11 rounded-xl px-4 font-black ${order.status === status ? "bg-tiger-ember text-black" : "border border-white/15 text-white"}`}>{status}</button>)}</div>
-                <button formAction={deleteOrderAction} className="flex min-h-11 items-center justify-center rounded-xl border border-red-500/20 bg-red-500/10 px-5 font-bold text-red-300 transition-colors hover:bg-red-500/20">
-                  <Trash2 className="mr-2 h-4 w-4" /> Delete Order
-                </button>
-              </div>
-            </form>
+              <form action={saveOrderStatusAction}>
+                <input type="hidden" name="id" value={order.id} />
+                <div className="mt-4 grid gap-3 md:grid-cols-[1fr]">
+                  <label className="grid gap-2 text-sm font-bold text-white">
+                    Admin notes
+                    <input name="adminNotes" defaultValue={order.adminNotes ?? ""} className="min-h-11 rounded-xl border border-white/10 bg-black/45 px-3 text-white outline-none focus:border-tiger-ember" />
+                  </label>
+                </div>
+                <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
+                  <div className="flex flex-wrap gap-2">{(["pending", "paid", "delivered", "cancelled"] as const).map((status) => <button key={status} type="submit" name="status" value={status} className={`min-h-11 rounded-xl px-4 font-black ${order.status === status ? "bg-tiger-ember text-black" : "border border-white/15 text-white"}`}>{status}</button>)}</div>
+                  <button formAction={deleteOrderAction} className="flex min-h-11 items-center justify-center rounded-xl border border-red-500/20 bg-red-500/10 px-5 font-bold text-red-300 transition-colors hover:bg-red-500/20">
+                    <Trash2 className="mr-2 h-4 w-4" /> Delete Order
+                  </button>
+                </div>
+              </form>
+              {order.status === "delivered" && order.products.length ? (
+                <div className="mt-4 border-t border-white/10 pt-4">
+                  <p className="mb-3 flex items-center gap-2 text-sm font-black text-tiger-gold"><ShieldCheck className="h-4 w-4" /> Issue warranty certificate</p>
+                  <div className="grid gap-3 lg:grid-cols-2">
+                    {order.products.map((item, itemIndex) => (
+                      <form key={`${item.id}-${itemIndex}`} action={createWarrantyLinkAction} className="flex flex-wrap items-end gap-3 rounded-xl border border-white/10 bg-black/25 p-3">
+                        <input type="hidden" name="orderId" value={order.id} />
+                        <input type="hidden" name="itemIndex" value={itemIndex} />
+                        <div className="min-w-0 flex-1">
+                          <p className="truncate text-sm font-black text-white">{item.name}</p>
+                          <p className="mt-1 text-xs font-semibold text-white/55">{item.option}</p>
+                        </div>
+                        <label className="grid gap-1 text-xs font-bold text-white/75">Coverage days
+                          <input name="coveredDays" type="number" min="1" max="3650" defaultValue="365" required className="h-10 w-28 rounded-lg border border-white/10 bg-black px-2 text-sm font-bold text-white outline-none focus:border-tiger-ember" />
+                        </label>
+                        <button type="submit" className="inline-flex min-h-10 items-center gap-2 rounded-lg bg-tiger-ember px-3 text-sm font-black text-black"><ShieldCheck className="h-4 w-4" /> Create link</button>
+                      </form>
+                    ))}
+                  </div>
+                </div>
+              ) : null}
+            </article>
           ))}
         </div>
       ) : (

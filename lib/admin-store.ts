@@ -154,7 +154,9 @@ export async function saveProduct(product: Product) {
   // The live catalog predates the optional details/faqs columns. Excluding
   // undefined optional fields keeps price, stock, and variant edits compatible
   // with that established schema instead of failing the entire save.
-  const { details: _details, faqs: _faqs, ...productPayload } = validatedProduct;
+  const { details, faqs, ...productPayload } = validatedProduct;
+  void details;
+  void faqs;
   const { error } = await client.from("products").upsert(productPayload, { onConflict: "id" });
   if (error) throw new Error(`saveProduct failed: ${error.message}`);
 

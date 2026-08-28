@@ -17,6 +17,7 @@ const serverEnvSchema = z.object({
   TELEGRAM_BOT_TOKEN: z.string().optional().default(""),
   TELEGRAM_CHAT_ID: z.string().optional().default(""),
   TELEGRAM_ADMIN_IDS: z.string().optional().default(""),
+  WARRANTY_LINK_SECRET: z.string().min(32, "WARRANTY_LINK_SECRET must be at least 32 characters").optional().default(""),
 });
 
 let cachedEnv: z.infer<typeof serverEnvSchema> | null = null;
@@ -38,4 +39,11 @@ export function getServerEnv() {
 
 export function getEncryptionSecret() {
   return getServerEnv().ENCRYPTION_KEY;
+}
+
+export function getWarrantyLinkSecret() {
+  const env = getServerEnv();
+  // Existing deployments remain functional while a distinct key is added.
+  // The encryption key is server-only and always required by this project.
+  return env.WARRANTY_LINK_SECRET || env.SESSION_SECRET || env.ENCRYPTION_KEY;
 }
