@@ -10,7 +10,18 @@ export const dynamic = "force-dynamic";
 export const metadata = { title: "Payment link", robots: { index: false, follow: false } };
 
 function findOffer(product: { id: string; price: number; oldPrice?: number; duration: string; durationAr: string; available: boolean; priceOptions?: ProductPriceOption[] }, optionId: string) {
-  if (product.priceOptions?.length) return product.priceOptions.find((option) => option.id === optionId);
+  if (product.priceOptions?.length) {
+    const exact = product.priceOptions.find((option) => option.id === optionId);
+    if (exact) return exact;
+
+    // Older product records may have kept a display-derived option ID. Match
+    // only the public plan key (for example `12-months` ↔ `12 months`) and
+    // still use the live server-side option, including its price and stock.
+    const key = (value: string) => value.toLowerCase().replace(/[^a-z0-9]+/g, "");
+    const requested = key(optionId.replace(`${product.id}:`, ""));
+    return product.priceOptions.find((option) => [option.id.replace(`${product.id}:`, ""), option.label, option.duration]
+      .some((value) => key(value) === requested));
+  }
   if (optionId !== `${product.id}:default`) return undefined;
   return { id: optionId, label: product.duration, labelAr: product.durationAr, duration: product.duration, durationAr: product.durationAr, price: product.price, oldPrice: product.oldPrice, available: product.available };
 }
