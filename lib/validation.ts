@@ -1,6 +1,32 @@
 import { z } from "zod";
 
 export const paymentMethodSchema = z.enum(["BaridiMob", "Binance", "RedotPay", "Flexy"]);
+export const telegramInterfaceLocaleSchema = z.enum(["ar", "en"]);
+export const telegramRoleSchema = z.enum(["pending", "admin", "owner"]);
+export const telegramRegistrationIdSchema = z.string().trim().regex(/^TG-[A-Z0-9]{8}$/);
+export const telegramUserIdSchema = z.string().trim().regex(/^[1-9][0-9]{0,18}$/);
+export const telegramWebhookUpdateSchema = z.object({
+  update_id: z.number().int().nonnegative(),
+  message: z.object({
+    message_id: z.number().int().nonnegative(),
+    text: z.string().max(4096).optional(),
+    from: z.object({
+      id: z.number().int().positive(),
+      is_bot: z.boolean(),
+      first_name: z.string().max(256).optional(),
+      username: z.string().max(64).optional(),
+      language_code: z.string().max(16).optional(),
+    }),
+    chat: z.object({ id: z.number().int(), type: z.string().max(32) }),
+  }).optional(),
+}).strict();
+export const manualOrderInputSchema = z.object({
+  customerName: z.string().trim().min(1).max(160),
+  total: z.coerce.number().int().positive().max(10_000_000),
+  status: z.enum(["paid", "delivered"]),
+  paymentMethod: paymentMethodSchema,
+  notes: z.string().trim().max(1200).optional(),
+});
 const storedPaymentMethodSchema = z.enum(["BaridiMob", "Binance", "RedotPay", "Flexy", "CCP"]);
 export const adminLoginInputSchema = z.object({ email: z.string().trim().email().max(180), password: z.string().min(1).max(512), next: z.string().trim().max(512).optional() });
 export const orderStatusSchema = z.enum(["pending", "paid", "delivered", "cancelled", "refunded"]);

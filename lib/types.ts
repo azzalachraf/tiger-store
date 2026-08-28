@@ -213,6 +213,33 @@ export type CustomerProfile = {
   isReturning: boolean;
 };
 
+/* ------------------------------------------------------------------ */
+/*  Private operations foundation                                     */
+/* ------------------------------------------------------------------ */
+
+export type TelegramRole = "pending" | "admin" | "owner";
+export type TelegramInterfaceLocale = "ar" | "en";
+
+export type TelegramOperator = {
+  telegramUserId: string;
+  username?: string;
+  firstName?: string;
+  interfaceLocale: TelegramInterfaceLocale;
+  role: TelegramRole;
+  registrationId: string;
+  approvedByTelegramUserId?: string;
+  approvedAt?: string;
+  lastSeenAt: string;
+  createdAt: string;
+};
+
+export type OperationEntityType = "telegram_user" | "order" | "warranty" | "inventory" | "payment" | "commission" | "adjustment" | "advertising_spend" | "setting";
+
+export type WarrantyCertificateStatus = "active" | "claimed" | "replaced" | "refunded" | "cancelled" | "expired";
+
+export type PaymentRecordStatus = "pending" | "verified" | "rejected" | "refunded";
+export type CommissionStatus = "pending" | "approved" | "paid" | "void";
+
 export type FunnelStep = {
   label: string;
   count: number;

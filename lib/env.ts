@@ -17,6 +17,8 @@ const serverEnvSchema = z.object({
   TELEGRAM_BOT_TOKEN: z.string().optional().default(""),
   TELEGRAM_CHAT_ID: z.string().optional().default(""),
   TELEGRAM_ADMIN_IDS: z.string().optional().default(""),
+  TELEGRAM_OWNER_ID: z.string().regex(/^[1-9][0-9]{0,18}$/).optional().default(""),
+  TELEGRAM_WEBHOOK_SECRET: z.string().min(32, "TELEGRAM_WEBHOOK_SECRET must be at least 32 characters").optional().default(""),
   WARRANTY_LINK_SECRET: z.string().min(32, "WARRANTY_LINK_SECRET must be at least 32 characters").optional().default(""),
 });
 
