@@ -1,7 +1,7 @@
 import "server-only";
 
 import { createHmac, randomBytes, timingSafeEqual } from "crypto";
-import { getWarrantyLinkSecret } from "@/lib/env";
+import { getWarrantyLinkSecret, getWarrantyLinkSecrets } from "@/lib/env";
 
 export type ProductCheckoutLinkPayload = {
   slug: string;
@@ -16,6 +16,15 @@ const EXPIRY_DAYS = 90;
 
 function sign(value: string) {
   return createHmac("sha256", getWarrantyLinkSecret()).update(value).digest().subarray(0, 16).toString("base64url");
+}
+
+function hasValidSignature(value: string, signature: string) {
+  const received = Buffer.from(signature);
+  return getWarrantyLinkSecrets().some((secret) => {
+    const expected = createHmac("sha256", secret).update(value).digest().subarray(0, 16).toString("base64url");
+    const expectedBuffer = Buffer.from(expected);
+    return received.length === expectedBuffer.length && timingSafeEqual(received, expectedBuffer);
+  });
 }
 
 function isSafeSlug(value: string) {
@@ -40,9 +49,7 @@ export function verifyProductCheckoutLink(token: string): ProductCheckoutLinkPay
   if (parts.length !== 6 || parts[0] !== LINK_VERSION) return undefined;
   const [version, slug, optionId, issuedMinutes, nonce, signature] = parts;
   const unsigned = [version, slug, optionId, issuedMinutes, nonce].join(".");
-  const expected = Buffer.from(sign(unsigned));
-  const received = Buffer.from(signature);
-  if (received.length !== expected.length || !timingSafeEqual(received, expected)) return undefined;
+  if (!hasValidSignature(unsigned, signature)) return undefined;
   const minutes = Number.parseInt(issuedMinutes, 36);
   if (!isSafeSlug(slug) || !isSafeOptionId(optionId) || !Number.isSafeInteger(minutes) || minutes < 0 || !/^[A-Za-z0-9_-]{8}$/.test(nonce)) return undefined;
   const issuedAt = new Date(minutes * 60_000);

@@ -42,8 +42,15 @@ export function getEncryptionSecret() {
 }
 
 export function getWarrantyLinkSecret() {
+  return getWarrantyLinkSecrets()[0];
+}
+
+/**
+ * Keep previously issued private links working after a dedicated warranty key
+ * is introduced. All returned values remain server-only secrets; this is only
+ * used to verify old HMACs, never exposed to a browser.
+ */
+export function getWarrantyLinkSecrets() {
   const env = getServerEnv();
-  // Existing deployments remain functional while a distinct key is added.
-  // The encryption key is server-only and always required by this project.
-  return env.WARRANTY_LINK_SECRET || env.SESSION_SECRET || env.ENCRYPTION_KEY;
+  return [...new Set([env.WARRANTY_LINK_SECRET, env.SESSION_SECRET, env.ENCRYPTION_KEY].filter((secret): secret is string => Boolean(secret)))];
 }
