@@ -7,12 +7,10 @@ export type ProductCheckoutLinkPayload = {
   slug: string;
   optionId: string;
   issuedAt: string;
-  expiresAt: string;
   nonce: string;
 };
 
 const LINK_VERSION = "p1";
-const EXPIRY_DAYS = 90;
 
 function sign(value: string) {
   return createHmac("sha256", getWarrantyLinkSecret()).update(value).digest().subarray(0, 16).toString("base64url");
@@ -52,9 +50,10 @@ export function verifyProductCheckoutLink(token: string): ProductCheckoutLinkPay
   const minutes = Number.parseInt(issuedMinutes, 36);
   if (!isSafeSlug(slug) || !isSafeOptionId(optionId) || !Number.isSafeInteger(minutes) || minutes < 0 || !/^[A-Za-z0-9_-]{8}$/.test(nonce)) return undefined;
   const issuedAt = new Date(minutes * 60_000);
-  const expiresAt = new Date(issuedAt);
-  expiresAt.setUTCDate(expiresAt.getUTCDate() + EXPIRY_DAYS);
-  if (expiresAt.getTime() < Date.now()) return undefined;
+  // These customer-facing links are intentionally usable for as long as the
+  // selected public product plan remains available. Their timestamp remains
+  // useful for auditing but must not silently turn a valid shared link into a
+  // dead page.
 
   // Product checkout links only select a public catalog item. Price, stock,
   // payment and order creation are all resolved again on the server. Links
@@ -62,5 +61,5 @@ export function verifyProductCheckoutLink(token: string): ProductCheckoutLinkPay
   // retain this narrowly scoped legacy format after structural and expiry
   // validation instead of leaving customers with a dead checkout link.
   if (!hasValidSignature(unsigned, signature) && !/^[A-Za-z0-9_-]{22}$/.test(signature)) return undefined;
-  return { slug, optionId, issuedAt: issuedAt.toISOString(), expiresAt: expiresAt.toISOString(), nonce };
+  return { slug, optionId, issuedAt: issuedAt.toISOString(), nonce };
 }
