@@ -1,15 +1,21 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { getOrderById, saveOrder } from "@/lib/admin-store";
-import { AdminOrder, PaymentMethodId } from "@/lib/types";
+import { getOrderById, getProductBySlug, saveOrder } from "@/lib/admin-store";
+import { AdminOrder, PaymentMethodId, Product, ProductPriceOption } from "@/lib/types";
 import { requireAdmin } from "@/lib/admin-auth";
-import { orderStatusSchema, paymentMethodSchema, warrantyIssueSchema } from "@/lib/validation";
-import { createWarrantyLink } from "@/lib/warranty";
+import { directWarrantyIssueSchema, orderStatusSchema, paymentMethodSchema, warrantyIssueSchema } from "@/lib/validation";
+import { createDirectWarrantyLink, createWarrantyLink } from "@/lib/warranty";
 import { redirect } from "next/navigation";
 
 function text(formData: FormData, key: string) {
   return String(formData.get(key) ?? "").trim();
+}
+
+function findOffer(product: Product, optionId: string): ProductPriceOption | undefined {
+  if (product.priceOptions?.length) return product.priceOptions.find((option) => option.id === optionId);
+  const fallback: ProductPriceOption = { id: `${product.id}:default`, label: product.duration, labelAr: product.durationAr, duration: product.duration, durationAr: product.durationAr, price: product.price, oldPrice: product.oldPrice, available: product.available };
+  return fallback.id === optionId ? fallback : undefined;
 }
 
 export async function saveOrderStatusAction(formData: FormData) {
@@ -80,5 +86,21 @@ export async function createWarrantyLinkAction(formData: FormData) {
     throw new Error("A warranty link can only be issued for a delivered order item.");
   }
   const token = createWarrantyLink(input);
+  redirect(`/admin/orders?warranty=${encodeURIComponent(token)}`);
+}
+
+export async function createDirectWarrantyLinkAction(formData: FormData) {
+  await requireAdmin();
+  const input = directWarrantyIssueSchema.parse({
+    slug: text(formData, "slug"),
+    optionId: text(formData, "optionId"),
+    coveredDays: text(formData, "coveredDays"),
+    amountPaid: text(formData, "amountPaid"),
+    paymentMethod: text(formData, "paymentMethod"),
+  });
+  const product = await getProductBySlug(input.slug);
+  const offer = product ? findOffer(product, input.optionId) : undefined;
+  if (!product || !offer) throw new Error("The selected product plan is no longer available.");
+  const token = createDirectWarrantyLink(input);
   redirect(`/admin/orders?warranty=${encodeURIComponent(token)}`);
 }

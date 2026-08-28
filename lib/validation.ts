@@ -9,9 +9,19 @@ export const warrantyIssueSchema = z.object({
   itemIndex: z.coerce.number().int().min(0).max(19),
   coveredDays: z.coerce.number().int().min(1).max(3650),
 });
+export const directWarrantyIssueSchema = z.object({
+  slug: z.string().trim().min(1).max(160).regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/),
+  optionId: z.string().trim().min(1).max(160),
+  coveredDays: z.coerce.number().int().min(1).max(3650),
+  amountPaid: z.coerce.number().int().positive().max(10_000_000),
+  paymentMethod: paymentMethodSchema,
+});
 export const warrantyClaimSchema = z.object({
   recipientName: z.string().trim().min(2).max(160),
   accepted: z.literal("yes"),
+});
+export const directWarrantyClaimSchema = warrantyClaimSchema.extend({
+  phone: z.string().trim().min(6).max(60),
 });
 export const accountStatusSchema = z.enum(["Available", "Sold", "Expired", "Problem"]);
 export const stockAlertInputSchema = z.object({

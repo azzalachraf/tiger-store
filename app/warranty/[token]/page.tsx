@@ -2,9 +2,9 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { cookies } from "next/headers";
 import { CheckCircle2, Download, ShieldCheck } from "lucide-react";
-import { getOrderById } from "@/lib/admin-store";
+import { getOrderById, getProductBySlug } from "@/lib/admin-store";
 import { claimWarrantyCertificateAction } from "@/app/warranty/actions";
-import { warrantyCertificateCode, warrantyClaimCookieName, warrantyEndDate, verifyWarrantyClaimCookie, verifyWarrantyLink } from "@/lib/warranty";
+import { directWarrantyOrderId, warrantyCertificateCode, warrantyClaimCookieName, warrantyEndDate, verifyWarrantyClaimCookie, verifyWarrantyLink } from "@/lib/warranty";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Warranty certificate", robots: { index: false, follow: false } };
@@ -17,9 +17,14 @@ export default async function WarrantyPage({ params }: WarrantyPageProps) {
   const { token } = await params;
   const payload = verifyWarrantyLink(token);
   if (!payload) notFound();
-  const order = await getOrderById(payload.orderId);
-  const item = order?.products[payload.itemIndex];
-  if (!order || order.status !== "delivered" || !item) notFound();
+  const directProduct = payload.source === "direct" ? await getProductBySlug(payload.slug) : undefined;
+  const directOffer = directProduct ? directProduct.priceOptions?.find((option) => option.id === (payload.source === "direct" ? payload.optionId : "")) ?? (payload.source === "direct" && payload.optionId === `${directProduct.id}:default` ? { label: directProduct.duration, labelAr: directProduct.durationAr } : undefined) : undefined;
+  const order = payload.source === "direct" ? await getOrderById(directWarrantyOrderId(payload)) : await getOrderById(payload.orderId);
+  const item = payload.source === "direct"
+    ? directProduct && directOffer ? { name: directProduct.name, nameAr: directProduct.nameAr, option: directOffer.label, optionAr: directOffer.labelAr } : undefined
+    : order?.products[payload.itemIndex];
+  if ((payload.source === "direct" && !item) || (payload.source !== "direct" && (!order || order.status !== "delivered" || !item))) notFound();
+  if (!item) notFound();
 
   const cookieStore = await cookies();
   const recipientName = verifyWarrantyClaimCookie(payload, cookieStore.get(warrantyClaimCookieName(token))?.value);
@@ -39,6 +44,9 @@ export default async function WarrantyPage({ params }: WarrantyPageProps) {
   const certificateCode = warrantyCertificateCode(payload);
   const productName = isArabic ? item.nameAr || item.name : item.name;
   const planName = isArabic ? item.optionAr || item.option : item.option;
+  const orderCode = payload.source === "direct" ? directWarrantyOrderId(payload) : order?.id;
+  if (!orderCode) notFound();
+  const initialRecipientName = order?.customerName ?? "";
 
   return (
     <main className="store-shell min-h-screen px-4 py-8 sm:px-6 sm:py-12" dir={isArabic ? "rtl" : "ltr"}>
@@ -56,7 +64,7 @@ export default async function WarrantyPage({ params }: WarrantyPageProps) {
               <Info label={copy.recipient} value={recipientName} />
               <Info label={copy.product} value={productName} />
               <Info label={copy.plan} value={planName} />
-              <Info label={copy.order} value={order.id} ltr />
+              <Info label={copy.order} value={orderCode} ltr />
               <Info label={copy.certificate} value={certificateCode} ltr />
               <Info label={copy.coverage} value={`${payload.coveredDays} ${copy.days}`} />
               <Info label={copy.ends} value={coverageEnd} />
@@ -74,8 +82,11 @@ export default async function WarrantyPage({ params }: WarrantyPageProps) {
             <p className="text-lg font-black text-[var(--text)]">{copy.complete}</p>
             <p className="mt-2 text-sm leading-7 text-[var(--muted-text)]">{copy.instruction}</p>
             <label className="mt-6 grid gap-2 text-sm font-bold text-[var(--text)]">{copy.name}
-              <input name="recipientName" defaultValue={order.customerName} required minLength={2} maxLength={160} className="min-h-12 rounded-xl border border-[var(--border-color)] bg-[var(--page)] px-4 text-base text-[var(--text)]" />
+              <input name="recipientName" defaultValue={initialRecipientName} required minLength={2} maxLength={160} className="min-h-12 rounded-xl border border-[var(--border-color)] bg-[var(--page)] px-4 text-base text-[var(--text)]" />
             </label>
+            {payload.source === "direct" ? <label className="mt-5 grid gap-2 text-sm font-bold text-[var(--text)]">{isArabic ? "رقم الهاتف" : "Phone number"}
+              <input name="phone" type="tel" required placeholder="0550 123 456" className="min-h-12 rounded-xl border border-[var(--border-color)] bg-[var(--page)] px-4 text-base text-[var(--text)]" dir="ltr" />
+            </label> : null}
             <label className="mt-5 flex items-start gap-3 rounded-xl border border-[var(--border-color)] bg-[var(--page)] p-4 text-sm font-bold leading-6 text-[var(--text)]"><input name="accepted" value="yes" type="checkbox" required className="mt-1 h-4 w-4 accent-[#FF7300]" />{copy.accept}</label>
             <button type="submit" className="mt-6 min-h-12 w-full rounded-xl bg-[#FF7300] px-5 font-black text-[#17120F] transition-colors hover:bg-[#E76800]">{copy.issue}</button>
           </form>

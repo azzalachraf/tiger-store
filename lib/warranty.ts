@@ -3,15 +3,29 @@ import "server-only";
 import { createHmac, randomBytes, timingSafeEqual } from "crypto";
 import { getWarrantyLinkSecret } from "@/lib/env";
 
-export type WarrantyLinkPayload = {
+type WarrantyPayloadBase = {
   version: 1;
-  orderId: string;
-  itemIndex: number;
   coveredDays: number;
   issuedAt: string;
   expiresAt: string;
   nonce: string;
 };
+
+export type WarrantyOrderLinkPayload = WarrantyPayloadBase & {
+  source?: "order";
+  orderId: string;
+  itemIndex: number;
+};
+
+export type WarrantyDirectLinkPayload = WarrantyPayloadBase & {
+  source: "direct";
+  slug: string;
+  optionId: string;
+  amountPaid: number;
+  paymentMethod: "BaridiMob" | "Binance" | "RedotPay";
+};
+
+export type WarrantyLinkPayload = WarrantyOrderLinkPayload | WarrantyDirectLinkPayload;
 
 type WarrantyClaimCookie = {
   nonce: string;
@@ -23,20 +37,38 @@ function sign(encodedPayload: string) {
   return createHmac("sha256", getWarrantyLinkSecret()).update(encodedPayload).digest("base64url");
 }
 
-export function createWarrantyLink(input: Pick<WarrantyLinkPayload, "orderId" | "itemIndex" | "coveredDays">) {
+function expirationDates() {
   const issuedAt = new Date();
   const expiresAt = new Date(issuedAt);
   // The submission link is deliberately long-lived, while still bounded in case it is shared accidentally.
   expiresAt.setUTCFullYear(expiresAt.getUTCFullYear() + 2);
-  const payload: WarrantyLinkPayload = {
-    version: 1,
-    ...input,
-    issuedAt: issuedAt.toISOString(),
-    expiresAt: expiresAt.toISOString(),
-    nonce: randomBytes(18).toString("base64url"),
-  };
+  return { issuedAt: issuedAt.toISOString(), expiresAt: expiresAt.toISOString() };
+}
+
+function encodePayload(payload: WarrantyLinkPayload) {
   const encodedPayload = Buffer.from(JSON.stringify(payload)).toString("base64url");
   return `${encodedPayload}.${sign(encodedPayload)}`;
+}
+
+export function createWarrantyLink(input: Pick<WarrantyOrderLinkPayload, "orderId" | "itemIndex" | "coveredDays">) {
+  const payload: WarrantyOrderLinkPayload = {
+    version: 1,
+    ...input,
+    ...expirationDates(),
+    nonce: randomBytes(18).toString("base64url"),
+  };
+  return encodePayload(payload);
+}
+
+export function createDirectWarrantyLink(input: Pick<WarrantyDirectLinkPayload, "slug" | "optionId" | "coveredDays" | "amountPaid" | "paymentMethod">) {
+  const payload: WarrantyDirectLinkPayload = {
+    version: 1,
+    source: "direct",
+    ...input,
+    ...expirationDates(),
+    nonce: randomBytes(18).toString("base64url"),
+  };
+  return encodePayload(payload);
 }
 
 export function verifyWarrantyLink(token: string): WarrantyLinkPayload | undefined {
@@ -49,15 +81,22 @@ export function verifyWarrantyLink(token: string): WarrantyLinkPayload | undefin
 
   try {
     const payload = JSON.parse(Buffer.from(encodedPayload, "base64url").toString("utf8")) as WarrantyLinkPayload;
+    const hasValidBase =
+      payload.version === 1 &&
+      Number.isInteger(payload.coveredDays) && payload.coveredDays >= 1 && payload.coveredDays <= 3650 &&
+      /^[A-Za-z0-9_-]{20,40}$/.test(payload.nonce) &&
+      !Number.isNaN(Date.parse(payload.issuedAt)) &&
+      !Number.isNaN(Date.parse(payload.expiresAt)) &&
+      Date.parse(payload.expiresAt) >= Date.now();
+    if (!hasValidBase) return undefined;
+    if (payload.source === "direct") {
+      if (!/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(payload.slug) || !/^[A-Za-z0-9:_-]{1,160}$/.test(payload.optionId) || !Number.isInteger(payload.amountPaid) || payload.amountPaid < 1 || payload.amountPaid > 10_000_000 || !["BaridiMob", "Binance", "RedotPay"].includes(payload.paymentMethod)) return undefined;
+      return payload;
+    }
     if (
-      payload.version !== 1 ||
       !/^[A-Za-z0-9-]{1,160}$/.test(payload.orderId) ||
       !Number.isInteger(payload.itemIndex) || payload.itemIndex < 0 || payload.itemIndex > 19 ||
-      !Number.isInteger(payload.coveredDays) || payload.coveredDays < 1 || payload.coveredDays > 3650 ||
-      !/^[A-Za-z0-9_-]{20,40}$/.test(payload.nonce) ||
-      Number.isNaN(Date.parse(payload.issuedAt)) ||
-      Number.isNaN(Date.parse(payload.expiresAt)) ||
-      Date.parse(payload.expiresAt) < Date.now()
+      payload.source !== undefined && payload.source !== "order"
     ) return undefined;
     return payload;
   } catch {
@@ -67,6 +106,10 @@ export function verifyWarrantyLink(token: string): WarrantyLinkPayload | undefin
 
 export function warrantyCertificateCode(payload: WarrantyLinkPayload) {
   return `TW-${payload.nonce.slice(0, 10).toUpperCase()}`;
+}
+
+export function directWarrantyOrderId(payload: WarrantyDirectLinkPayload) {
+  return `TS-W-${payload.nonce.slice(0, 10).toUpperCase()}`;
 }
 
 export function warrantyEndDate(payload: WarrantyLinkPayload) {

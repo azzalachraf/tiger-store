@@ -98,6 +98,8 @@ WhatsApp number:
 
 After an order has been marked **delivered**, open **Admin → Orders**. Each delivered product has an **Issue warranty certificate** control. Enter the exact covered period in days, create the link, and send that private link to the customer.
 
+For a sale made through messages, use **Create link for an off-site sale** on the same page instead. Select the plan, record the exact integer DZD amount paid and payment method, then send the link. The order is not created at link generation; the customer name and Algerian phone number are collected when the customer completes the form, at which point one delivered order is saved automatically.
+
 The customer enters the name that should appear on the certificate, confirms receipt, and can download a PDF immediately. Warranty links are signed server-side, tied to one order item, expire after two years, and cannot reveal an order without a valid link. No receipt, payment, customer login, email, or new database table is used for this flow.
 
 For stronger key separation, configure `WARRANTY_LINK_SECRET` with a random 32+ character server-only value. Existing deployments safely fall back to the existing server-only session/encryption secret until it is configured.
