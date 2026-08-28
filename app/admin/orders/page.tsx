@@ -4,6 +4,7 @@ import { saveOrderStatusAction, deleteOrderAction, addManualOrderAction, createW
 import { Trash2, Plus, ShoppingBag, Clock3, CheckCircle2, ShieldCheck, Copy } from "lucide-react";
 import { AdminShell } from "@/components/admin/AdminShell";
 import { formatPriceDZD } from "@/lib/utils";
+import { absoluteUrl } from "@/lib/seo";
 
 export const dynamic = "force-dynamic";
 
@@ -13,6 +14,7 @@ export const metadata = {
 
 export default async function AdminOrdersPage({ searchParams }: { searchParams: Promise<{ warranty?: string }> }) {
   const warrantyToken = (await searchParams).warranty;
+  const warrantyLink = warrantyToken ? absoluteUrl(`/warranty/${warrantyToken}`) : undefined;
   const orders = await getOrders();
   const receiptLinks = await Promise.all(orders.map((order) => getReceiptSignedUrl(order.receiptPath)));
   const pending = orders.filter((order) => order.status === "pending").length;
@@ -68,9 +70,9 @@ export default async function AdminOrdersPage({ searchParams }: { searchParams: 
               <p className="flex items-center gap-2 text-sm font-black text-tiger-gold"><ShieldCheck className="h-4 w-4" /> Warranty link ready</p>
               <p className="mt-1 text-sm font-semibold leading-6 text-white/70">Send this private link to the customer after delivery. They complete the certificate form themselves.</p>
             </div>
-            <a href={`/warranty/${warrantyToken}`} target="_blank" rel="noreferrer" className="inline-flex min-h-11 items-center gap-2 rounded-xl bg-tiger-ember px-4 text-sm font-black text-black"><Copy className="h-4 w-4" /> Open warranty link</a>
+            <a href={warrantyLink} target="_blank" rel="noreferrer" className="inline-flex min-h-11 items-center gap-2 rounded-xl bg-tiger-ember px-4 text-sm font-black text-black"><Copy className="h-4 w-4" /> Open warranty link</a>
           </div>
-          <p className="mt-4 overflow-x-auto rounded-xl border border-white/10 bg-black/35 p-3 font-mono text-xs text-white/80" dir="ltr">/warranty/{warrantyToken}</p>
+          <p className="mt-4 overflow-x-auto rounded-xl border border-white/10 bg-black/35 p-3 font-mono text-xs text-white/80" dir="ltr">{warrantyLink}</p>
         </section>
       ) : null}
 
