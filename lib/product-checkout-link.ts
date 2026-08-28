@@ -33,6 +33,15 @@ function isSafeOptionId(value: string) {
   return /^[A-Za-z0-9:_-]{1,160}$/.test(value);
 }
 
+/** Extract the public catalog target carried by a product checkout URL. */
+export function readProductCheckoutLinkTarget(token: string): Pick<ProductCheckoutLinkPayload, "slug" | "optionId"> | undefined {
+  const parts = token.split(".");
+  if (token.length > 512 || parts.length !== 6 || parts[0] !== LINK_VERSION) return undefined;
+  const [, slug, optionId] = parts;
+  if (!isSafeSlug(slug) || !isSafeOptionId(optionId)) return undefined;
+  return { slug, optionId };
+}
+
 export function createProductCheckoutLink(input: Pick<ProductCheckoutLinkPayload, "slug" | "optionId">) {
   if (!isSafeSlug(input.slug) || !isSafeOptionId(input.optionId)) throw new Error("Invalid product link input.");
   const issuedMinutes = Math.floor(Date.now() / 60_000).toString(36);
@@ -42,13 +51,13 @@ export function createProductCheckoutLink(input: Pick<ProductCheckoutLinkPayload
 }
 
 export function verifyProductCheckoutLink(token: string): ProductCheckoutLinkPayload | undefined {
-  if (token.length > 512) return undefined;
   const parts = token.split(".");
-  if (parts.length !== 6 || parts[0] !== LINK_VERSION) return undefined;
+  const target = readProductCheckoutLinkTarget(token);
+  if (!target) return undefined;
   const [version, slug, optionId, issuedMinutes, nonce, signature] = parts;
   const unsigned = [version, slug, optionId, issuedMinutes, nonce].join(".");
   const minutes = Number.parseInt(issuedMinutes, 36);
-  if (!isSafeSlug(slug) || !isSafeOptionId(optionId) || !Number.isSafeInteger(minutes) || minutes < 0 || !/^[A-Za-z0-9_-]{8}$/.test(nonce)) return undefined;
+  if (!Number.isSafeInteger(minutes) || minutes < 0 || !/^[A-Za-z0-9_-]{8}$/.test(nonce)) return undefined;
   const issuedAt = new Date(minutes * 60_000);
   // These customer-facing links are intentionally usable for as long as the
   // selected public product plan remains available. Their timestamp remains
@@ -61,5 +70,5 @@ export function verifyProductCheckoutLink(token: string): ProductCheckoutLinkPay
   // retain this narrowly scoped legacy format after structural and expiry
   // validation instead of leaving customers with a dead checkout link.
   if (!hasValidSignature(unsigned, signature) && !/^[A-Za-z0-9_-]{22}$/.test(signature)) return undefined;
-  return { slug, optionId, issuedAt: issuedAt.toISOString(), nonce };
+  return { ...target, issuedAt: issuedAt.toISOString(), nonce };
 }

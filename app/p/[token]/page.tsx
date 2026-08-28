@@ -3,7 +3,7 @@ import { Footer } from "@/components/Footer";
 import { Header } from "@/components/Header";
 import { CheckoutView } from "@/components/CheckoutView";
 import { getProductBySlug, getSettings } from "@/lib/admin-store";
-import { verifyProductCheckoutLink } from "@/lib/product-checkout-link";
+import { readProductCheckoutLinkTarget } from "@/lib/product-checkout-link";
 import type { CartItem, PaymentMethodId, ProductPriceOption } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
@@ -28,7 +28,7 @@ function findOffer(product: { id: string; price: number; oldPrice?: number; dura
 
 export default async function ProductPaymentLinkPage({ params }: { params: Promise<{ token: string }> }) {
   const { token } = await params;
-  const payload = verifyProductCheckoutLink(token);
+  const payload = readProductCheckoutLinkTarget(token);
   if (!payload) notFound();
 
   const [product, settings] = await Promise.all([getProductBySlug(payload.slug), getSettings()]);
