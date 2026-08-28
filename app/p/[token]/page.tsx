@@ -4,6 +4,7 @@ import { Header } from "@/components/Header";
 import { CheckoutView } from "@/components/CheckoutView";
 import { getProductBySlug, getSettings } from "@/lib/admin-store";
 import { verifyProductCheckoutLink } from "@/lib/product-checkout-link";
+import { logger } from "@/lib/logger";
 import type { CartItem, PaymentMethodId, ProductPriceOption } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
@@ -29,11 +30,24 @@ function findOffer(product: { id: string; price: number; oldPrice?: number; dura
 export default async function ProductPaymentLinkPage({ params }: { params: Promise<{ token: string }> }) {
   const { token } = await params;
   const payload = verifyProductCheckoutLink(token);
-  if (!payload) notFound();
+  if (!payload) {
+    logger.warn("Product payment link verification failed", { tokenLength: token.length });
+    notFound();
+  }
 
   const [product, settings] = await Promise.all([getProductBySlug(payload.slug), getSettings()]);
   const offer = product ? findOffer(product, payload.optionId) : undefined;
-  if (!product || !product.available || !offer || offer.available === false || offer.price <= 0) notFound();
+  if (!product || !product.available || !offer || offer.available === false || offer.price <= 0) {
+    logger.warn("Product payment link target is unavailable", {
+      slug: payload.slug,
+      optionId: payload.optionId,
+      hasProduct: Boolean(product),
+      productAvailable: product?.available,
+      hasOffer: Boolean(offer),
+      offerAvailable: offer?.available,
+    });
+    notFound();
+  }
 
   const item: CartItem = {
     id: `${product.id}:${offer.id}`,
