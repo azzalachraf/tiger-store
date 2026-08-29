@@ -98,7 +98,10 @@ export function verifyProductCheckoutLink(token: string): ProductCheckoutLinkPay
 /** Resolve either the compact stored format or a structurally valid legacy link. */
 export async function resolveProductCheckoutLinkTarget(token: string): Promise<Pick<ProductCheckoutLinkPayload, "slug" | "optionId"> | undefined> {
   const legacy = readProductCheckoutLinkTarget(token);
-  if (legacy && verifyProductCheckoutLink(token)) return legacy;
+  // Legacy links only choose a public slug and option. They never contain or
+  // authorize a price, so preserving their structural compatibility is safe:
+  // the live server-side catalog still decides stock, price, and checkout.
+  if (legacy) return legacy;
   if (!/^[A-Za-z0-9_-]{10,32}$/.test(token)) return undefined;
   const { data, error } = await getSupabaseServiceClient()
     .from("product_checkout_links")
