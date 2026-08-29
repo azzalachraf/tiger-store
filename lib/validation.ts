@@ -161,6 +161,13 @@ const productPriceOptionsSchema = z.preprocess((value) => {
   return value;
 }, z.array(productPriceOptionSchema).optional());
 
+// PostgreSQL returns nullable JSONB fields as `null`. Keep the application
+// model optional while accepting that database representation on reads.
+const nullableOptional = <T extends z.ZodType>(schema: T) => z.preprocess(
+  (value) => value === null || value === undefined ? undefined : value,
+  schema.optional(),
+);
+
 export const productSchema = z.object({
   id: z.string().trim().min(1).max(160),
   slug: z.string().trim().min(1).max(160).regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/),
@@ -183,8 +190,8 @@ export const productSchema = z.object({
   available: z.boolean(),
   featured: z.boolean(),
   priceOptions: productPriceOptionsSchema,
-  details: productDetailsSchema.optional(),
-  faqs: z.array(productFaqSchema).max(12).optional(),
+  details: nullableOptional(productDetailsSchema),
+  faqs: nullableOptional(z.array(productFaqSchema).max(12)),
 });
 
 export const cartItemSchema = z.object({
