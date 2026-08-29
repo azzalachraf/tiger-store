@@ -4,7 +4,6 @@ import { Header } from "@/components/Header";
 import { CheckoutView } from "@/components/CheckoutView";
 import { getProducts, getSettings } from "@/lib/admin-store";
 import { resolveProductCheckoutLinkTarget } from "@/lib/product-checkout-link";
-import { logger } from "@/lib/logger";
 import type { CartItem, PaymentMethodId, ProductPriceOption } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
@@ -38,11 +37,9 @@ function findOffer(product: { id: string; price: number; oldPrice?: number; dura
 
 export default async function ProductPaymentLinkPage({ params }: { params: Promise<{ token: string }> }) {
   const { token } = await params;
-  const payload = await resolveProductCheckoutLinkTarget(token) ?? legacyTarget(token);
-  if (!payload) {
-    logger.warn("product payment link token was rejected", { tokenLength: token.length, tokenPrefix: token.slice(0, 3), dotCount: token.split(".").length });
-    notFound();
-  }
+  const decodedToken = (() => { try { return decodeURIComponent(token); } catch { return token; } })();
+  const payload = await resolveProductCheckoutLinkTarget(decodedToken) ?? legacyTarget(decodedToken);
+  if (!payload) notFound();
 
   // Use the normalized catalog collection used by storefront listings. This
   // preserves older stored products whose variants were saved without IDs,
@@ -50,10 +47,7 @@ export default async function ProductPaymentLinkPage({ params }: { params: Promi
   const [products, settings] = await Promise.all([getProducts(), getSettings()]);
   const product = products.find((item) => item.slug === payload.slug);
   const offer = product ? findOffer(product, payload.optionId) : undefined;
-  if (!product || !product.available || !offer || offer.available === false || offer.price <= 0) {
-    logger.warn("product payment link target is unavailable", { slug: payload.slug, optionId: payload.optionId, productFound: Boolean(product), productAvailable: product?.available ?? false, offerFound: Boolean(offer), offerAvailable: offer?.available ?? false, offerPrice: offer?.price ?? 0 });
-    notFound();
-  }
+  if (!product || !product.available || !offer || offer.available === false || offer.price <= 0) notFound();
 
   const item: CartItem = {
     id: `${product.id}:${offer.id}`,
