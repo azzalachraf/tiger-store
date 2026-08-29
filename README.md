@@ -2,7 +2,7 @@
 
 ## Private Telegram operations
 
-The owner-maintained Google Sheet is the only source for Snapchat redeem-card uploads. See [Telegram operations setup](docs/telegram-operations.md) for the service-account setup, owner approval flow, and private card-operation commands. No code is stored or logged in plaintext.
+The owner-maintained [Redeem Cards 2 Google Sheet](https://docs.google.com/spreadsheets/d/1icedwWIcAgW2xjw-YUX-TSseHc2JVO0SvWIFsh2-mSA/edit) is the only source for Snapchat redeem-card uploads. See [Telegram operations setup](docs/telegram-operations.md) for the service-account setup, owner approval flow, secure persistent Telegram button menu, and private card-operation commands. No code is stored or logged in plaintext.
 
 Tiger Store is a mobile-first Next.js App Router storefront for digital subscriptions in Algeria at `digitaldz.shop`.
 

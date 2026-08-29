@@ -57,6 +57,44 @@ function registrationId() {
 }
 
 type InlineKeyboard = { inline_keyboard: { text: string; callback_data: string }[][] };
+type ReplyKeyboard = { keyboard: { text: string }[][]; resize_keyboard: true; is_persistent: true };
+type ReplyMarkup = InlineKeyboard | ReplyKeyboard;
+
+function menuKeyboard(locale: TelegramInterfaceLocale, role: TelegramRole): ReplyKeyboard {
+  const labels = locale === "ar"
+    ? {
+        snapchat: "🛒 بيع Snapchat", stats: "📊 إحصاءاتي", owner: "👑 لوحة المالك", profit: "💰 صافي الربح",
+        cards: "📦 مزامنة البطاقات", reports: "📈 مزامنة التقارير", ads: "📣 الإعلانات", products: "🛍 المنتجات",
+        approval: "👥 اعتماد مشرف", arabic: "🌐 العربية", english: "🌐 English", help: "ℹ️ المساعدة",
+      }
+    : {
+        snapchat: "🛒 Snapchat sale", stats: "📊 My stats", owner: "👑 Owner controls", profit: "💰 Net profit",
+        cards: "📦 Sync cards", reports: "📈 Sync reports", ads: "📣 Advertising", products: "🛍 Products",
+        approval: "👥 Approve admin", arabic: "🌐 العربية", english: "🌐 English", help: "ℹ️ Help",
+      };
+  const rows = [[labels.snapchat, labels.stats]];
+  if (role === "owner") rows.push([labels.owner, labels.profit], [labels.cards, labels.reports], [labels.ads, labels.products], [labels.approval]);
+  rows.push([labels.arabic, labels.english], [labels.help]);
+  return { keyboard: rows.map((row) => row.map((text) => ({ text }))), resize_keyboard: true, is_persistent: true };
+}
+
+function routeMenuButton(value: string | undefined) {
+  const text = (value ?? "").trim();
+  const commands: Record<string, string> = {
+    "🛒 بيع Snapchat": "/snapchat", "🛒 Snapchat sale": "/snapchat",
+    "📊 إحصاءاتي": "/stats", "📊 My stats": "/stats",
+    "👑 لوحة المالك": "/owner", "👑 Owner controls": "/owner",
+    "💰 صافي الربح": "/net_profit today", "💰 Net profit": "/net_profit today",
+    "📦 مزامنة البطاقات": "/sync_cards", "📦 Sync cards": "/sync_cards",
+    "📈 مزامنة التقارير": "/sync_finance", "📈 Sync reports": "/sync_finance",
+    "📣 الإعلانات": "/ad_help", "📣 Advertising": "/ad_help",
+    "🛍 المنتجات": "/product_help", "🛍 Products": "/product_help",
+    "👥 اعتماد مشرف": "/approve_help", "👥 Approve admin": "/approve_help",
+    "🌐 العربية": "/ar", "🌐 English": "/en",
+    "ℹ️ المساعدة": "/menu", "ℹ️ Help": "/menu",
+  };
+  return commands[text] ?? text;
+}
 
 async function telegramCall(method: string, body: Record<string, unknown>) {
   const token = getServerEnv().TELEGRAM_BOT_TOKEN;
@@ -68,7 +106,7 @@ async function telegramCall(method: string, body: Record<string, unknown>) {
   });
 }
 
-async function reply(chatId: string, text: string, replyMarkup?: InlineKeyboard) {
+async function reply(chatId: string, text: string, replyMarkup?: ReplyMarkup) {
   await telegramCall("sendMessage", { chat_id: chatId, text, disable_web_page_preview: true, ...(replyMarkup ? { reply_markup: replyMarkup } : {}) });
 }
 
@@ -241,7 +279,7 @@ export async function handleTelegramOperationsMessage(input: {
   };
   const user = await registerIdentity(identity);
   const locale = user.interface_locale;
-  const [rawCommand, argument, secondArgument] = command(input.text);
+  const [rawCommand = "", argument, secondArgument] = command(routeMenuButton(input.text));
   const action = rawCommand.toLowerCase().split("@")[0];
   const chatId = telegramId(input.chatId);
 
@@ -287,6 +325,19 @@ export async function handleTelegramOperationsMessage(input: {
     return;
   }
 
+  if (action === "/menu") {
+    if (user.role === "pending") {
+      await reply(chatId, textFor(locale,
+        "طلبك بانتظار موافقة المالك. أرسل معرّف التسجيل التالي للمالك فقط:\n" + user.registration_id,
+        "Your request is waiting for the owner's approval. Send this registration ID only to the owner:\n" + user.registration_id));
+      return;
+    }
+    await reply(chatId, textFor(locale,
+      "اختر أي زر من القائمة. كل العمليات الحساسة تبقى محمية بصلاحيتك في Telegram.",
+      "Choose a button below. Every sensitive action remains protected by your Telegram role."), menuKeyboard(locale, user.role));
+    return;
+  }
+
   if (action === "/snapchat") {
     if (user.role !== "admin" && user.role !== "owner") {
       await reply(chatId, textFor(locale, "غير مصرح لك بهذه العملية.", "Not authorised."));
@@ -322,7 +373,33 @@ export async function handleTelegramOperationsMessage(input: {
 
   if (action === "/owner") {
     if (!ownerOnly(user)) { await reply(chatId, textFor(locale, "غير مصرح لك بهذه العملية.", "Not authorised.")); return; }
-    await reply(chatId, textFor(locale, "لوحة المالك", "Owner controls"), { inline_keyboard: [[{ text: textFor(locale, "صافي ربح اليوم", "Today net profit"), callback_data: "an|today" }, { text: textFor(locale, "صافي ربح الشهر", "Month net profit"), callback_data: "an|month" }]] });
+    await reply(chatId, textFor(locale,
+      "لوحة المالك\n• مزامنة البطاقات تقرأ Google Sheet فقط.\n• الإعلانات والمنتجات تعرض تعليمات إدخال آمنة.\n• الموافقة تستعمل معرّف تسجيل المشرف فقط.",
+      "Owner controls\n• Card sync only reads the Google Sheet.\n• Advertising and products show safe input instructions.\n• Approval uses an admin registration ID only."), { inline_keyboard: [[{ text: textFor(locale, "صافي ربح اليوم", "Today net profit"), callback_data: "an|today" }, { text: textFor(locale, "صافي ربح الشهر", "Month net profit"), callback_data: "an|month" }]] });
+    return;
+  }
+
+  if (action === "/approve_help") {
+    if (!ownerOnly(user)) { await reply(chatId, textFor(locale, "غير مصرح لك بهذه العملية.", "Not authorised.")); return; }
+    await reply(chatId, textFor(locale,
+      "لموافقة مشرف جديد: اطلب منه فتح البوت وإرسال /start، ثم أرسل هنا: /approve TG-XXXXXXXX",
+      "To approve a new admin: ask them to open the bot and send /start, then send: /approve TG-XXXXXXXX"), menuKeyboard(locale, user.role));
+    return;
+  }
+
+  if (action === "/ad_help") {
+    if (!ownerOnly(user)) { await reply(chatId, textFor(locale, "غير مصرح لك بهذه العملية.", "Not authorised.")); return; }
+    await reply(chatId, textFor(locale,
+      "الإعلانات: أضف إنفاقاً هكذا:\n/ad_add 2026-08-29|instagram|12.50|اسم الحملة|ملاحظة\nلعرض يوم محدد: /ad_list 2026-08-29",
+      "Advertising: add spend with:\n/ad_add 2026-08-29|instagram|12.50|campaign name|note\nTo view a day: /ad_list 2026-08-29"), menuKeyboard(locale, user.role));
+    return;
+  }
+
+  if (action === "/product_help") {
+    if (!ownerOnly(user)) { await reply(chatId, textFor(locale, "غير مصرح لك بهذه العملية.", "Not authorised.")); return; }
+    await reply(chatId, textFor(locale,
+      "إدارة المنتجات الكاملة متاحة في لوحة الموقع المحمية. الأوامر المتقدمة هنا تقبل فقط JSON كامل ومطابق للنموذج: /product_create أو /product_edit أو /product_delete <id>.",
+      "Full product management is available in the protected site admin panel. Advanced commands here accept only complete validated JSON: /product_create, /product_edit, or /product_delete <id>."), menuKeyboard(locale, user.role));
     return;
   }
 
@@ -404,8 +481,8 @@ export async function handleTelegramOperationsMessage(input: {
         "Your request is registered. Send this registration ID to the owner for approval:\n" + user.registration_id));
     } else {
       await reply(chatId, textFor(locale,
-        "أهلاً بك. الأوامر: /whoami، /ar، /en، /snapchat، /stats" + (user.role === "owner" ? "، /approve TG-XXXXXXXX، /sync_cards، /sync_finance" : ""),
-        "Welcome. Commands: /whoami, /ar, /en, /snapchat, /stats" + (user.role === "owner" ? ", /approve TG-XXXXXXXX, /sync_cards, /sync_finance" : "")));
+        "أهلاً بك في عمليات Tiger Store. استعمل الأزرار أسفل الرسالة.",
+        "Welcome to Tiger Store operations. Use the buttons below."), menuKeyboard(locale, user.role));
     }
     return;
   }

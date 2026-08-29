@@ -39,11 +39,17 @@ Only the verified database identity with role `owner` can approve registrations.
 
 ## Snapchat redeem-card operations
 
-Redeem inventory has one owner-controlled source: the existing Google Sheet **Redeem cards 2**, tab **Gift Card Inventory**. The application reads it using a dedicated Google service account with Viewer access; it never writes, changes a status, or uploads a code to that sheet.
+Redeem inventory has one owner-controlled source: [Tiger Store – Redeem Cards 2](https://docs.google.com/spreadsheets/d/1icedwWIcAgW2xjw-YUX-TSseHc2JVO0SvWIFsh2-mSA/edit), tab **Gift Card Inventory**. The application reads it using a dedicated Google service account with Viewer access; it never writes, changes a status, or uploads a code to that sheet.
 
-The sheet contains repeating `Code` / boolean `Status` pairs. The heading above each pair must be exactly one of `24 TRY`, `48 TRY`, `100 INR`, `115 TRY`, `229 TRY`, `199 INR`, or `298 INR`. `TRUE` means available. The owner adds cards in that sheet, then privately runs `/sync_cards`.
+The sheet contains repeating `Code` / boolean `Status` pairs. The heading above each pair must be exactly one of `24 TRY`, `48 TRY`, `100 INR`, `115 TRY`, `229 TRY`, `199 INR`, or `298 INR`. `TRUE` means available. Replace the highlighted sample row before the first sync; it is not a redeem code. The owner adds cards in that sheet, then privately runs the **Sync cards** button (or `/sync_cards`).
 
-Set `GOOGLE_REDEEM_SHEET_ID`, `GOOGLE_REDEEM_SHEET_TAB`, `GOOGLE_SERVICE_ACCOUNT_EMAIL`, and `GOOGLE_SERVICE_ACCOUNT_PRIVATE_KEY`. Share the sheet with the service-account email as **Viewer**. Do not use a public sheet or an API key.
+Set `GOOGLE_REDEEM_SHEET_ID` to `1icedwWIcAgW2xjw-YUX-TSseHc2JVO0SvWIFsh2-mSA` and `GOOGLE_REDEEM_SHEET_TAB` to `Gift Card Inventory`, plus `GOOGLE_SERVICE_ACCOUNT_EMAIL` and `GOOGLE_SERVICE_ACCOUNT_PRIVATE_KEY` in the hosting provider. Share the sheet with the service-account email as **Viewer**. Do not use a public sheet or an API key.
+
+## Button menu
+
+After the owner or an approved admin sends `/start`, the bot displays a persistent mobile button menu. Every approved operator gets **Snapchat sale**, **My stats**, Arabic, English, and Help. The owner also gets **Owner controls**, **Net profit**, **Sync cards**, **Sync reports**, **Advertising**, **Products**, and **Approve admin**.
+
+The menu only routes to the existing private-chat, verified-role commands. It does not expose redeem codes, weaken approvals, or give admins access to owner controls.
 
 An approved admin privately sends `/snapchat`, selects a plan and then an allowed card type:
 
