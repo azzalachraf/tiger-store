@@ -41,7 +41,7 @@ Only the verified database identity with role `owner` can approve registrations.
 
 Redeem inventory has one owner-controlled source: [Tiger Store – Redeem Cards 2](https://docs.google.com/spreadsheets/d/1icedwWIcAgW2xjw-YUX-TSseHc2JVO0SvWIFsh2-mSA/edit), tab **Gift Card Inventory**. The application reads it using a dedicated Google service account with Viewer access; it never writes, changes a status, or uploads a code to that sheet.
 
-The sheet contains repeating `Code` / boolean `Status` pairs. The heading above each pair must be exactly one of `24 TRY`, `48 TRY`, `100 INR`, `115 TRY`, `229 TRY`, `199 INR`, or `298 INR`. `TRUE` means available. Replace the highlighted sample row before the first sync; it is not a redeem code. The owner adds cards in that sheet, then privately runs the **Sync cards** button (or `/sync_cards`).
+The sheet contains repeating `Code` / boolean `Status` pairs. The heading above each pair must be exactly one of `24 TRY`, `48 TRY`, `100 INR`, `115 TRY`, `229 TRY`, `199 INR`, or `298 INR`. `TRUE` means available. The reader safely finds those paired headings even when the sheet has a title and instructions above them. Replace the highlighted sample row before the first sync; it is ignored and is not a redeem code. The owner adds cards in that sheet, then privately runs the **Sync cards** button (or `/sync_cards`).
 
 Set `GOOGLE_REDEEM_SHEET_ID` to `1icedwWIcAgW2xjw-YUX-TSseHc2JVO0SvWIFsh2-mSA` and `GOOGLE_REDEEM_SHEET_TAB` to `Gift Card Inventory`, plus `GOOGLE_SERVICE_ACCOUNT_EMAIL` and `GOOGLE_SERVICE_ACCOUNT_PRIVATE_KEY` in the hosting provider. Share the sheet with the service-account email as **Viewer**. Do not use a public sheet or an API key.
 
