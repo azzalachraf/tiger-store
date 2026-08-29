@@ -46,6 +46,7 @@ alter table public.products add column if not exists updated_at timestamptz not 
 alter table public.products add column if not exists "priceOptions" jsonb not null default '[]'::jsonb;
 alter table public.products alter column price type integer using round(price)::integer;
 alter table public.products alter column "oldPrice" type integer using case when "oldPrice" is null then null else round("oldPrice")::integer end;
+update public.products set "priceOptions" = '[]'::jsonb where "priceOptions" is null;
 alter table public.products alter column "priceOptions" set default '[]'::jsonb;
 alter table public.products alter column "priceOptions" set not null;
 alter table public.products drop constraint if exists products_id_format;
@@ -189,5 +190,3 @@ create trigger stock_alerts_set_updated_at before update on public.stock_alerts 
 -- policies for this bucket; access is limited to the service role.
 insert into storage.buckets (id, name, public) values ('receipts', 'receipts', false)
 on conflict (id) do update set public = false;
-alter table storage.objects enable row level security;
-revoke all on storage.objects from anon, authenticated;
