@@ -65,6 +65,18 @@ The owner edits the USD/DZD rate, Snapchat plan prices, fixed commissions, card 
 
 Create a Google Sheet, share it with the configured service-account email as **Editor**, then save its ID in Admin → Finance or `GOOGLE_FINANCE_SHEET_ID`. The owner runs `/sync_finance` privately. This writes PII-free `Income`, `Daily Profit`, `Advertising`, `Admin Summary`, and `Inventory` tabs, then maintains one `Admin <id> YYYY-MM` tab per admin/month. Only that admin’s operational tab may contain their own customer name and phone; admins do not get sheet access. Each admin can use `/stats` privately to see completed orders, earned commission, paid amount, remaining credit and next payment date.
 
+## Owner analytics and advertising
+
+The owner uses `/owner` for Net Profit buttons, or `/net_profit today`, `/net_profit month`, and `/net_profit YYYY-MM-DD YYYY-MM-DD`. The report includes orders, plans, admins, revenue, card costs, commissions, advertising, cost per order, margin, and net profit. It explicitly lists order days with no advertising record instead of treating missing data as zero.
+
+Use only private owner chat commands for advertising: `/ad_add YYYY-MM-DD|instagram|12.50|campaign|note`, `/ad_list YYYY-MM-DD`, `/ad_edit ID|YYYY-MM-DD|instagram|12.50|campaign|note`, and `/ad_delete ID`. USD is parsed into integer cents; reports convert it with the editable USD/DZD rate and distribute that day's spend deterministically across that day's completed orders. Advertising never changes commission. The initial source is `instagram` for `@tigerr_store_dz`; future sources use the private `business_settings.advertising_sources` setting.
+
+`vercel.json` schedules the daily owner report at `23:00 UTC`, which is `00:00 Africa/Algiers`. Set the server-only `CRON_SECRET` in Vercel. The cron endpoint accepts only `Authorization: Bearer <CRON_SECRET>`, records a daily key before sending, and therefore does not send the same date twice when Vercel retries.
+
+## Owner product management
+
+Owner-only Telegram commands accept the complete existing product JSON validated by the same `productSchema` as the web admin form: `/product_create { ... }`, `/product_edit { ... }`, and `/product_delete PRODUCT_ID`. A product JSON includes its image URL/path, Arabic and English translations, category, stable option IDs, plans, prices, availability, details, and FAQs. Product image uploads remain supported by the existing protected web form; Telegram JSON uses the same `image` field for a hosted public image URL/path.
+
 ## Webhook registration after deployment
 
 Do this only after the deployment contains this route and the environment variables are configured. Replace the placeholders locally; never paste a real token into a public terminal recording.

@@ -75,7 +75,7 @@ export async function getFinanceReports() {
     client.from("finance_sales").select("order_id, admin_telegram_user_id, plan_months, card_type, revenue_dzd, commission_dzd, card_cost_usd_cents, card_cost_dzd, gross_profit_dzd, completed_at").order("completed_at", { ascending: true }),
     client.from("telegram_users").select("telegram_user_id, first_name, username, role, work_started_at, next_payment_date").in("role", ["owner", "admin"]),
     client.from("redeem_cards").select("card_type, status"),
-    client.from("advertising_spend").select("spend_date, platform, campaign, amount_dzd, note").order("spend_date", { ascending: false }),
+    client.from("advertising_spend").select("spend_date, platform, campaign, amount_dzd, amount_usd_cents, note").order("spend_date", { ascending: false }),
     getFinanceSettings(),
   ]);
   if (salesError || adminsError || cardsError || advertisingError) throw new Error("Finance reports could not be read.");

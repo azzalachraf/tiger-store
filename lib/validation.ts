@@ -38,7 +38,9 @@ export const snapchatCallbackDataSchema = z.union([
   z.tuple([z.literal("sc"), snapchatPlanSchema]),
   z.tuple([z.literal("sc"), snapchatPlanSchema, snapchatCardTypeSchema]),
   z.tuple([z.literal("op"), z.string().uuid(), z.enum(["complete", "cancel"])]),
+  z.tuple([z.literal("an"), z.enum(["today", "month"])]),
 ]);
+export const advertisingUsdSchema = z.object({ date: z.string().date(), sourceId: z.string().trim().regex(/^[a-z][a-z0-9_-]{1,39}$/), amountUsd: z.string().trim().regex(/^\d+(?:\.\d{1,2})?$/), campaign: z.string().trim().max(160), note: z.string().trim().max(500) });
 export const manualOrderInputSchema = z.object({
   customerName: z.string().trim().min(1).max(160),
   total: z.coerce.number().int().positive().max(10_000_000),

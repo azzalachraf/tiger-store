@@ -151,13 +151,7 @@ export async function getProductBySlug(slug: string): Promise<Product | undefine
 export async function saveProduct(product: Product) {
   const validatedProduct = productSchema.parse(product);
   const client = supabase();
-  // The live catalog predates the optional details/faqs columns. Excluding
-  // undefined optional fields keeps price, stock, and variant edits compatible
-  // with that established schema instead of failing the entire save.
-  const { details, faqs, ...productPayload } = validatedProduct;
-  void details;
-  void faqs;
-  const { error } = await client.from("products").upsert(productPayload, { onConflict: "id" });
+  const { error } = await client.from("products").upsert(validatedProduct, { onConflict: "id" });
   if (error) throw new Error(`saveProduct failed: ${error.message}`);
 
   const options = validatedProduct.priceOptions ?? [];

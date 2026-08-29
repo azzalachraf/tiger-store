@@ -4,13 +4,15 @@ import { randomBytes } from "node:crypto";
 import { getServerEnv } from "@/lib/env";
 import { getSupabaseServiceClient } from "@/lib/supabase";
 import type { TelegramInterfaceLocale, TelegramRole } from "@/lib/types";
-import { snapchatCallbackDataSchema } from "@/lib/validation";
+import { advertisingUsdSchema, productSchema, snapchatCallbackDataSchema } from "@/lib/validation";
 import { cardLabel, cardsForPlan, snapchatCardTypes, type SnapchatCardType, type SnapchatPlanMonths } from "@/lib/snapchat-cards";
 import { claimSnapchatCard, finishSnapchatOperation, syncRedeemInventory } from "@/lib/snapchat-operations";
 import { completeSnapchatSale } from "@/lib/telegram-warranty";
 import { absoluteUrl } from "@/lib/seo";
 import { getAdminFinanceSummary } from "@/lib/finance";
 import { syncFinanceReporting } from "@/lib/google-finance-sheet";
+import { formatOwnerAnalytics, getOwnerAnalytics, rangeFor, type AnalyticsRange } from "@/lib/owner-analytics";
+import { deleteProduct, getProductById, saveProduct } from "@/lib/admin-store";
 
 type TelegramIdentity = {
   userId: string;
@@ -32,6 +34,22 @@ function telegramId(value: number) {
 
 function textFor(locale: TelegramInterfaceLocale, arabic: string, english: string) {
   return locale === "ar" ? arabic : english;
+}
+
+function usdCents(value: string) {
+  const [whole, fraction = ""] = value.split(".");
+  return Number(whole) * 100 + Number((fraction + "00").slice(0, 2));
+}
+
+function ownerOnly(user: TelegramUserRow) { return user.role === "owner"; }
+
+function commandParts(value: string | undefined) { return (value ?? "").split("|").map((part) => part.trim()); }
+
+function customRange(argument?: string, second?: string): AnalyticsRange | null {
+  if (!argument) return rangeFor("today");
+  if (argument === "today" || argument === "month") return rangeFor(argument);
+  if (!second || !/^\d{4}-\d{2}-\d{2}$/.test(argument) || !/^\d{4}-\d{2}-\d{2}$/.test(second) || argument > second) return null;
+  return { start: argument, end: second, label: "custom" };
 }
 
 function registrationId() {
@@ -163,6 +181,11 @@ export async function handleTelegramOperationsCallback(input: {
   const parsed = snapchatCallbackDataSchema.safeParse(parts.map((part, index) => index === 1 && /^\d+$/.test(part) ? Number(part) : part));
   if (!parsed.success) { await reply(String(input.chatId), textFor(locale, "انتهت صلاحية هذا الاختيار.", "This selection has expired.")); return; }
   const selected = parsed.data;
+  if (selected[0] === "an") {
+    if (!ownerOnly(user)) { await reply(String(input.chatId), textFor(locale, "غير مصرح لك بهذه العملية.", "Not authorised.")); return; }
+    try { await reply(String(input.chatId), formatOwnerAnalytics(locale, await getOwnerAnalytics(rangeFor(selected[1])))); } catch { await reply(String(input.chatId), textFor(locale, "تعذر إعداد التقرير حالياً.", "The report is unavailable right now.")); }
+    return;
+  }
   if (selected[0] === "sc" && selected.length === 2) {
     const plan = selected[1];
     await reply(String(input.chatId), textFor(locale, "اختر نوع البطاقة.", "Choose the card type."), { inline_keyboard: cardsForPlan(plan).map((cardType) => [{ text: cardLabel(cardType, locale), callback_data: `sc|${plan}|${cardType}` }]) });
@@ -218,7 +241,7 @@ export async function handleTelegramOperationsMessage(input: {
   };
   const user = await registerIdentity(identity);
   const locale = user.interface_locale;
-  const [rawCommand, argument] = command(input.text);
+  const [rawCommand, argument, secondArgument] = command(input.text);
   const action = rawCommand.toLowerCase().split("@")[0];
   const chatId = telegramId(input.chatId);
 
@@ -289,6 +312,72 @@ export async function handleTelegramOperationsMessage(input: {
     return;
   }
 
+  if (action === "/net_profit") {
+    if (!ownerOnly(user)) { await reply(chatId, textFor(locale, "غير مصرح لك بهذه العملية.", "Not authorised.")); return; }
+    const range = customRange(argument, secondArgument);
+    if (!range) { await reply(chatId, textFor(locale, "استعمل: /net_profit today أو /net_profit month أو /net_profit YYYY-MM-DD YYYY-MM-DD", "Use: /net_profit today, /net_profit month, or /net_profit YYYY-MM-DD YYYY-MM-DD")); return; }
+    try { await reply(chatId, formatOwnerAnalytics(locale, await getOwnerAnalytics(range))); } catch { await reply(chatId, textFor(locale, "تعذر إعداد التقرير حالياً.", "The report is unavailable right now.")); }
+    return;
+  }
+
+  if (action === "/owner") {
+    if (!ownerOnly(user)) { await reply(chatId, textFor(locale, "غير مصرح لك بهذه العملية.", "Not authorised.")); return; }
+    await reply(chatId, textFor(locale, "لوحة المالك", "Owner controls"), { inline_keyboard: [[{ text: textFor(locale, "صافي ربح اليوم", "Today net profit"), callback_data: "an|today" }, { text: textFor(locale, "صافي ربح الشهر", "Month net profit"), callback_data: "an|month" }]] });
+    return;
+  }
+
+  if (action === "/ad_add" || action === "/ad_edit") {
+    if (!ownerOnly(user)) { await reply(chatId, textFor(locale, "غير مصرح لك بهذه العملية.", "Not authorised.")); return; }
+    const payload = commandParts((input.text ?? "").replace(/^\/ad_(?:add|edit)\s*/i, ""));
+    const id = action === "/ad_edit" ? payload.shift() : undefined;
+    const parsedSpend = advertisingUsdSchema.safeParse({ date: payload[0], sourceId: payload[1], amountUsd: payload[2], campaign: payload[3] ?? "", note: payload[4] ?? "" });
+    if (!parsedSpend.success || (action === "/ad_edit" && !id)) { await reply(chatId, textFor(locale, "استعمل: /ad_add 2026-08-29|instagram|12.50|الحملة|ملاحظة", "Use: /ad_add 2026-08-29|instagram|12.50|campaign|note")); return; }
+    try {
+      const settings = await (await import("@/lib/finance")).getFinanceSettings();
+      const inputSpend = parsedSpend.data;
+      const row = { spend_date: inputSpend.date, source_id: inputSpend.sourceId, platform: inputSpend.sourceId === "instagram" ? "instagram" : "other", amount_usd_cents: usdCents(inputSpend.amountUsd), amount_dzd: Math.floor(usdCents(inputSpend.amountUsd) * settings.usdDzdRate / 100), campaign: inputSpend.campaign, note: inputSpend.note, recorded_by_telegram_user_id: identity.userId };
+      const query = id ? getSupabaseServiceClient().from("advertising_spend").update(row).eq("id", id) : getSupabaseServiceClient().from("advertising_spend").insert(row);
+      const { error } = await query;
+      if (error) throw error;
+      await audit(identity.userId, "setting", id ?? inputSpend.date, id ? "advertising_spend_edited" : "advertising_spend_added", { date: inputSpend.date, source: inputSpend.sourceId });
+      await reply(chatId, textFor(locale, "تم حفظ الإنفاق الإعلاني بالدولار.", "Advertising spend was saved in USD."));
+    } catch { await reply(chatId, textFor(locale, "تعذر حفظ الإنفاق الإعلاني.", "Advertising spend could not be saved.")); }
+    return;
+  }
+
+  if (action === "/ad_delete") {
+    if (!ownerOnly(user) || !argument) { await reply(chatId, textFor(locale, "غير مصرح لك بهذه العملية أو المعرف غير موجود.", "Not authorised or missing ID.")); return; }
+    const { error } = await getSupabaseServiceClient().from("advertising_spend").delete().eq("id", argument);
+    if (error) { await reply(chatId, textFor(locale, "تعذر حذف الإنفاق.", "Advertising spend could not be deleted.")); return; }
+    await audit(identity.userId, "setting", argument, "advertising_spend_deleted", {}); await reply(chatId, textFor(locale, "تم الحذف.", "Deleted.")); return;
+  }
+
+  if (action === "/ad_list") {
+    if (!ownerOnly(user)) { await reply(chatId, textFor(locale, "غير مصرح لك بهذه العملية.", "Not authorised.")); return; }
+    const date = argument && /^\d{4}-\d{2}-\d{2}$/.test(argument) ? argument : rangeFor("today").start;
+    const { data } = await getSupabaseServiceClient().from("advertising_spend").select("id, source_id, amount_usd_cents, campaign").eq("spend_date", date).order("created_at");
+    await reply(chatId, (data?.length ?? 0) ? data!.map((row) => `${row.id} | ${row.source_id} | $${(Number(row.amount_usd_cents) / 100).toFixed(2)} | ${row.campaign}`).join("\n") : textFor(locale, "لا يوجد إنفاق مسجل لهذا اليوم.", "No advertising spend is recorded for this day.")); return;
+  }
+
+  if (action === "/product_create" || action === "/product_edit") {
+    if (!ownerOnly(user)) { await reply(chatId, textFor(locale, "غير مصرح لك بهذه العملية.", "Not authorised.")); return; }
+    const json = (input.text ?? "").replace(/^\/product_(?:create|edit)\s*/i, "").trim();
+    try {
+      const product = productSchema.parse(JSON.parse(json));
+      if (action === "/product_edit" && !await getProductById(product.id)) throw new Error("Missing product");
+      await saveProduct(product);
+      await audit(identity.userId, "setting", product.id, action === "/product_create" ? "product_created" : "product_edited", { slug: product.slug });
+      await reply(chatId, textFor(locale, "تم حفظ المنتج بكامل الترجمات والخطط والصورة والتفاصيل والأسئلة.", "The complete product was saved: translations, plans, image, details, and FAQs."));
+    } catch { await reply(chatId, textFor(locale, "تعذر حفظ المنتج. أرسل JSON كامل مطابق لنموذج المنتج، مع image وdetails وfaqs.", "Product could not be saved. Send complete product JSON with image, details, and FAQs.")); }
+    return;
+  }
+
+  if (action === "/product_delete") {
+    if (!ownerOnly(user) || !argument) { await reply(chatId, textFor(locale, "غير مصرح لك بهذه العملية أو المعرف غير موجود.", "Not authorised or missing ID.")); return; }
+    try { await deleteProduct(argument); await audit(identity.userId, "setting", argument, "product_deleted", {}); await reply(chatId, textFor(locale, "تم حذف المنتج.", "Product deleted.")); } catch { await reply(chatId, textFor(locale, "تعذر حذف المنتج.", "Product could not be deleted.")); }
+    return;
+  }
+
   if (action === "/stats") {
     if (user.role !== "admin" && user.role !== "owner") { await reply(chatId, textFor(locale, "غير مصرح لك بهذه العملية.", "Not authorised.")); return; }
     try {
@@ -322,4 +411,19 @@ export async function handleTelegramOperationsMessage(input: {
   }
 
   await reply(chatId, textFor(locale, "أمر غير معروف. أرسل /start للمساعدة.", "Unknown command. Send /start for help."));
+}
+
+export async function sendOwnerDailyReport(now = new Date()) {
+  if (!getServerEnv().TELEGRAM_BOT_TOKEN) throw new Error("Telegram is not configured.");
+  const client = getSupabaseServiceClient();
+  const reportRange = rangeFor("yesterday", now);
+  const { data: existing } = await client.from("daily_owner_reports").select("report_date").eq("report_date", reportRange.start).maybeSingle();
+  if (existing) return { sent: false, reason: "already_sent" as const };
+  const { data: owner } = await client.from("telegram_users").select("telegram_user_id, interface_locale").eq("role", "owner").maybeSingle();
+  if (!owner) throw new Error("Owner is not registered.");
+  const report = await getOwnerAnalytics(reportRange);
+  const { error } = await client.from("daily_owner_reports").insert({ report_date: reportRange.start, summary: report });
+  if (error) { if (error.code === "23505") return { sent: false, reason: "already_sent" as const }; throw new Error("Daily report could not be recorded."); }
+  await reply(String(owner.telegram_user_id), formatOwnerAnalytics(owner.interface_locale as TelegramInterfaceLocale, report));
+  return { sent: true, reason: "sent" as const };
 }

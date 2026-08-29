@@ -19,6 +19,7 @@ const serverEnvSchema = z.object({
   TELEGRAM_ADMIN_IDS: z.string().optional().default(""),
   TELEGRAM_OWNER_ID: z.string().regex(/^[1-9][0-9]{0,18}$/).optional().default(""),
   TELEGRAM_WEBHOOK_SECRET: z.string().min(32, "TELEGRAM_WEBHOOK_SECRET must be at least 32 characters").optional().default(""),
+  CRON_SECRET: z.string().min(32, "CRON_SECRET must be at least 32 characters").optional().default(""),
   GOOGLE_REDEEM_SHEET_ID: z.string().trim().min(10).optional().default(""),
   GOOGLE_REDEEM_SHEET_TAB: z.string().trim().max(160).optional().default(""),
   GOOGLE_FINANCE_SHEET_ID: z.string().trim().min(10).optional().default(""),
