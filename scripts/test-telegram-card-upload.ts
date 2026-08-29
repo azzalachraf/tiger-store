@@ -7,6 +7,10 @@ assert.deepEqual(
   parseTelegramRedeemCardLines("try_24", "https://apps.apple.com/redeem?code=TEST-CODE-123"),
   ["TEST-CODE-123"],
 );
+assert.deepEqual(
+  parseTelegramRedeemCardLines("try_24", "https://apps.apple.com/redeem/?code=TEST-CODE-456"),
+  ["TEST-CODE-456"],
+);
 
 assert.throws(() => parseTelegramRedeemCardLines("try_24", "CODE-ONE\nCODE-ONE"));
 assert.throws(() => parseTelegramRedeemCardLines("try_24", ""));

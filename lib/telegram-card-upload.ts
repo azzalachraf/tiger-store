@@ -10,7 +10,7 @@ const redeemCodeSchema = z.string()
 function extractRedeemCode(line: string) {
   if (!/^https?:\/\//i.test(line)) return line;
   const url = new URL(line);
-  if (url.protocol !== "https:" || url.hostname !== "apps.apple.com" || url.pathname !== "/redeem") {
+  if (url.protocol !== "https:" || url.hostname !== "apps.apple.com" || !/^\/redeem\/?$/.test(url.pathname)) {
     throw new Error("Unsupported redemption link.");
   }
   const code = url.searchParams.get("code");
