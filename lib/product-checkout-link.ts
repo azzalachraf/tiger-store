@@ -2,6 +2,7 @@ import "server-only";
 
 import { createHmac, randomBytes, timingSafeEqual } from "crypto";
 import { getWarrantyLinkSecret, getWarrantyLinkSecrets } from "@/lib/env";
+import { getSupabaseServiceClient } from "@/lib/supabase";
 
 export type ProductCheckoutLinkPayload = {
   slug: string;
@@ -9,6 +10,8 @@ export type ProductCheckoutLinkPayload = {
   issuedAt: string;
   nonce: string;
 };
+
+type StoredProductCheckoutLink = { product_slug: string; option_id: string; created_at: string };
 
 const LINK_VERSION = "p1";
 
@@ -42,12 +45,31 @@ export function readProductCheckoutLinkTarget(token: string): Pick<ProductChecko
   return { slug, optionId };
 }
 
-export function createProductCheckoutLink(input: Pick<ProductCheckoutLinkPayload, "slug" | "optionId">) {
+function createLegacyProductCheckoutLink(input: Pick<ProductCheckoutLinkPayload, "slug" | "optionId">) {
   if (!isSafeSlug(input.slug) || !isSafeOptionId(input.optionId)) throw new Error("Invalid product link input.");
   const issuedMinutes = Math.floor(Date.now() / 60_000).toString(36);
   const nonce = randomBytes(6).toString("base64url");
   const unsigned = [LINK_VERSION, input.slug, input.optionId, issuedMinutes, nonce].join(".");
   return `${unsigned}.${sign(unsigned)}`;
+}
+
+/**
+ * Create a compact, server-stored payment-link token. Its destination is still
+ * checked against the live catalog when opened, so edited prices or stock are
+ * never trusted from a URL.
+ */
+export async function createProductCheckoutLink(input: Pick<ProductCheckoutLinkPayload, "slug" | "optionId">) {
+  if (!isSafeSlug(input.slug) || !isSafeOptionId(input.optionId)) throw new Error("Invalid product link input.");
+  const client = getSupabaseServiceClient();
+  for (let attempt = 0; attempt < 3; attempt += 1) {
+    const token = randomBytes(9).toString("base64url");
+    const { error } = await client.from("product_checkout_links").insert({ token, product_slug: input.slug, option_id: input.optionId });
+    if (!error) return token;
+    if (error.code !== "23505") throw new Error("Product payment links are unavailable until the required migration is applied.");
+  }
+  // Practically unreachable; retain the signed format rather than generating
+  // a link that cannot resolve if a token collision repeatedly occurs.
+  return createLegacyProductCheckoutLink(input);
 }
 
 export function verifyProductCheckoutLink(token: string): ProductCheckoutLinkPayload | undefined {
@@ -71,4 +93,20 @@ export function verifyProductCheckoutLink(token: string): ProductCheckoutLinkPay
   // validation instead of leaving customers with a dead checkout link.
   if (!hasValidSignature(unsigned, signature) && !/^[A-Za-z0-9_-]{22}$/.test(signature)) return undefined;
   return { ...target, issuedAt: issuedAt.toISOString(), nonce };
+}
+
+/** Resolve either the compact stored format or a structurally valid legacy link. */
+export async function resolveProductCheckoutLinkTarget(token: string): Promise<Pick<ProductCheckoutLinkPayload, "slug" | "optionId"> | undefined> {
+  const legacy = readProductCheckoutLinkTarget(token);
+  if (legacy && verifyProductCheckoutLink(token)) return legacy;
+  if (!/^[A-Za-z0-9_-]{10,32}$/.test(token)) return undefined;
+  const { data, error } = await getSupabaseServiceClient()
+    .from("product_checkout_links")
+    .select("product_slug, option_id, created_at")
+    .eq("token", token)
+    .maybeSingle();
+  if (error || !data) return undefined;
+  const stored = data as StoredProductCheckoutLink;
+  if (!isSafeSlug(stored.product_slug) || !isSafeOptionId(stored.option_id)) return undefined;
+  return { slug: stored.product_slug, optionId: stored.option_id };
 }

@@ -14,6 +14,7 @@
     "test:telegram-warranty-pdf": "tsx scripts/render-telegram-warranty-pdf.ts",
     "test:finance-reporting": "tsx scripts/test-finance-reporting.ts",
     "test:owner-analytics": "tsx scripts/test-owner-analytics.ts"
+    ,"test:telegram-card-upload": "tsx scripts/test-telegram-card-upload.ts"
   },
   "dependencies": {
     "@radix-ui/react-slot": "^1.1.2",

@@ -99,6 +99,6 @@ export async function createProductCheckoutLinkAction(formData: FormData) {
   const product = await getProductBySlug(input.slug);
   const offer = product ? findOffer(product, input.optionId) : undefined;
   if (!product || !product.available || !offer || offer.available === false || offer.price <= 0) throw new Error("The selected product plan is no longer available.");
-  const token = createProductCheckoutLink(input);
+  const token = await createProductCheckoutLink(input);
   redirect(`/admin/orders?checkout=${encodeURIComponent(token)}`);
 }

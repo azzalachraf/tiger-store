@@ -6,7 +6,7 @@ import { AdminShell } from "@/components/admin/AdminShell";
 import { formatPriceDZD } from "@/lib/utils";
 import { absoluteUrl } from "@/lib/seo";
 import { verifyWarrantyLink } from "@/lib/warranty";
-import { verifyProductCheckoutLink } from "@/lib/product-checkout-link";
+import { resolveProductCheckoutLinkTarget } from "@/lib/product-checkout-link";
 import { getFinanceReports } from "@/lib/finance";
 import { GoogleSheetsOrderCopy, type GoogleSheetsOrderRow } from "@/components/admin/GoogleSheetsOrderCopy";
 
@@ -20,7 +20,7 @@ export default async function AdminOrdersPage({ searchParams }: { searchParams: 
   const { warranty: warrantyToken, checkout: checkoutToken } = await searchParams;
   const warrantyPayload = warrantyToken ? verifyWarrantyLink(warrantyToken) : undefined;
   const warrantyLink = warrantyPayload && warrantyToken ? absoluteUrl(`/warranty/${warrantyToken}`) : undefined;
-  const checkoutPayload = checkoutToken ? verifyProductCheckoutLink(checkoutToken) : undefined;
+  const checkoutPayload = checkoutToken ? await resolveProductCheckoutLinkTarget(checkoutToken) : undefined;
   const checkoutLink = checkoutPayload && checkoutToken ? `https://tiger-storedz.com/p/${checkoutToken}` : undefined;
   const [orders, products, finance] = await Promise.all([getOrders(), getProducts(), getFinanceReports().catch(() => null)]);
   const receiptLinks = await Promise.all(orders.map((order) => getReceiptSignedUrl(order.receiptPath)));

@@ -6,7 +6,8 @@ import { getSupabaseServiceClient } from "@/lib/supabase";
 import type { TelegramInterfaceLocale, TelegramRole } from "@/lib/types";
 import { advertisingUsdSchema, productSchema, snapchatCallbackDataSchema } from "@/lib/validation";
 import { cardLabel, cardsForPlan, snapchatCardTypes, type SnapchatCardType, type SnapchatPlanMonths } from "@/lib/snapchat-cards";
-import { claimSnapchatCard, finishSnapchatOperation, syncRedeemInventory } from "@/lib/snapchat-operations";
+import { claimSnapchatCard, finishSnapchatOperation, syncRedeemInventory, uploadRedeemCardsFromTelegram } from "@/lib/snapchat-operations";
+import { parseTelegramRedeemCardUpload } from "@/lib/telegram-card-upload";
 import { completeSnapchatSale } from "@/lib/telegram-warranty";
 import { absoluteUrl } from "@/lib/seo";
 import { getAdminFinanceSummary } from "@/lib/finance";
@@ -64,12 +65,12 @@ function menuKeyboard(locale: TelegramInterfaceLocale, role: TelegramRole): Repl
   const labels = locale === "ar"
     ? {
         snapchat: "🛒 بيع Snapchat", stats: "📊 إحصاءاتي", owner: "👑 لوحة المالك", profit: "💰 صافي الربح",
-        cards: "📦 مزامنة البطاقات", reports: "📈 مزامنة التقارير", ads: "📣 الإعلانات", products: "🛍 المنتجات",
+        cards: "⬆️ رفع البطاقات", reports: "📈 مزامنة التقارير", ads: "📣 الإعلانات", products: "🛍 المنتجات",
         approval: "👥 اعتماد مشرف", arabic: "🌐 العربية", english: "🌐 English", help: "ℹ️ المساعدة",
       }
     : {
         snapchat: "🛒 Snapchat sale", stats: "📊 My stats", owner: "👑 Owner controls", profit: "💰 Net profit",
-        cards: "📦 Sync cards", reports: "📈 Sync reports", ads: "📣 Advertising", products: "🛍 Products",
+        cards: "⬆️ Upload cards", reports: "📈 Sync reports", ads: "📣 Advertising", products: "🛍 Products",
         approval: "👥 Approve admin", arabic: "🌐 العربية", english: "🌐 English", help: "ℹ️ Help",
       };
   const rows = [[labels.snapchat, labels.stats]];
@@ -85,7 +86,7 @@ function routeMenuButton(value: string | undefined) {
     "📊 إحصاءاتي": "/stats", "📊 My stats": "/stats",
     "👑 لوحة المالك": "/owner", "👑 Owner controls": "/owner",
     "💰 صافي الربح": "/net_profit today", "💰 Net profit": "/net_profit today",
-    "📦 مزامنة البطاقات": "/sync_cards", "📦 Sync cards": "/sync_cards",
+    "⬆️ رفع البطاقات": "/upload_cards", "⬆️ Upload cards": "/upload_cards",
     "📈 مزامنة التقارير": "/sync_finance", "📈 Sync reports": "/sync_finance",
     "📣 الإعلانات": "/ad_help", "📣 Advertising": "/ad_help",
     "🛍 المنتجات": "/product_help", "🛍 Products": "/product_help",
@@ -222,6 +223,14 @@ export async function handleTelegramOperationsCallback(input: {
   if (selected[0] === "an") {
     if (!ownerOnly(user)) { await reply(String(input.chatId), textFor(locale, "غير مصرح لك بهذه العملية.", "Not authorised.")); return; }
     try { await reply(String(input.chatId), formatOwnerAnalytics(locale, await getOwnerAnalytics(rangeFor(selected[1])))); } catch { await reply(String(input.chatId), textFor(locale, "تعذر إعداد التقرير حالياً.", "The report is unavailable right now.")); }
+    return;
+  }
+  if (selected[0] === "up") {
+    if (!ownerOnly(user)) { await reply(String(input.chatId), textFor(locale, "غير مصرح لك بهذه العملية.", "Not authorised.")); return; }
+    const cardType = selected[1];
+    await reply(String(input.chatId), textFor(locale,
+      `أرسل حتى 100 كود من نوع ${cardLabel(cardType, locale)}، كود واحد في كل سطر:\n/upload ${cardType}\nCODE-1\nCODE-2`,
+      `Send up to 100 ${cardLabel(cardType, locale)} codes, one code per line:\n/upload ${cardType}\nCODE-1\nCODE-2`));
     return;
   }
   if (selected[0] === "sc" && selected.length === 2) {
@@ -370,6 +379,32 @@ export async function handleTelegramOperationsMessage(input: {
     return;
   }
 
+  if (action === "/upload_cards") {
+    if (!ownerOnly(user)) { await reply(chatId, textFor(locale, "غير مصرح لك بهذه العملية.", "Not authorised.")); return; }
+    await reply(chatId, textFor(locale, "اختر نوع البطاقة ثم ألصق الأكواد، كود واحد في كل سطر.", "Choose the card type, then paste the codes one per line."), {
+      inline_keyboard: snapchatCardTypes.map((cardType) => [{ text: cardLabel(cardType, locale), callback_data: `up|${cardType}` }]),
+    });
+    return;
+  }
+
+  if (action === "/upload") {
+    if (!ownerOnly(user)) { await reply(chatId, textFor(locale, "غير مصرح لك بهذه العملية.", "Not authorised.")); return; }
+    try {
+      const upload = parseTelegramRedeemCardUpload(input.text ?? "");
+      const result = await uploadRedeemCardsFromTelegram(upload.cardType, upload.codes);
+      await audit(identity.userId, "inventory", upload.cardType, "redeem_cards_uploaded_from_telegram", { added: String(result.added), duplicates: String(result.duplicates) });
+      await reply(chatId, textFor(locale,
+        `تمت إضافة ${result.added} بطاقة من نوع ${cardLabel(upload.cardType, locale)}.${result.duplicates ? ` تم تجاهل ${result.duplicates} مكرر.` : ""}`,
+        `${result.added} ${cardLabel(upload.cardType, locale)} cards were added.${result.duplicates ? ` ${result.duplicates} duplicate(s) were skipped.` : ""}`));
+      await notifyLowStock(result.counts, identity.userId);
+    } catch {
+      await reply(chatId, textFor(locale,
+        "تعذر رفع البطاقات. استعمل /upload ثم نوع البطاقة، وبعده من 1 إلى 100 كود، كل كود في سطر. تأكد من عدم تكرار الأكواد.",
+        "Cards could not be uploaded. Use /upload, then the card type, followed by 1–100 codes, one code per line. Remove duplicates."));
+    }
+    return;
+  }
+
   if (action === "/net_profit") {
     if (!ownerOnly(user)) { await reply(chatId, textFor(locale, "غير مصرح لك بهذه العملية.", "Not authorised.")); return; }
     const range = customRange(argument, secondArgument);
@@ -381,8 +416,8 @@ export async function handleTelegramOperationsMessage(input: {
   if (action === "/owner") {
     if (!ownerOnly(user)) { await reply(chatId, textFor(locale, "غير مصرح لك بهذه العملية.", "Not authorised.")); return; }
     await reply(chatId, textFor(locale,
-      "لوحة المالك\n• مزامنة البطاقات تقرأ Google Sheet فقط.\n• الإعلانات والمنتجات تعرض تعليمات إدخال آمنة.\n• الموافقة تستعمل معرّف تسجيل المشرف فقط.",
-      "Owner controls\n• Card sync only reads the Google Sheet.\n• Advertising and products show safe input instructions.\n• Approval uses an admin registration ID only."), { inline_keyboard: [[{ text: textFor(locale, "صافي ربح اليوم", "Today net profit"), callback_data: "an|today" }, { text: textFor(locale, "صافي ربح الشهر", "Month net profit"), callback_data: "an|month" }]] });
+      "لوحة المالك\n• رفع البطاقات متاح هنا من Telegram فقط.\n• الإعلانات والمنتجات تعرض تعليمات إدخال آمنة.\n• الموافقة تستعمل معرّف تسجيل المشرف فقط.",
+      "Owner controls\n• Card upload is available here from Telegram only.\n• Advertising and products show safe input instructions.\n• Approval uses an admin registration ID only."), { inline_keyboard: [[{ text: textFor(locale, "صافي ربح اليوم", "Today net profit"), callback_data: "an|today" }, { text: textFor(locale, "صافي ربح الشهر", "Month net profit"), callback_data: "an|month" }]] });
     return;
   }
 

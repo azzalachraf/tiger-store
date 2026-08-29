@@ -25,6 +25,33 @@ export async function syncRedeemInventory() {
   return { synchronized, counts };
 }
 
+/** Owner-only callers import codes from a private Telegram message. */
+export async function uploadRedeemCardsFromTelegram(cardType: SnapchatCardType, codes: string[]) {
+  const client = getSupabaseServiceClient();
+  const hashes = codes.map(redeemCodeHash);
+  const { data: existing, error: readError } = await client.from("redeem_cards").select("code_hash").in("code_hash", hashes);
+  if (readError) throw new Error("Inventory could not be read.");
+  const existingHashes = new Set((existing ?? []).map((row) => String(row.code_hash)));
+  const newCodes = codes.filter((code) => !existingHashes.has(redeemCodeHash(code)));
+  if (newCodes.length) {
+    const { error } = await client.from("redeem_cards").upsert(newCodes.map((code) => ({
+      code_hash: redeemCodeHash(code),
+      code_ciphertext: encryptRedeemCode(code),
+      card_type: cardType,
+      source_row_key: `telegram:${crypto.randomUUID()}`,
+      source_available: true,
+      status: "available",
+    })), { onConflict: "code_hash", ignoreDuplicates: true });
+    if (error) throw new Error("Inventory could not be saved.");
+  }
+  const { data, error } = await client.from("redeem_cards").select("card_type").eq("status", "available").eq("source_available", true);
+  if (error) throw new Error("Inventory stock could not be read.");
+  const availableCards = (data ?? []) as { card_type: SnapchatCardType }[];
+  const counts = availableCards.reduce<Partial<Record<SnapchatCardType, number>>>((result, item) => ({ ...result, [item.card_type]: (result[item.card_type] ?? 0) + 1 }), {});
+  for (const type of snapchatCardTypes) counts[type] ??= 0;
+  return { added: newCodes.length, duplicates: codes.length - newCodes.length, counts };
+}
+
 export async function claimSnapchatCard(adminTelegramUserId: string, planMonths: SnapchatPlanMonths, cardType: SnapchatCardType) {
   const { data, error } = await getSupabaseServiceClient().rpc("claim_snapchat_redeem_card", { p_admin_telegram_user_id: adminTelegramUserId, p_plan_months: planMonths, p_card_type: cardType });
   const row = (data as unknown as ClaimRow[] | null)?.[0];
