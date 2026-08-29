@@ -14,6 +14,7 @@ export type ProductCheckoutLinkPayload = {
 type StoredProductCheckoutLink = { product_slug: string; option_id: string; created_at: string };
 
 const LINK_VERSION = "p1";
+const LEGACY_LINK_VERSIONS = new Set([LINK_VERSION, "1"]);
 
 function sign(value: string) {
   return createHmac("sha256", getWarrantyLinkSecret()).update(value).digest().subarray(0, 16).toString("base64url");
@@ -39,7 +40,7 @@ function isSafeOptionId(value: string) {
 /** Extract the public catalog target carried by a product checkout URL. */
 export function readProductCheckoutLinkTarget(token: string): Pick<ProductCheckoutLinkPayload, "slug" | "optionId"> | undefined {
   const parts = token.split(".");
-  if (token.length > 512 || parts.length !== 6 || parts[0] !== LINK_VERSION) return undefined;
+  if (token.length > 512 || parts.length !== 6 || !LEGACY_LINK_VERSIONS.has(parts[0])) return undefined;
   const [, slug, optionId] = parts;
   if (!isSafeSlug(slug) || !isSafeOptionId(optionId)) return undefined;
   return { slug, optionId };
