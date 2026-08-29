@@ -16,8 +16,8 @@ export const metadata = {
   title: "Admin Orders",
 };
 
-export default async function AdminOrdersPage({ searchParams }: { searchParams: Promise<{ warranty?: string; checkout?: string }> }) {
-  const { warranty: warrantyToken, checkout: checkoutToken } = await searchParams;
+export default async function AdminOrdersPage({ searchParams }: { searchParams: Promise<{ warranty?: string; checkout?: string; notice?: string }> }) {
+  const { warranty: warrantyToken, checkout: checkoutToken, notice } = await searchParams;
   const warrantyPayload = warrantyToken ? verifyWarrantyLink(warrantyToken) : undefined;
   const warrantyLink = warrantyPayload && warrantyToken ? absoluteUrl(`/warranty/${warrantyToken}`) : undefined;
   const checkoutPayload = checkoutToken ? await resolveProductCheckoutLinkTarget(checkoutToken) : undefined;
@@ -49,6 +49,12 @@ export default async function AdminOrdersPage({ searchParams }: { searchParams: 
 
   return (
     <AdminShell title="Orders" description="Review incoming orders, update status, add notes, and record manual sales.">
+      {notice === "order-deleted" ? (
+        <p className="mb-5 rounded-xl border border-emerald-400/25 bg-emerald-400/10 px-4 py-3 text-sm font-bold text-emerald-200">Order deleted.</p>
+      ) : null}
+      {notice === "protected-order" ? (
+        <p className="mb-5 rounded-xl border border-amber-400/25 bg-amber-400/10 px-4 py-3 text-sm font-bold text-amber-100">This completed Telegram sale is protected because it is linked to financial records. It cannot be deleted.</p>
+      ) : null}
       <div className="mb-5 grid gap-3 sm:grid-cols-3">
         <Metric icon={<ShoppingBag className="h-5 w-5" />} label="Total orders" value={orders.length} />
         <Metric icon={<Clock3 className="h-5 w-5" />} label="Pending" value={pending} />

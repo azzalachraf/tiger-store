@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { getOrderById, getProductBySlug, saveOrder } from "@/lib/admin-store";
 import { AdminOrder, Product, ProductPriceOption } from "@/lib/types";
 import { requireAdmin } from "@/lib/admin-auth";
-import { manualOrderInputSchema, orderStatusSchema, productCheckoutLinkIssueSchema, warrantyIssueSchema } from "@/lib/validation";
+import { adminOrderIdSchema, manualOrderInputSchema, orderStatusSchema, productCheckoutLinkIssueSchema, warrantyIssueSchema } from "@/lib/validation";
 import { createWarrantyLink } from "@/lib/warranty";
 import { createProductCheckoutLink } from "@/lib/product-checkout-link";
 import { redirect } from "next/navigation";
@@ -38,12 +38,11 @@ export async function saveOrderStatusAction(formData: FormData) {
 
 export async function deleteOrderAction(formData: FormData) {
   await requireAdmin();
-  const id = text(formData, "id");
-  if (id) {
-    const { deleteOrder } = await import("@/lib/admin-store");
-    await deleteOrder(id);
-    revalidatePath("/admin", "layout");
-  }
+  const id = adminOrderIdSchema.parse(text(formData, "id"));
+  const { deleteOrder } = await import("@/lib/admin-store");
+  const result = await deleteOrder(id);
+  revalidatePath("/admin", "layout");
+  redirect(result.deleted ? "/admin/orders?notice=order-deleted" : "/admin/orders?notice=protected-order");
 }
 
 export async function addManualOrderAction(formData: FormData) {

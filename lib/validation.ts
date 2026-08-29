@@ -55,6 +55,8 @@ export const manualOrderInputSchema = z.object({
   paymentMethod: paymentMethodSchema,
   notes: z.string().trim().max(1200).optional(),
 });
+
+export const adminOrderIdSchema = z.string().trim().min(1).max(160).regex(/^[A-Za-z0-9_-]+$/);
 const storedPaymentMethodSchema = z.enum(["BaridiMob", "Binance", "RedotPay", "Flexy", "CCP", "Telegram"]);
 export const adminLoginInputSchema = z.object({ email: z.string().trim().email().max(180), password: z.string().min(1).max(512), next: z.string().trim().max(512).optional() });
 export const orderStatusSchema = z.enum(["pending", "paid", "delivered", "cancelled", "refunded"]);

@@ -231,9 +231,27 @@ export async function getReceiptSignedUrl(receiptPath?: string) {
   return data.signedUrl;
 }
 
-export async function deleteOrder(id: string) {
+export type DeleteOrderResult = { deleted: true } | { deleted: false; reason: "financial-record" };
+
+export async function deleteOrder(id: string): Promise<DeleteOrderResult> {
+  // Completed Telegram operations are the source for finance, commission and
+  // inventory reporting. Keep their order record immutable instead of
+  // cascading a deletion into those ledgers.
+  const { data: financialSale, error: financialSaleError } = await supabase()
+    .from("finance_sales")
+    .select("order_id")
+    .eq("order_id", id)
+    .maybeSingle();
+
+  if (financialSaleError && financialSaleError.code !== "PGRST116") {
+    throw new Error(`deleteOrder finance check failed: ${financialSaleError.message}`);
+  }
+  if (financialSale) return { deleted: false, reason: "financial-record" };
+
   const { error } = await supabase().from("orders").delete().eq("id", id);
+  if (error?.code === "23503") return { deleted: false, reason: "financial-record" };
   if (error) throw new Error(`deleteOrder failed: ${error.message}`);
+  return { deleted: true };
 }
 
 /* ------------------------------------------------------------------ */
