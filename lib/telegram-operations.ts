@@ -352,6 +352,13 @@ export async function handleTelegramOperationsMessage(input: {
       await reply(chatId, textFor(locale, "غير مصرح لك بهذه العملية.", "Not authorised."));
       return;
     }
+    const env = getServerEnv();
+    if (!env.GOOGLE_SERVICE_ACCOUNT_EMAIL || !env.GOOGLE_SERVICE_ACCOUNT_PRIVATE_KEY) {
+      await reply(chatId, textFor(locale,
+        "لم يتم ربط Google Sheet بعد. أضف حساب الخدمة ومفتاحه في Vercel، ثم شارك معه الجدول بصلاحية Viewer قبل المزامنة.",
+        "Google Sheet is not connected yet. Add the service account and its key in Vercel, then share the sheet with it as Viewer before syncing."));
+      return;
+    }
     try {
       const result = await syncRedeemInventory();
       await audit(identity.userId, "inventory", "redeem-sheet", "redeem_sheet_synchronized", { count: String(result.synchronized) });
