@@ -42,7 +42,7 @@ export async function deleteOrderAction(formData: FormData) {
   const { deleteOrder } = await import("@/lib/admin-store");
   const result = await deleteOrder(id);
   revalidatePath("/admin", "layout");
-  redirect(result.deleted ? "/admin/orders?notice=order-deleted" : "/admin/orders?notice=protected-order");
+  redirect(result.deleted ? `/admin/orders?notice=${result.receiptCleanupFailed ? "order-deleted-receipt-pending" : "order-deleted"}` : "/admin/orders?notice=order-missing");
 }
 
 export async function addManualOrderAction(formData: FormData) {

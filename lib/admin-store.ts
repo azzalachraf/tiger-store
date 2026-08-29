@@ -231,27 +231,68 @@ export async function getReceiptSignedUrl(receiptPath?: string) {
   return data.signedUrl;
 }
 
-export type DeleteOrderResult = { deleted: true } | { deleted: false; reason: "financial-record" };
+export type DeleteOrderResult = { deleted: boolean; receiptCleanupFailed: boolean };
+
+function isMissingPermanentDeleteFunction(error: { code?: string; message?: string } | null) {
+  return error?.code === "PGRST202" || error?.message?.includes("delete_order_permanently") === true;
+}
+
+async function requireDelete(result: { error: { message: string } | null }, recordType: string) {
+  if (result.error) throw new Error(`deleteOrder ${recordType} cleanup failed: ${result.error.message}`);
+}
+
+// Older deployed projects may not have the atomic RPC migration yet. This
+// ordered fallback keeps the same permanent-delete behavior while preserving
+// the redeem card as consumed: a code that was already revealed must never be
+// returned to inventory. The migration below is used automatically once it is
+// applied, which makes the database portion transactional.
+async function deleteOrderWithoutPermanentDeleteFunction(id: string) {
+  const client = supabase();
+  const [saleResult, certificateResult] = await Promise.all([
+    client.from("finance_sales").select("operation_id").eq("order_id", id).maybeSingle(),
+    client.from("warranty_certificates").select("id, operation_id").eq("order_id", id),
+  ]);
+  if (saleResult.error) throw new Error(`deleteOrder finance lookup failed: ${saleResult.error.message}`);
+  if (certificateResult.error) throw new Error(`deleteOrder warranty lookup failed: ${certificateResult.error.message}`);
+
+  const operationId = saleResult.data?.operation_id ?? certificateResult.data?.find((certificate) => certificate.operation_id)?.operation_id;
+  const certificateIds = certificateResult.data?.map((certificate) => String(certificate.id)) ?? [];
+
+  await requireDelete(await client.from("operation_events").delete().eq("entity_type", "order").eq("entity_id", id), "order event");
+  if (certificateIds.length) {
+    await requireDelete(await client.from("operation_events").delete().eq("entity_type", "warranty").in("entity_id", certificateIds), "warranty event");
+  }
+  if (operationId) {
+    await requireDelete(await client.from("operation_events").delete().contains("metadata", { operation_id: operationId }), "operation event");
+  }
+  await requireDelete(await client.from("financial_adjustments").delete().eq("order_id", id), "adjustment");
+  await requireDelete(await client.from("payment_records").delete().eq("order_id", id), "payment record");
+  await requireDelete(await client.from("commissions").delete().eq("order_id", id), "commission");
+  await requireDelete(await client.from("inventory_assignments").delete().eq("order_id", id), "inventory assignment");
+  await requireDelete(await client.from("warranty_certificates").delete().eq("order_id", id), "warranty certificate");
+  await requireDelete(await client.from("finance_sales").delete().eq("order_id", id), "finance sale");
+  if (operationId) {
+    await requireDelete(await client.from("snapchat_operations").delete().eq("id", operationId), "Snapchat operation");
+  }
+  await requireDelete(await client.from("orders").delete().eq("id", id), "order");
+}
 
 export async function deleteOrder(id: string): Promise<DeleteOrderResult> {
-  // Completed Telegram operations are the source for finance, commission and
-  // inventory reporting. Keep their order record immutable instead of
-  // cascading a deletion into those ledgers.
-  const { data: financialSale, error: financialSaleError } = await supabase()
-    .from("finance_sales")
-    .select("order_id")
-    .eq("order_id", id)
-    .maybeSingle();
+  const order = await getOrderById(id);
+  if (!order) return { deleted: false, receiptCleanupFailed: false };
 
-  if (financialSaleError && financialSaleError.code !== "PGRST116") {
-    throw new Error(`deleteOrder finance check failed: ${financialSaleError.message}`);
+  const { data: deleted, error } = await supabase().rpc("delete_order_permanently", { p_order_id: id });
+  if (error && !isMissingPermanentDeleteFunction(error)) throw new Error(`deleteOrder failed: ${error.message}`);
+  if (!error && !deleted) return { deleted: false, receiptCleanupFailed: false };
+  if (error) await deleteOrderWithoutPermanentDeleteFunction(id);
+
+  if (!order.receiptPath) return { deleted: true, receiptCleanupFailed: false };
+  const { error: receiptError } = await supabase().storage.from("receipts").remove([order.receiptPath]);
+  if (receiptError) {
+    logger.error("deleteOrder receipt cleanup failed", receiptError, { id });
+    return { deleted: true, receiptCleanupFailed: true };
   }
-  if (financialSale) return { deleted: false, reason: "financial-record" };
-
-  const { error } = await supabase().from("orders").delete().eq("id", id);
-  if (error?.code === "23503") return { deleted: false, reason: "financial-record" };
-  if (error) throw new Error(`deleteOrder failed: ${error.message}`);
-  return { deleted: true };
+  return { deleted: true, receiptCleanupFailed: false };
 }
 
 /* ------------------------------------------------------------------ */

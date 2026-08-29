@@ -50,10 +50,13 @@ export default async function AdminOrdersPage({ searchParams }: { searchParams: 
   return (
     <AdminShell title="Orders" description="Review incoming orders, update status, add notes, and record manual sales.">
       {notice === "order-deleted" ? (
-        <p className="mb-5 rounded-xl border border-emerald-400/25 bg-emerald-400/10 px-4 py-3 text-sm font-bold text-emerald-200">Order deleted.</p>
+        <p className="mb-5 rounded-xl border border-emerald-400/25 bg-emerald-400/10 px-4 py-3 text-sm font-bold text-emerald-200">Order and all linked records were permanently deleted.</p>
       ) : null}
-      {notice === "protected-order" ? (
-        <p className="mb-5 rounded-xl border border-amber-400/25 bg-amber-400/10 px-4 py-3 text-sm font-bold text-amber-100">This completed Telegram sale is protected because it is linked to financial records. It cannot be deleted.</p>
+      {notice === "order-deleted-receipt-pending" ? (
+        <p className="mb-5 rounded-xl border border-amber-400/25 bg-amber-400/10 px-4 py-3 text-sm font-bold text-amber-100">Order records were deleted. The private receipt could not be removed automatically; remove it from the receipts bucket.</p>
+      ) : null}
+      {notice === "order-missing" ? (
+        <p className="mb-5 rounded-xl border border-amber-400/25 bg-amber-400/10 px-4 py-3 text-sm font-bold text-amber-100">That order no longer exists.</p>
       ) : null}
       <div className="mb-5 grid gap-3 sm:grid-cols-3">
         <Metric icon={<ShoppingBag className="h-5 w-5" />} label="Total orders" value={orders.length} />
@@ -184,7 +187,7 @@ export default async function AdminOrdersPage({ searchParams }: { searchParams: 
                 <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
                   <div className="flex flex-wrap gap-2">{(["pending", "paid", "delivered", "cancelled"] as const).map((status) => <button key={status} type="submit" name="status" value={status} className={`min-h-11 rounded-xl px-4 font-black ${order.status === status ? "bg-tiger-ember text-black" : "border border-white/15 text-white"}`}>{status}</button>)}</div>
                   <button formAction={deleteOrderAction} className="flex min-h-11 items-center justify-center rounded-xl border border-red-500/20 bg-red-500/10 px-5 font-bold text-red-300 transition-colors hover:bg-red-500/20">
-                    <Trash2 className="mr-2 h-4 w-4" /> Delete Order
+                    <Trash2 className="mr-2 h-4 w-4" /> Permanently delete
                   </button>
                 </div>
               </form>
