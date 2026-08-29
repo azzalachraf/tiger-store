@@ -2,7 +2,7 @@ import { notFound } from "next/navigation";
 import { Footer } from "@/components/Footer";
 import { Header } from "@/components/Header";
 import { CheckoutView } from "@/components/CheckoutView";
-import { getProductBySlug, getSettings } from "@/lib/admin-store";
+import { getProducts, getSettings } from "@/lib/admin-store";
 import { resolveProductCheckoutLinkTarget } from "@/lib/product-checkout-link";
 import type { CartItem, PaymentMethodId, ProductPriceOption } from "@/lib/types";
 
@@ -31,7 +31,11 @@ export default async function ProductPaymentLinkPage({ params }: { params: Promi
   const payload = await resolveProductCheckoutLinkTarget(token);
   if (!payload) notFound();
 
-  const [product, settings] = await Promise.all([getProductBySlug(payload.slug), getSettings()]);
+  // Use the normalized catalog collection used by storefront listings. This
+  // preserves older stored products whose variants were saved without IDs,
+  // while the selected offer is still resolved from the current server data.
+  const [products, settings] = await Promise.all([getProducts(), getSettings()]);
+  const product = products.find((item) => item.slug === payload.slug);
   const offer = product ? findOffer(product, payload.optionId) : undefined;
   if (!product || !product.available || !offer || offer.available === false || offer.price <= 0) notFound();
 
