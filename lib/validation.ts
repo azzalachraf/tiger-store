@@ -84,7 +84,7 @@ export const directWarrantyClaimSchema = warrantyClaimSchema.extend({
 export const telegramWarrantyFormSchema = z.object({
   name: z.string().trim().min(2).max(160),
   username: z.string().trim().min(2).max(80),
-  platform: z.string().trim().min(2).max(80),
+  platform: z.enum(["Instagram", "Snapchat", "Facebook"]),
   phone: z.string().trim().min(6).max(40),
   email: z.string().trim().email().max(180),
 });

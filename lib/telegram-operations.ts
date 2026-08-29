@@ -426,10 +426,12 @@ export async function handleTelegramOperationsCallback(input: {
     const [, plan, cardType] = selected;
     try {
       const operation = await claimSnapchatCard(identity.userId, plan, cardType);
-      await reply(String(input.chatId), textFor(locale, `تم إنشاء العملية. هذا الكود خاص بك فقط:\n${operation.code}`, `Operation created. This code is private to you:\n${operation.code}`), { inline_keyboard: [[
-        { text: textFor(locale, "إكمال", "Complete"), callback_data: `op|${operation.operationId}|complete` },
-        { text: textFor(locale, "إلغاء", "Cancel"), callback_data: `op|${operation.operationId}|cancel` },
+      const activationLink = `https://apps.apple.com/redeem?code=${encodeURIComponent(operation.code)}`;
+      await reply(String(input.chatId), textFor(locale, "✅ تم إنشاء العملية. رابط التفعيل في الرسالة التالية.", "✅ Operation created. Your activation link is in the next message."), { inline_keyboard: [[
+        { text: textFor(locale, "✅ إكمال", "✅ Complete"), callback_data: `op|${operation.operationId}|complete` },
+        { text: textFor(locale, "❌ إلغاء", "❌ Cancel"), callback_data: `op|${operation.operationId}|cancel` },
       ]] });
+      await reply(String(input.chatId), activationLink);
     } catch {
       await reply(String(input.chatId), textFor(locale, "لا يوجد كود متاح لهذا النوع حالياً.", "No code is currently available for this card type."));
     }

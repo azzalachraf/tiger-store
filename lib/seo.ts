@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 
-export const SITE_URL = "https://www.digitaldz.shop";
+export const SITE_URL = "https://www.tiger-storedz.com";
 export const SITE_NAME = "Tiger Store";
 export const DEFAULT_OG_IMAGE = "/hero/main-hero.png";
 

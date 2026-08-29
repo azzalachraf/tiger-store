@@ -1,6 +1,6 @@
 # Tiger Store
 
-Tiger Store is a Next.js 16 App Router storefront selling digital subscriptions to customers in Algeria. Production domain: `https://www.digitaldz.shop`.
+Tiger Store is a Next.js 16 App Router storefront selling digital subscriptions to customers in Algeria. Production domain: `https://www.tiger-storedz.com`.
 
 ## Audience
 

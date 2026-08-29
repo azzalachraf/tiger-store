@@ -4,7 +4,7 @@
 
 The owner-maintained [Redeem Cards 2 Google Sheet](https://docs.google.com/spreadsheets/d/1icedwWIcAgW2xjw-YUX-TSseHc2JVO0SvWIFsh2-mSA/edit) is the only source for Snapchat redeem-card uploads. See [Telegram operations setup](docs/telegram-operations.md) for the service-account setup, owner approval flow, secure persistent Telegram button menu, and private card-operation commands. No code is stored or logged in plaintext.
 
-Tiger Store is a mobile-first Next.js App Router storefront for digital subscriptions in Algeria at `digitaldz.shop`.
+Tiger Store is a mobile-first Next.js App Router storefront for digital subscriptions in Algeria at `tiger-storedz.com`.
 
 The site uses Arabic RTL by default, generated product thumbnails from `public/products`, WhatsApp-only checkout, and an admin-only dashboard. There are no customer accounts and no online payment gateway.
 
