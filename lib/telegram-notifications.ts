@@ -14,29 +14,51 @@ function escapeTelegramHtml(value: string) {
 function formatOrderItems(order: AdminOrder) {
   return order.products
     .map((item) => {
-      const option = item.optionAr || item.option;
-      return `- ${escapeTelegramHtml(item.nameAr || item.name)} (${escapeTelegramHtml(option)}) x${item.quantity}`;
+      return `- ${escapeTelegramHtml(item.name)} (${escapeTelegramHtml(item.option)}) x${item.quantity}`;
     })
     .join("\n");
+}
+
+function formatLocalAlgerianPhone(phone: string) {
+  const digits = phone.replace(/\D/g, "");
+  if (digits.startsWith("213") && digits.length === 12) return `0${digits.slice(3)}`;
+  if (digits.startsWith("0") && digits.length === 10) return digits;
+  return phone;
+}
+
+function formatOrderTime(createdAt: string) {
+  const date = new Date(createdAt);
+  if (Number.isNaN(date.getTime())) return "—";
+
+  const parts = new Intl.DateTimeFormat("en-GB", {
+    timeZone: "Africa/Algiers",
+    day: "2-digit",
+    month: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    hourCycle: "h23",
+  }).formatToParts(date);
+  const value = (type: Intl.DateTimeFormatPartTypes) => parts.find((part) => part.type === type)?.value ?? "";
+  return `${value("day")}/${value("month")} ${value("hour")}:${value("minute")}`;
 }
 
 function formatOrderMessage(order: AdminOrder) {
   const notes = order.notes?.trim();
   return [
-    "طلب جديد في Tiger Store",
+    "New Tiger Store order",
     "",
-    `<b>الكود:</b> <code>${escapeTelegramHtml(order.id)}</code>`,
-    `<b>الزبون:</b> ${escapeTelegramHtml(order.customerName)}`,
-    `<b>الهاتف:</b> <code>${escapeTelegramHtml(order.phone)}</code>`,
-    `<b>الدفع:</b> ${escapeTelegramHtml(order.paymentMethod)}`,
-    `<b>المجموع:</b> ${order.total.toLocaleString("en-US")} DA`,
+    `<b>Order code:</b> <code>${escapeTelegramHtml(order.id)}</code>`,
+    `<b>Customer:</b> ${escapeTelegramHtml(order.customerName)}`,
+    `<b>Phone:</b> <code>${escapeTelegramHtml(formatLocalAlgerianPhone(order.phone))}</code>`,
+    `<b>Payment method:</b> ${escapeTelegramHtml(order.paymentMethod)}`,
+    `<b>Total:</b> ${order.total.toLocaleString("en-US")} DA`,
     "",
-    "<b>المنتجات:</b>",
+    "<b>Products:</b>",
     formatOrderItems(order),
     "",
-    order.receiptPath ? "<b>الوصل:</b> مرفوع في لوحة الادارة الخاصة" : "<b>الوصل:</b> غير موجود",
-    notes ? `<b>ملاحظات:</b> ${escapeTelegramHtml(notes)}` : "",
-    `<b>وقت الطلب:</b> ${escapeTelegramHtml(order.createdAt)}`,
+    order.receiptPath ? "<b>Receipt:</b> available in the secure admin panel" : "<b>Receipt:</b> not attached",
+    notes ? `<b>Notes:</b> ${escapeTelegramHtml(notes)}` : "",
+    `<b>Order time:</b> ${formatOrderTime(order.createdAt)}`,
   ]
     .filter(Boolean)
     .join("\n");
