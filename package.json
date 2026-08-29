@@ -13,8 +13,9 @@
     "test:redeem-sheet": "tsx scripts/test-google-redeem-sheet.ts",
     "test:telegram-warranty-pdf": "tsx scripts/render-telegram-warranty-pdf.ts",
     "test:finance-reporting": "tsx scripts/test-finance-reporting.ts",
-    "test:owner-analytics": "tsx scripts/test-owner-analytics.ts"
-    ,"test:telegram-card-upload": "tsx scripts/test-telegram-card-upload.ts"
+    "test:owner-analytics": "tsx scripts/test-owner-analytics.ts",
+    "test:telegram-card-upload": "tsx scripts/test-telegram-card-upload.ts",
+    "test:telegram-owner-controls": "tsx scripts/test-telegram-owner-controls.ts"
   },
   "dependencies": {
     "@radix-ui/react-slot": "^1.1.2",

@@ -4,7 +4,7 @@ import { randomBytes } from "node:crypto";
 import { getServerEnv } from "@/lib/env";
 import { getSupabaseServiceClient } from "@/lib/supabase";
 import type { TelegramInterfaceLocale, TelegramRole } from "@/lib/types";
-import { advertisingUsdSchema, productSchema, snapchatCallbackDataSchema } from "@/lib/validation";
+import { advertisingUsdSchema, productSchema, telegramCallbackDataSchema } from "@/lib/validation";
 import { cardLabel, cardsForPlan, snapchatCardTypes, type SnapchatCardType, type SnapchatPlanMonths } from "@/lib/snapchat-cards";
 import { claimSnapchatCard, clearTelegramRedeemCardUploadSession, finishSnapchatOperation, getTelegramRedeemCardUploadSession, startTelegramRedeemCardUploadSession, syncRedeemInventory, uploadRedeemCardsFromTelegram } from "@/lib/snapchat-operations";
 import { parseTelegramRedeemCardLines } from "@/lib/telegram-card-upload";
@@ -66,12 +66,12 @@ function menuKeyboard(locale: TelegramInterfaceLocale, role: TelegramRole): Repl
     ? {
         snapchat: "🛒 بيع Snapchat", stats: "📊 إحصاءاتي", owner: "👑 لوحة المالك", profit: "💰 صافي الربح",
         cards: "⬆️ رفع البطاقات", reports: "📈 مزامنة التقارير", ads: "📣 الإعلانات", products: "🛍 المنتجات",
-        approval: "👥 اعتماد مشرف", arabic: "🌐 العربية", english: "🌐 English", help: "ℹ️ المساعدة",
+        approval: "👥 إدارة المشرفين", arabic: "🌐 العربية", english: "🌐 English", help: "ℹ️ المساعدة",
       }
     : {
         snapchat: "🛒 Snapchat sale", stats: "📊 My stats", owner: "👑 Owner controls", profit: "💰 Net profit",
         cards: "⬆️ Upload cards", reports: "📈 Sync reports", ads: "📣 Advertising", products: "🛍 Products",
-        approval: "👥 Approve admin", arabic: "🌐 العربية", english: "🌐 English", help: "ℹ️ Help",
+        approval: "👥 Manage admins", arabic: "🌐 العربية", english: "🌐 English", help: "ℹ️ Help",
       };
   const rows = [[labels.snapchat, labels.stats]];
   if (role === "owner") rows.push([labels.owner, labels.profit], [labels.cards, labels.reports], [labels.ads, labels.products], [labels.approval]);
@@ -90,6 +90,7 @@ function routeMenuButton(value: string | undefined) {
     "📈 مزامنة التقارير": "/sync_finance", "📈 Sync reports": "/sync_finance",
     "📣 الإعلانات": "/ad_help", "📣 Advertising": "/ad_help",
     "🛍 المنتجات": "/product_help", "🛍 Products": "/product_help",
+    "👥 إدارة المشرفين": "/owner", "👥 Manage admins": "/owner",
     "👥 اعتماد مشرف": "/approve_help", "👥 Approve admin": "/approve_help",
     "🌐 العربية": "/ar", "🌐 English": "/en",
     "ℹ️ المساعدة": "/menu", "ℹ️ Help": "/menu",
@@ -113,7 +114,7 @@ async function reply(chatId: string, text: string, replyMarkup?: ReplyMarkup) {
 
 async function answerCallback(id: string) { await telegramCall("answerCallbackQuery", { callback_query_id: id }); }
 
-async function audit(actorTelegramUserId: string, entityType: "telegram_user" | "inventory" | "setting", entityId: string, action: string, metadata: Record<string, string>) {
+async function audit(actorTelegramUserId: string, entityType: "telegram_user" | "inventory" | "setting" | "adjustment" | "payment", entityId: string, action: string, metadata: Record<string, string>) {
   await getSupabaseServiceClient().from("operation_events").insert({
     actor_telegram_user_id: actorTelegramUserId,
     entity_type: entityType,
@@ -187,6 +188,79 @@ async function sendSnapchatPlans(chatId: string, locale: TelegramInterfaceLocale
   });
 }
 
+type TelegramAdminRow = {
+  telegram_user_id: string | number;
+  first_name: string | null;
+  username: string | null;
+  role: TelegramRole;
+  registration_id: string;
+};
+
+function operatorName(operator: Pick<TelegramAdminRow, "first_name" | "username">) {
+  const firstName = operator.first_name?.trim();
+  const username = operator.username?.trim();
+  if (firstName && username) return `${firstName} (@${username})`;
+  if (firstName) return firstName;
+  if (username) return `@${username}`;
+  return "Unnamed admin";
+}
+
+async function listOperators(role: "admin" | "pending") {
+  const { data, error } = await getSupabaseServiceClient().from("telegram_users")
+    .select("telegram_user_id, first_name, username, role, registration_id")
+    .eq("role", role)
+    .order("created_at", { ascending: true })
+    .limit(40);
+  if (error) throw new Error("Operators could not be read.");
+  return (data ?? []) as TelegramAdminRow[];
+}
+
+async function findAdmin(adminId: string) {
+  const { data, error } = await getSupabaseServiceClient().from("telegram_users")
+    .select("telegram_user_id, first_name, username, role, registration_id")
+    .eq("telegram_user_id", adminId)
+    .eq("role", "admin")
+    .maybeSingle();
+  if (error || !data) throw new Error("Admin unavailable.");
+  return data as TelegramAdminRow;
+}
+
+async function sendAdminPicker(chatId: string, locale: TelegramInterfaceLocale) {
+  const admins = await listOperators("admin");
+  if (!admins.length) {
+    await reply(chatId, textFor(locale, "لا يوجد مشرفون معتمدون بعد. 👥", "There are no approved admins yet. 👥"));
+    return;
+  }
+  await reply(chatId, textFor(locale, "👥 اختر المشرف لإدارة عمولته ومدفوعاته.", "👥 Choose an admin to manage commission and payments."), {
+    inline_keyboard: admins.map((admin) => [{ text: `👤 ${operatorName(admin)}`.slice(0, 60), callback_data: `adm|${admin.telegram_user_id}|open` }]),
+  });
+}
+
+async function sendPendingPicker(chatId: string, locale: TelegramInterfaceLocale) {
+  const pending = await listOperators("pending");
+  if (!pending.length) {
+    await reply(chatId, textFor(locale, "✅ لا توجد طلبات اعتماد معلقة.", "✅ There are no pending approval requests."));
+    return;
+  }
+  await reply(chatId, textFor(locale, "✅ اختر الشخص الذي تريد اعتماده كمشرف.", "✅ Choose the person to approve as an admin."), {
+    inline_keyboard: pending.map((candidate) => [{ text: `✅ ${operatorName(candidate)}`.slice(0, 60), callback_data: `apr|${candidate.telegram_user_id}` }]),
+  });
+}
+
+async function sendAdminOverview(chatId: string, locale: TelegramInterfaceLocale, adminId: string) {
+  const admin = await findAdmin(adminId);
+  const summary = await getAdminFinanceSummary(adminId);
+  await reply(chatId, textFor(locale,
+    `👤 ${operatorName(admin)}\n📦 الطلبات المكتملة: ${summary.completedOrders}\n💰 العمولة: ${summary.commissionDzd} DZD\n➕/➖ التعديلات: ${summary.adjustmentsDzd} DZD\n💸 المدفوع: ${summary.paidDzd} DZD\n🧾 الرصيد: ${summary.remainingDzd} DZD\n📅 الدفع القادم: ${summary.nextPaymentDate}`,
+    `👤 ${operatorName(admin)}\n📦 Completed orders: ${summary.completedOrders}\n💰 Commission: ${summary.commissionDzd} DZD\n➕/➖ Adjustments: ${summary.adjustmentsDzd} DZD\n💸 Paid: ${summary.paidDzd} DZD\n🧾 Remaining credit: ${summary.remainingDzd} DZD\n📅 Next payment: ${summary.nextPaymentDate}`), {
+    inline_keyboard: [
+      [{ text: textFor(locale, "➕➖ تعديل العمولة", "➕➖ Adjust commission"), callback_data: `adm|${adminId}|adjust` }],
+      [{ text: textFor(locale, "💸 تسجيل دفعة", "💸 Record payment"), callback_data: `adm|${adminId}|pay` }],
+      [{ text: textFor(locale, "👥 رجوع للمشرفين", "👥 Back to admins"), callback_data: "own|admins" }],
+    ],
+  });
+}
+
 async function notifyLowStock(counts: Partial<Record<SnapchatCardType, number>>, actorId: string) {
   const client = getSupabaseServiceClient();
   const { data: owner } = await client.from("telegram_users").select("telegram_user_id, interface_locale").eq("role", "owner").maybeSingle();
@@ -217,7 +291,7 @@ export async function handleTelegramOperationsCallback(input: {
   const locale = user.interface_locale;
   if (user.role !== "admin" && user.role !== "owner") { await reply(String(input.chatId), textFor(locale, "غير مصرح لك بهذه العملية.", "Not authorised.")); return; }
   const parts = input.data.split("|");
-  const parsed = snapchatCallbackDataSchema.safeParse(parts.map((part, index) => index === 1 && /^\d+$/.test(part) ? Number(part) : part));
+  const parsed = telegramCallbackDataSchema.safeParse(parts.map((part, index) => parts[0] === "sc" && index === 1 && /^\d+$/.test(part) ? Number(part) : part));
   if (!parsed.success) { await reply(String(input.chatId), textFor(locale, "انتهت صلاحية هذا الاختيار.", "This selection has expired.")); return; }
   const selected = parsed.data;
   if (selected[0] === "an") {
@@ -233,6 +307,114 @@ export async function handleTelegramOperationsCallback(input: {
     await reply(String(input.chatId), textFor(locale,
       `جاهز لرفع بطاقات ${cardLabel(cardType, locale)}. ألصق الآن من 1 إلى 100 كود، كود واحد في كل سطر.`,
       `Ready to upload ${cardLabel(cardType, locale)} cards. Paste 1–100 codes now, one code per line.`));
+    return;
+  }
+  if (selected[0] === "own") {
+    if (!ownerOnly(user)) { await reply(String(input.chatId), textFor(locale, "غير مصرح لك بهذه العملية.", "Not authorised.")); return; }
+    try {
+      if (selected[1] === "admins") await sendAdminPicker(String(input.chatId), locale);
+      else await sendPendingPicker(String(input.chatId), locale);
+    } catch {
+      await reply(String(input.chatId), textFor(locale, "تعذر تحميل قائمة المشرفين حالياً.", "The admin list is unavailable right now."));
+    }
+    return;
+  }
+  if (selected[0] === "apr") {
+    if (!ownerOnly(user)) { await reply(String(input.chatId), textFor(locale, "غير مصرح لك بهذه العملية.", "Not authorised.")); return; }
+    const candidateId = selected[1];
+    const { data: candidate, error } = await getSupabaseServiceClient().from("telegram_users")
+      .select("telegram_user_id, first_name, username, role, registration_id")
+      .eq("telegram_user_id", candidateId)
+      .eq("role", "pending")
+      .maybeSingle();
+    if (error || !candidate) { await reply(String(input.chatId), textFor(locale, "هذا الطلب غير متاح أو تمت معالجته. ⚠️", "This request is unavailable or already handled. ⚠️")); return; }
+    const { error: updateError } = await getSupabaseServiceClient().from("telegram_users").update({
+      role: "admin",
+      approved_by_telegram_user_id: identity.userId,
+      approved_at: new Date().toISOString(),
+    }).eq("telegram_user_id", candidateId).eq("role", "pending");
+    if (updateError) { await reply(String(input.chatId), textFor(locale, "تعذرت الموافقة حالياً. ⚠️", "Approval could not be saved. ⚠️")); return; }
+    await audit(identity.userId, "telegram_user", candidateId, "admin_approved", { role: "admin" });
+    await reply(String(input.chatId), textFor(locale, `✅ تمت الموافقة على ${operatorName(candidate as TelegramAdminRow)}.`, `✅ ${operatorName(candidate as TelegramAdminRow)} is now an admin.`));
+    return;
+  }
+  if (selected[0] === "adm") {
+    if (!ownerOnly(user)) { await reply(String(input.chatId), textFor(locale, "غير مصرح لك بهذه العملية.", "Not authorised.")); return; }
+    const adminId = selected[1];
+    try {
+      if (selected[2] === "open") await sendAdminOverview(String(input.chatId), locale, adminId);
+      if (selected[2] === "adjust") {
+        const admin = await findAdmin(adminId);
+        await reply(String(input.chatId), textFor(locale, `➕➖ ${operatorName(admin)}\nاختر مقدار الزيادة أو العقوبة.`, `➕➖ ${operatorName(admin)}\nChoose a credit increase or penalty.`), {
+          inline_keyboard: [
+            [{ text: "➕ 10 DZD", callback_data: `adj|${adminId}|p10` }, { text: "➕ 50 DZD", callback_data: `adj|${adminId}|p50` }, { text: "➕ 100 DZD", callback_data: `adj|${adminId}|p100` }],
+            [{ text: "➖ 10 DZD", callback_data: `adj|${adminId}|m10` }, { text: "➖ 50 DZD", callback_data: `adj|${adminId}|m50` }, { text: "➖ 100 DZD", callback_data: `adj|${adminId}|m100` }],
+            [{ text: textFor(locale, "↩️ رجوع", "↩️ Back"), callback_data: `adm|${adminId}|open` }],
+          ],
+        });
+      }
+      if (selected[2] === "pay") {
+        const admin = await findAdmin(adminId);
+        const summary = await getAdminFinanceSummary(adminId);
+        await reply(String(input.chatId), textFor(locale, `💸 ${operatorName(admin)}\nالرصيد الحالي: ${summary.remainingDzd} DZD\nاختر الدفعة.`, `💸 ${operatorName(admin)}\nCurrent credit: ${summary.remainingDzd} DZD\nChoose a payment.`), {
+          inline_keyboard: [
+            [{ text: "💸 50 DZD", callback_data: `pay|${adminId}|50` }, { text: "💸 100 DZD", callback_data: `pay|${adminId}|100` }, { text: "💸 500 DZD", callback_data: `pay|${adminId}|500` }],
+            [{ text: textFor(locale, "✅ دفع كل الرصيد", "✅ Mark full balance paid"), callback_data: `pay|${adminId}|full` }],
+            [{ text: textFor(locale, "↩️ رجوع", "↩️ Back"), callback_data: `adm|${adminId}|open` }],
+          ],
+        });
+      }
+    } catch {
+      await reply(String(input.chatId), textFor(locale, "هذا المشرف غير متاح حالياً. ⚠️", "This admin is unavailable right now. ⚠️"));
+    }
+    return;
+  }
+  if (selected[0] === "adj") {
+    if (!ownerOnly(user)) { await reply(String(input.chatId), textFor(locale, "غير مصرح لك بهذه العملية.", "Not authorised.")); return; }
+    const adminId = selected[1];
+    const values = { p10: 10, p50: 50, p100: 100, m10: -10, m50: -50, m100: -100 } as const;
+    const amount = values[selected[2]];
+    try {
+      await findAdmin(adminId);
+      const { error } = await getSupabaseServiceClient().from("financial_adjustments").insert({
+        recipient_telegram_user_id: adminId,
+        amount_dzd: amount,
+        reason: amount > 0 ? "Owner commission credit adjustment." : "Owner penalty adjustment.",
+        created_by_telegram_user_id: identity.userId,
+      });
+      if (error) throw error;
+      await audit(identity.userId, "adjustment", adminId, amount > 0 ? "admin_credit_added" : "admin_penalty_applied", { amountDzd: String(amount) });
+      await reply(String(input.chatId), textFor(locale, `✅ تم تسجيل ${amount > 0 ? "زيادة" : "عقوبة"} بقيمة ${Math.abs(amount)} DZD.`, `✅ ${amount > 0 ? "Credit" : "Penalty"} of ${Math.abs(amount)} DZD recorded.`));
+      await sendAdminOverview(String(input.chatId), locale, adminId);
+    } catch {
+      await reply(String(input.chatId), textFor(locale, "تعذر حفظ التعديل. ⚠️", "The adjustment could not be saved. ⚠️"));
+    }
+    return;
+  }
+  if (selected[0] === "pay") {
+    if (!ownerOnly(user)) { await reply(String(input.chatId), textFor(locale, "غير مصرح لك بهذه العملية.", "Not authorised.")); return; }
+    const adminId = selected[1];
+    try {
+      await findAdmin(adminId);
+      const summary = await getAdminFinanceSummary(adminId);
+      const amount = selected[2] === "full" ? summary.remainingDzd : Number(selected[2]);
+      if (!Number.isInteger(amount) || amount < 1 || amount > summary.remainingDzd) {
+        await reply(String(input.chatId), textFor(locale, "لا يمكن أن تتجاوز الدفعة الرصيد المتبقي. ⚠️", "A payment cannot exceed the remaining credit. ⚠️"));
+        return;
+      }
+      const { error } = await getSupabaseServiceClient().from("admin_payments").insert({
+        admin_telegram_user_id: adminId,
+        amount_dzd: amount,
+        recorded_by_telegram_user_id: identity.userId,
+        note: "Recorded by owner from Telegram.",
+      });
+      if (error) throw error;
+      await audit(identity.userId, "payment", adminId, "admin_payment_recorded", { amountDzd: String(amount) });
+      await reply(String(input.chatId), textFor(locale, `✅ تم تسجيل دفعة ${amount} DZD.`, `✅ Payment of ${amount} DZD recorded.`));
+      await sendAdminOverview(String(input.chatId), locale, adminId);
+    } catch {
+      await reply(String(input.chatId), textFor(locale, "تعذر تسجيل الدفعة. ⚠️", "The payment could not be recorded. ⚠️"));
+    }
     return;
   }
   if (selected[0] === "sc" && selected.length === 2) {
@@ -422,16 +604,20 @@ export async function handleTelegramOperationsMessage(input: {
   if (action === "/owner") {
     if (!ownerOnly(user)) { await reply(chatId, textFor(locale, "غير مصرح لك بهذه العملية.", "Not authorised.")); return; }
     await reply(chatId, textFor(locale,
-      "لوحة المالك\n• رفع البطاقات متاح هنا من Telegram فقط.\n• الإعلانات والمنتجات تعرض تعليمات إدخال آمنة.\n• الموافقة تستعمل معرّف تسجيل المشرف فقط.",
-      "Owner controls\n• Card upload is available here from Telegram only.\n• Advertising and products show safe input instructions.\n• Approval uses an admin registration ID only."), { inline_keyboard: [[{ text: textFor(locale, "صافي ربح اليوم", "Today net profit"), callback_data: "an|today" }, { text: textFor(locale, "صافي ربح الشهر", "Month net profit"), callback_data: "an|month" }]] });
+      "👑 لوحة المالك\nاختر ما تريد إدارته. لا تحتاج لكتابة أوامر للمشرفين أو العمولة أو المدفوعات.",
+      "👑 Owner controls\nChoose what to manage. No commands are needed for admins, commission, or payments."), {
+      inline_keyboard: [
+        [{ text: textFor(locale, "👥 إدارة المشرفين", "👥 Manage admins"), callback_data: "own|admins" }],
+        [{ text: textFor(locale, "✅ طلبات الاعتماد", "✅ Pending approvals"), callback_data: "own|pending" }],
+        [{ text: textFor(locale, "💰 ربح اليوم", "💰 Today net profit"), callback_data: "an|today" }, { text: textFor(locale, "📈 ربح الشهر", "📈 Month net profit"), callback_data: "an|month" }],
+      ],
+    });
     return;
   }
 
   if (action === "/approve_help") {
     if (!ownerOnly(user)) { await reply(chatId, textFor(locale, "غير مصرح لك بهذه العملية.", "Not authorised.")); return; }
-    await reply(chatId, textFor(locale,
-      "لموافقة مشرف جديد: اطلب منه فتح البوت وإرسال /start، ثم أرسل هنا: /approve TG-XXXXXXXX",
-      "To approve a new admin: ask them to open the bot and send /start, then send: /approve TG-XXXXXXXX"), menuKeyboard(locale, user.role));
+    await sendPendingPicker(chatId, locale);
     return;
   }
 

@@ -34,12 +34,18 @@ export const telegramWebhookUpdateSchema = z.object({
 }).strict();
 export const snapchatPlanSchema = z.union([z.literal(1), z.literal(2), z.literal(3), z.literal(6), z.literal(12)]);
 export const snapchatCardTypeSchema = z.enum(["try_24", "try_48", "inr_100", "try_115", "try_229", "inr_199", "inr_298"]);
-export const snapchatCallbackDataSchema = z.union([
+const telegramCallbackUserIdSchema = z.string().regex(/^[1-9][0-9]{0,18}$/);
+export const telegramCallbackDataSchema = z.union([
   z.tuple([z.literal("sc"), snapchatPlanSchema]),
   z.tuple([z.literal("sc"), snapchatPlanSchema, snapchatCardTypeSchema]),
   z.tuple([z.literal("op"), z.string().uuid(), z.enum(["complete", "cancel"])]),
   z.tuple([z.literal("an"), z.enum(["today", "month"])]),
   z.tuple([z.literal("up"), snapchatCardTypeSchema]),
+  z.tuple([z.literal("own"), z.enum(["admins", "pending"])]),
+  z.tuple([z.literal("adm"), telegramCallbackUserIdSchema, z.enum(["open", "adjust", "pay"])]),
+  z.tuple([z.literal("adj"), telegramCallbackUserIdSchema, z.enum(["p10", "p50", "p100", "m10", "m50", "m100"])]),
+  z.tuple([z.literal("pay"), telegramCallbackUserIdSchema, z.enum(["50", "100", "500", "full"])]),
+  z.tuple([z.literal("apr"), telegramCallbackUserIdSchema]),
 ]);
 export const advertisingUsdSchema = z.object({ date: z.string().date(), sourceId: z.string().trim().regex(/^[a-z][a-z0-9_-]{1,39}$/), amountUsd: z.string().trim().regex(/^\d+(?:\.\d{1,2})?$/), campaign: z.string().trim().max(160), note: z.string().trim().max(500) });
 export const manualOrderInputSchema = z.object({
