@@ -9,6 +9,8 @@ import { cardLabel, cardsForPlan, snapchatCardTypes, type SnapchatCardType, type
 import { claimSnapchatCard, finishSnapchatOperation, syncRedeemInventory } from "@/lib/snapchat-operations";
 import { completeSnapchatSale } from "@/lib/telegram-warranty";
 import { absoluteUrl } from "@/lib/seo";
+import { getAdminFinanceSummary } from "@/lib/finance";
+import { syncFinanceReporting } from "@/lib/google-finance-sheet";
 
 type TelegramIdentity = {
   userId: string;
@@ -54,7 +56,7 @@ async function reply(chatId: string, text: string, replyMarkup?: InlineKeyboard)
 
 async function answerCallback(id: string) { await telegramCall("answerCallbackQuery", { callback_query_id: id }); }
 
-async function audit(actorTelegramUserId: string, entityType: "telegram_user" | "inventory", entityId: string, action: string, metadata: Record<string, string>) {
+async function audit(actorTelegramUserId: string, entityType: "telegram_user" | "inventory" | "setting", entityId: string, action: string, metadata: Record<string, string>) {
   await getSupabaseServiceClient().from("operation_events").insert({
     actor_telegram_user_id: actorTelegramUserId,
     entity_type: entityType,
@@ -287,6 +289,25 @@ export async function handleTelegramOperationsMessage(input: {
     return;
   }
 
+  if (action === "/stats") {
+    if (user.role !== "admin" && user.role !== "owner") { await reply(chatId, textFor(locale, "غير مصرح لك بهذه العملية.", "Not authorised.")); return; }
+    try {
+      const summary = await getAdminFinanceSummary(identity.userId);
+      await reply(chatId, textFor(locale, `إحصاءاتك:\nطلبات مكتملة: ${summary.completedOrders}\nالعمولة: ${summary.commissionDzd} DZD\nالمدفوع: ${summary.paidDzd} DZD\nالتعديلات: ${summary.adjustmentsDzd} DZD\nالرصيد المتبقي: ${summary.remainingDzd} DZD\nتاريخ الدفع القادم: ${summary.nextPaymentDate}`, `Your statistics:\nCompleted orders: ${summary.completedOrders}\nCommission: ${summary.commissionDzd} DZD\nPaid: ${summary.paidDzd} DZD\nAdjustments: ${summary.adjustmentsDzd} DZD\nRemaining credit: ${summary.remainingDzd} DZD\nNext payment: ${summary.nextPaymentDate}`));
+    } catch { await reply(chatId, textFor(locale, "تعذر عرض الإحصاءات حالياً.", "Statistics are unavailable right now.")); }
+    return;
+  }
+
+  if (action === "/sync_finance") {
+    if (user.role !== "owner") { await reply(chatId, textFor(locale, "غير مصرح لك بهذه العملية.", "Not authorised.")); return; }
+    try {
+      const result = await syncFinanceReporting();
+      await audit(identity.userId, "setting", "finance-reporting", "finance_sheet_synchronized", { sales: String(result.sales), tabs: String(result.tabs) });
+      await reply(chatId, textFor(locale, `تمت مزامنة التقارير المالية: ${result.sales} مبيعات.`, `Finance reports synchronized: ${result.sales} sales.`));
+    } catch { await reply(chatId, textFor(locale, "تعذرت مزامنة التقارير المالية. راجع وصول جدول Google ومعرّفه.", "Finance reporting sync failed. Check the Google sheet ID and editor access.")); }
+    return;
+  }
+
   if (action === "/start" || !action) {
     if (user.role === "pending") {
       await reply(chatId, textFor(locale,
@@ -294,8 +315,8 @@ export async function handleTelegramOperationsMessage(input: {
         "Your request is registered. Send this registration ID to the owner for approval:\n" + user.registration_id));
     } else {
       await reply(chatId, textFor(locale,
-        "أهلاً بك. الأوامر: /whoami، /ar، /en، /snapchat" + (user.role === "owner" ? "، /approve TG-XXXXXXXX، /sync_cards" : ""),
-        "Welcome. Commands: /whoami, /ar, /en, /snapchat" + (user.role === "owner" ? ", /approve TG-XXXXXXXX, /sync_cards" : "")));
+        "أهلاً بك. الأوامر: /whoami، /ar، /en، /snapchat، /stats" + (user.role === "owner" ? "، /approve TG-XXXXXXXX، /sync_cards، /sync_finance" : ""),
+        "Welcome. Commands: /whoami, /ar, /en, /snapchat, /stats" + (user.role === "owner" ? ", /approve TG-XXXXXXXX, /sync_cards, /sync_finance" : "")));
     }
     return;
   }

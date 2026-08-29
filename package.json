@@ -10,7 +10,8 @@
     "typecheck": "tsc --noEmit",
     "migrate:admin-store": "tsx scripts/migrate-admin-store-to-supabase.ts",
     "test:snapchat-operations": "tsx scripts/test-snapchat-operations.ts",
-    "test:telegram-warranty-pdf": "tsx scripts/render-telegram-warranty-pdf.ts"
+    "test:telegram-warranty-pdf": "tsx scripts/render-telegram-warranty-pdf.ts",
+    "test:finance-reporting": "tsx scripts/test-finance-reporting.ts"
   },
   "dependencies": {
     "@radix-ui/react-slot": "^1.1.2",

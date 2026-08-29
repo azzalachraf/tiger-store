@@ -8,7 +8,8 @@ This foundation keeps Telegram identities, roles and all operations data private
 2. Apply [`supabase/migrations/2026-08-28-operations-foundation.sql`](../supabase/migrations/2026-08-28-operations-foundation.sql).
 3. Apply [`supabase/migrations/2026-08-28-snapchat-redeem-operations.sql`](../supabase/migrations/2026-08-28-snapchat-redeem-operations.sql).
 4. Apply [`supabase/migrations/2026-08-28-snapchat-order-warranties.sql`](../supabase/migrations/2026-08-28-snapchat-order-warranties.sql).
-5. Verify that every new table has RLS enabled and that `anon` and `authenticated` have no privileges.
+5. Apply [`supabase/migrations/2026-08-28-finance-reporting.sql`](../supabase/migrations/2026-08-28-finance-reporting.sql).
+6. Verify that every new table has RLS enabled and that `anon` and `authenticated` have no privileges.
 
 The migration is additive and does not alter catalog rows, existing orders, private receipts, accounts, or the current signed warranty-link flow.
 
@@ -57,6 +58,12 @@ The database claims a single card with `FOR UPDATE SKIP LOCKED`, then returns th
 Completing a Snapchat operation atomically creates a delivered Tiger Store order, a pending zero-DZD commission record (the owner sets the real commission later), and a single-use public warranty form link. Revenue is taken from the server-resolved Snapchat catalog option; no browser price is involved. The sale remains counted with customer details marked incomplete until the customer submits the form.
 
 The customer link is private and non-indexed. It collects name, username, activation platform, phone, and email in Arabic or English, then shows a review step. Submission is irreversible; later visits show only the certificate. The PDF is French, contains no phone or email, and uses the official Tiger Store logo. `100 INR` and `199 INR` require acknowledgement of the Arabic balance warning before the PDF route becomes available; their expiry adds seven days before the subscription duration. All other card types use the subscription duration directly.
+
+## Finance and reporting
+
+The owner edits the USD/DZD rate, Snapchat plan prices, fixed commissions, card costs (integer USD cents), payment dates, advertising spend, and central reporting-sheet ID in **Admin → Finance**. Sales, commissions, payments and adjustments remain in Supabase; reports are derived copies.
+
+Create a Google Sheet, share it with the configured service-account email as **Editor**, then save its ID in Admin → Finance or `GOOGLE_FINANCE_SHEET_ID`. The owner runs `/sync_finance` privately. This writes PII-free `Income`, `Daily Profit`, `Advertising`, `Admin Summary`, and `Inventory` tabs, then maintains one `Admin <id> YYYY-MM` tab per admin/month. Only that admin’s operational tab may contain their own customer name and phone; admins do not get sheet access. Each admin can use `/stats` privately to see completed orders, earned commission, paid amount, remaining credit and next payment date.
 
 ## Webhook registration after deployment
 

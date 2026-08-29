@@ -21,6 +21,7 @@ const serverEnvSchema = z.object({
   TELEGRAM_WEBHOOK_SECRET: z.string().min(32, "TELEGRAM_WEBHOOK_SECRET must be at least 32 characters").optional().default(""),
   GOOGLE_REDEEM_SHEET_ID: z.string().trim().min(10).optional().default(""),
   GOOGLE_REDEEM_SHEET_TAB: z.string().trim().max(160).optional().default(""),
+  GOOGLE_FINANCE_SHEET_ID: z.string().trim().min(10).optional().default(""),
   GOOGLE_SERVICE_ACCOUNT_EMAIL: z.string().email().optional().or(z.literal("")).default(""),
   GOOGLE_SERVICE_ACCOUNT_PRIVATE_KEY: z.string().min(100).optional().or(z.literal("")).default(""),
   WARRANTY_LINK_SECRET: z.string().min(32, "WARRANTY_LINK_SECRET must be at least 32 characters").optional().default(""),

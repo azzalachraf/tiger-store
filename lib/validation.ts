@@ -79,6 +79,17 @@ export const telegramWarrantyFormSchema = z.object({
   phone: z.string().trim().min(6).max(40),
   email: z.string().trim().email().max(180),
 });
+export const financeSettingsSchema = z.object({
+  usdDzdRate: z.coerce.number().int().min(1).max(100000),
+  paymentDay: z.coerce.number().int().min(1).max(28),
+  reportingSheetId: z.string().trim().max(200),
+  plans: z.array(z.object({ months: z.coerce.number().int().refine((value) => [1, 2, 3, 6, 12].includes(value)), priceDzd: z.coerce.number().int().min(1), commissionDzd: z.coerce.number().int().min(0) })).length(5),
+  cardCosts: z.array(z.object({ cardType: z.enum(["try_24", "try_48", "inr_100", "try_115", "try_229", "inr_199", "inr_298"]), usdCents: z.coerce.number().int().min(0) })).length(7),
+});
+export const adminFinanceAdjustmentSchema = z.object({ adminId: z.string().regex(/^[1-9][0-9]{0,18}$/), amountDzd: z.coerce.number().int().min(-10_000_000).max(10_000_000).refine((value) => value !== 0), reason: z.string().trim().min(2).max(500) });
+export const adminPaymentSchema = z.object({ adminId: z.string().regex(/^[1-9][0-9]{0,18}$/), amountDzd: z.coerce.number().int().min(1).max(10_000_000), note: z.string().trim().max(500) });
+export const adminPaymentScheduleSchema = z.object({ adminId: z.string().regex(/^[1-9][0-9]{0,18}$/), workStartedAt: z.string().date(), nextPaymentDate: z.string().date() });
+export const advertisingSpendSchema = z.object({ spentOn: z.string().date(), platform: z.enum(["meta", "instagram", "facebook", "other"]), campaign: z.string().trim().max(160), amountDzd: z.coerce.number().int().min(0).max(10_000_000), note: z.string().trim().max(500) });
 export const accountStatusSchema = z.enum(["Available", "Sold", "Expired", "Problem"]);
 export const stockAlertInputSchema = z.object({
   productSlug: z.string().trim().min(1).max(160).regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/),

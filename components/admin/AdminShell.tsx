@@ -1,12 +1,12 @@
 import Image from "next/image";
 import Link from "next/link";
 import { ReactNode } from "react";
-import { Boxes, CreditCard, ExternalLink, LayoutDashboard, LogOut, Settings, ShoppingBag } from "lucide-react";
+import { Boxes, CreditCard, ExternalLink, LayoutDashboard, LogOut, Settings, ShoppingBag, WalletCards } from "lucide-react";
 import { logoutAction } from "@/app/admin/login/actions";
 import { requireAdmin } from "@/lib/admin-auth";
 import { Button } from "@/components/ui/button";
 
-const adminNav = [{ href: "/admin", label: "Overview", icon: LayoutDashboard, group: "Store" }, { href: "/admin/products", label: "Products", icon: Boxes, group: "Store" }, { href: "/admin/orders", label: "Orders", icon: ShoppingBag, group: "Store" }, { href: "/admin/payment-methods", label: "Payment methods", icon: CreditCard, group: "Store" }, { href: "/admin/stock-alerts", label: "Stock alerts", icon: Boxes, group: "Store" }, { href: "/admin/settings", label: "Store settings", icon: Settings, group: "Store" }];
+const adminNav = [{ href: "/admin", label: "Overview", icon: LayoutDashboard, group: "Store" }, { href: "/admin/products", label: "Products", icon: Boxes, group: "Store" }, { href: "/admin/orders", label: "Orders", icon: ShoppingBag, group: "Store" }, { href: "/admin/payment-methods", label: "Payment methods", icon: CreditCard, group: "Store" }, { href: "/admin/stock-alerts", label: "Stock alerts", icon: Boxes, group: "Store" }, { href: "/admin/finance", label: "Finance", icon: WalletCards, group: "Store" }, { href: "/admin/settings", label: "Store settings", icon: Settings, group: "Store" }];
 
 const groupedNav = adminNav.reduce<Record<string, typeof adminNav>>((groups, item) => {
   groups[item.group] = [...(groups[item.group] ?? []), item];
