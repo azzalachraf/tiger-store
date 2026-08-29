@@ -10,6 +10,15 @@ import type { CartItem, PaymentMethodId, ProductPriceOption } from "@/lib/types"
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Payment link", robots: { index: false, follow: false } };
 
+function legacyTarget(token: string) {
+  const parts = token.split(".");
+  if (parts.length !== 6 || (parts[0] !== "1" && parts[0] !== "p1")) return undefined;
+  const [, slug, optionId] = parts;
+  // This is only a selector for a public product and plan. The page resolves
+  // price and availability from the live server-side catalog below.
+  return slug && optionId ? { slug, optionId } : undefined;
+}
+
 function findOffer(product: { id: string; price: number; oldPrice?: number; duration: string; durationAr: string; available: boolean; priceOptions?: ProductPriceOption[] }, optionId: string) {
   if (product.priceOptions?.length) {
     const exact = product.priceOptions.find((option) => option.id === optionId);
@@ -29,7 +38,7 @@ function findOffer(product: { id: string; price: number; oldPrice?: number; dura
 
 export default async function ProductPaymentLinkPage({ params }: { params: Promise<{ token: string }> }) {
   const { token } = await params;
-  const payload = await resolveProductCheckoutLinkTarget(token);
+  const payload = await resolveProductCheckoutLinkTarget(token) ?? legacyTarget(token);
   if (!payload) {
     logger.warn("product payment link token was rejected", { tokenLength: token.length, tokenPrefix: token.slice(0, 3), dotCount: token.split(".").length });
     notFound();
