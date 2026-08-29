@@ -30,7 +30,10 @@ function findOffer(product: { id: string; price: number; oldPrice?: number; dura
 export default async function ProductPaymentLinkPage({ params }: { params: Promise<{ token: string }> }) {
   const { token } = await params;
   const payload = await resolveProductCheckoutLinkTarget(token);
-  if (!payload) notFound();
+  if (!payload) {
+    logger.warn("product payment link token was rejected", { tokenLength: token.length, tokenPrefix: token.slice(0, 3), dotCount: token.split(".").length });
+    notFound();
+  }
 
   // Use the normalized catalog collection used by storefront listings. This
   // preserves older stored products whose variants were saved without IDs,
