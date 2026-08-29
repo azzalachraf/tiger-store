@@ -6,8 +6,8 @@ import { getSupabaseServiceClient } from "@/lib/supabase";
 import type { TelegramInterfaceLocale, TelegramRole } from "@/lib/types";
 import { advertisingUsdSchema, productSchema, snapchatCallbackDataSchema } from "@/lib/validation";
 import { cardLabel, cardsForPlan, snapchatCardTypes, type SnapchatCardType, type SnapchatPlanMonths } from "@/lib/snapchat-cards";
-import { claimSnapchatCard, finishSnapchatOperation, syncRedeemInventory, uploadRedeemCardsFromTelegram } from "@/lib/snapchat-operations";
-import { parseTelegramRedeemCardUpload } from "@/lib/telegram-card-upload";
+import { claimSnapchatCard, clearTelegramRedeemCardUploadSession, finishSnapchatOperation, getTelegramRedeemCardUploadSession, startTelegramRedeemCardUploadSession, syncRedeemInventory, uploadRedeemCardsFromTelegram } from "@/lib/snapchat-operations";
+import { parseTelegramRedeemCardLines } from "@/lib/telegram-card-upload";
 import { completeSnapchatSale } from "@/lib/telegram-warranty";
 import { absoluteUrl } from "@/lib/seo";
 import { getAdminFinanceSummary } from "@/lib/finance";
@@ -228,9 +228,11 @@ export async function handleTelegramOperationsCallback(input: {
   if (selected[0] === "up") {
     if (!ownerOnly(user)) { await reply(String(input.chatId), textFor(locale, "غير مصرح لك بهذه العملية.", "Not authorised.")); return; }
     const cardType = selected[1];
+    await startTelegramRedeemCardUploadSession(identity.userId, cardType);
+    await audit(identity.userId, "inventory", cardType, "redeem_card_upload_started", { cardType });
     await reply(String(input.chatId), textFor(locale,
-      `أرسل حتى 100 كود من نوع ${cardLabel(cardType, locale)}، كود واحد في كل سطر:\n/upload ${cardType}\nCODE-1\nCODE-2`,
-      `Send up to 100 ${cardLabel(cardType, locale)} codes, one code per line:\n/upload ${cardType}\nCODE-1\nCODE-2`));
+      `جاهز لرفع بطاقات ${cardLabel(cardType, locale)}. ألصق الآن من 1 إلى 100 كود، كود واحد في كل سطر.`,
+      `Ready to upload ${cardLabel(cardType, locale)} cards. Paste 1–100 codes now, one code per line.`));
     return;
   }
   if (selected[0] === "sc" && selected.length === 2) {
@@ -288,9 +290,31 @@ export async function handleTelegramOperationsMessage(input: {
   };
   const user = await registerIdentity(identity);
   const locale = user.interface_locale;
-  const [rawCommand = "", argument, secondArgument] = command(routeMenuButton(input.text));
-  const action = rawCommand.toLowerCase().split("@")[0];
+  const rawText = (input.text ?? "").trim();
+  const routedText = routeMenuButton(input.text);
   const chatId = telegramId(input.chatId);
+  if (ownerOnly(user) && rawText && !rawText.startsWith("/") && routedText === rawText) {
+    const cardType = await getTelegramRedeemCardUploadSession(identity.userId);
+    if (cardType) {
+      try {
+        const codes = parseTelegramRedeemCardLines(cardType, rawText);
+        const result = await uploadRedeemCardsFromTelegram(cardType, codes);
+        await clearTelegramRedeemCardUploadSession(identity.userId);
+        await audit(identity.userId, "inventory", cardType, "redeem_cards_uploaded_from_telegram", { added: String(result.added), duplicates: String(result.duplicates) });
+        await reply(chatId, textFor(locale,
+          `تمت إضافة ${result.added} بطاقة من نوع ${cardLabel(cardType, locale)}.${result.duplicates ? ` تم تجاهل ${result.duplicates} مكرر.` : ""}`,
+          `${result.added} ${cardLabel(cardType, locale)} cards were added.${result.duplicates ? ` ${result.duplicates} duplicate(s) were skipped.` : ""}`));
+        await notifyLowStock(result.counts, identity.userId);
+      } catch {
+        await reply(chatId, textFor(locale,
+          "تعذر رفع البطاقات. ألصق من 1 إلى 100 كود صالح، كل كود في سطر، ومن دون تكرار.",
+          "Cards could not be uploaded. Paste 1–100 valid, non-duplicate codes, one code per line."));
+      }
+      return;
+    }
+  }
+  const [rawCommand = "", argument, secondArgument] = command(routedText);
+  const action = rawCommand.toLowerCase().split("@")[0];
 
   if (action === "/ar" || action === "/en") {
     const chosen = action === "/ar" ? "ar" : "en";
@@ -384,24 +408,6 @@ export async function handleTelegramOperationsMessage(input: {
     await reply(chatId, textFor(locale, "اختر نوع البطاقة ثم ألصق الأكواد، كود واحد في كل سطر.", "Choose the card type, then paste the codes one per line."), {
       inline_keyboard: snapchatCardTypes.map((cardType) => [{ text: cardLabel(cardType, locale), callback_data: `up|${cardType}` }]),
     });
-    return;
-  }
-
-  if (action === "/upload") {
-    if (!ownerOnly(user)) { await reply(chatId, textFor(locale, "غير مصرح لك بهذه العملية.", "Not authorised.")); return; }
-    try {
-      const upload = parseTelegramRedeemCardUpload(input.text ?? "");
-      const result = await uploadRedeemCardsFromTelegram(upload.cardType, upload.codes);
-      await audit(identity.userId, "inventory", upload.cardType, "redeem_cards_uploaded_from_telegram", { added: String(result.added), duplicates: String(result.duplicates) });
-      await reply(chatId, textFor(locale,
-        `تمت إضافة ${result.added} بطاقة من نوع ${cardLabel(upload.cardType, locale)}.${result.duplicates ? ` تم تجاهل ${result.duplicates} مكرر.` : ""}`,
-        `${result.added} ${cardLabel(upload.cardType, locale)} cards were added.${result.duplicates ? ` ${result.duplicates} duplicate(s) were skipped.` : ""}`));
-      await notifyLowStock(result.counts, identity.userId);
-    } catch {
-      await reply(chatId, textFor(locale,
-        "تعذر رفع البطاقات. استعمل /upload ثم نوع البطاقة، وبعده من 1 إلى 100 كود، كل كود في سطر. تأكد من عدم تكرار الأكواد.",
-        "Cards could not be uploaded. Use /upload, then the card type, followed by 1–100 codes, one code per line. Remove duplicates."));
-    }
     return;
   }
 

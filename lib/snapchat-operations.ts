@@ -6,6 +6,34 @@ import { readRedeemCardsSheet } from "@/lib/google-redeem-sheet";
 
 type ClaimRow = { operation_id: string; card_id: string; code_ciphertext: string };
 
+const uploadSessionLifetimeMs = 30 * 60 * 1000;
+
+export async function startTelegramRedeemCardUploadSession(telegramUserId: string, cardType: SnapchatCardType) {
+  const { error } = await getSupabaseServiceClient().from("telegram_redeem_upload_sessions").upsert({
+    telegram_user_id: telegramUserId,
+    card_type: cardType,
+    expires_at: new Date(Date.now() + uploadSessionLifetimeMs).toISOString(),
+  }, { onConflict: "telegram_user_id" });
+  if (error) throw new Error("Card upload session could not be started.");
+}
+
+export async function getTelegramRedeemCardUploadSession(telegramUserId: string): Promise<SnapchatCardType | null> {
+  const client = getSupabaseServiceClient();
+  const { data, error } = await client.from("telegram_redeem_upload_sessions").select("card_type, expires_at").eq("telegram_user_id", telegramUserId).maybeSingle();
+  if (error) throw new Error("Card upload session could not be read.");
+  if (!data) return null;
+  if (new Date(data.expires_at).getTime() <= Date.now()) {
+    await client.from("telegram_redeem_upload_sessions").delete().eq("telegram_user_id", telegramUserId);
+    return null;
+  }
+  return snapchatCardTypes.includes(data.card_type as SnapchatCardType) ? data.card_type as SnapchatCardType : null;
+}
+
+export async function clearTelegramRedeemCardUploadSession(telegramUserId: string) {
+  const { error } = await getSupabaseServiceClient().from("telegram_redeem_upload_sessions").delete().eq("telegram_user_id", telegramUserId);
+  if (error) throw new Error("Card upload session could not be cleared.");
+}
+
 export async function syncRedeemInventory() {
   const cards = await readRedeemCardsSheet();
   const client = getSupabaseServiceClient();
