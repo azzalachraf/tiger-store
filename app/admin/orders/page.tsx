@@ -7,6 +7,8 @@ import { formatPriceDZD } from "@/lib/utils";
 import { absoluteUrl } from "@/lib/seo";
 import { verifyWarrantyLink } from "@/lib/warranty";
 import { verifyProductCheckoutLink } from "@/lib/product-checkout-link";
+import { getFinanceReports } from "@/lib/finance";
+import { GoogleSheetsOrderCopy, type GoogleSheetsOrderRow } from "@/components/admin/GoogleSheetsOrderCopy";
 
 export const dynamic = "force-dynamic";
 
@@ -20,10 +22,30 @@ export default async function AdminOrdersPage({ searchParams }: { searchParams: 
   const warrantyLink = warrantyPayload && warrantyToken ? absoluteUrl(`/warranty/${warrantyToken}`) : undefined;
   const checkoutPayload = checkoutToken ? verifyProductCheckoutLink(checkoutToken) : undefined;
   const checkoutLink = checkoutPayload && checkoutToken ? `https://tiger-storedz.com/p/${checkoutToken}` : undefined;
-  const [orders, products] = await Promise.all([getOrders(), getProducts()]);
+  const [orders, products, finance] = await Promise.all([getOrders(), getProducts(), getFinanceReports().catch(() => null)]);
   const receiptLinks = await Promise.all(orders.map((order) => getReceiptSignedUrl(order.receiptPath)));
   const pending = orders.filter((order) => order.status === "pending").length;
   const completed = orders.filter((order) => order.status === "paid" || order.status === "delivered").length;
+  const cardCostByOrder = new Map((finance?.sales ?? []).map((sale) => [String(sale.order_id), Number(sale.card_cost_dzd)]));
+  const sheetsRows: GoogleSheetsOrderRow[] = orders.map((order) => ({
+    client: order.customerName,
+    phone: order.phone,
+    email: order.email,
+    orderCode: order.id,
+    subscription: order.products.length ? order.products.map((item) => item.name).join(" + ") : "Manual order",
+    duration: order.products.length ? order.products.map((item) => item.option || item.duration).join(" + ") : "",
+    quantity: order.products.length ? String(order.products.reduce((sum, item) => sum + item.quantity, 0)) : "",
+    costPrice: cardCostByOrder.has(order.id) ? String(cardCostByOrder.get(order.id)) : "",
+    amountPaid: String(order.total),
+    spend: "",
+    cost: "",
+    netProfit: "",
+    paymentMethod: order.paymentMethod,
+    status: order.status,
+    orderDate: order.createdAt,
+    notes: order.notes ?? "",
+    completed: order.status === "paid" || order.status === "delivered",
+  }));
 
   return (
     <AdminShell title="Orders" description="Review incoming orders, update status, add notes, and record manual sales.">
@@ -32,6 +54,8 @@ export default async function AdminOrdersPage({ searchParams }: { searchParams: 
         <Metric icon={<Clock3 className="h-5 w-5" />} label="Pending" value={pending} />
         <Metric icon={<CheckCircle2 className="h-5 w-5" />} label="Completed" value={completed} />
       </div>
+
+      <GoogleSheetsOrderCopy rows={sheetsRows} />
 
       <section className="mb-6 rounded-md border border-white/10 bg-white/[0.045] p-5 shadow-[0_18px_55px_rgba(0,0,0,0.26)]">
         <div className="mb-4">
