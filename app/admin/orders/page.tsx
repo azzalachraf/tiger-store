@@ -3,7 +3,7 @@ import type { ReactNode } from "react";
 import { saveOrderStatusAction, deleteOrderAction, addManualOrderAction, createProductCheckoutLinkAction, createWarrantyLinkAction } from "@/app/admin/orders/actions";
 import { Trash2, Plus, ShoppingBag, Clock3, CheckCircle2, ShieldCheck, Copy } from "lucide-react";
 import { AdminShell } from "@/components/admin/AdminShell";
-import { formatPriceDZD } from "@/lib/utils";
+import { formatOrderTime, formatPriceDZD } from "@/lib/utils";
 import { absoluteUrl } from "@/lib/seo";
 import { verifyWarrantyLink } from "@/lib/warranty";
 import { resolveProductCheckoutLinkTarget } from "@/lib/product-checkout-link";
@@ -165,7 +165,7 @@ export default async function AdminOrdersPage({ searchParams }: { searchParams: 
                 <Info label="Phone" value={order.phone || "-"} />
                 <Info label="Email" value={order.email || "-"} />
                 <Info label="Payment" value={order.paymentMethod} />
-                <Info label="Date" value={new Date(order.createdAt).toLocaleString("en-US")} />
+                <Info label="Order time" value={formatOrderTime(order.createdAt)} />
                 <Info label="Products" value={order.products.length ? order.products.map((item) => `${item.name} — ${item.option} ×${item.quantity}`).join("\n") : "Manual order"} />
                 <Info label="Notes" value={order.notes || "-"} />
                 <Info label="Receipt" value={receiptLinks[index] ? "Receipt uploaded" : "No receipt"} />
