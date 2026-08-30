@@ -3,6 +3,7 @@ import "server-only";
 import { getSupabaseServiceClient } from "@/lib/supabase";
 import { snapchatCardTypes, type SnapchatCardType, type SnapchatPlanMonths } from "@/lib/snapchat-cards";
 import { getOrders } from "@/lib/admin-store";
+import { adminOrderSchema } from "@/lib/validation";
 
 export type PlanFinance = { priceDzd: number; commissionDzd: number };
 export type FinanceSettings = { usdDzdRate: number; plans: Record<SnapchatPlanMonths, PlanFinance>; cardCostsUsdCents: Record<SnapchatCardType, number>; paymentDay: number; reportingSheetId: string };
@@ -67,6 +68,59 @@ export async function getAdminFinanceSummary(adminId: string): Promise<AdminFina
     ? new Date(`${user.next_payment_date}T00:00:00Z`)
     : calculateNextPaymentDate(workStart, settings.paymentDay);
   return { adminId, completedOrders: sales?.length ?? 0, commissionDzd, paidDzd, adjustmentsDzd, remainingDzd: commissionDzd + adjustmentsDzd - paidDzd, nextPaymentDate: next.toISOString().slice(0, 10) };
+}
+
+export type AdminClientSheetRow = {
+  orderId: string;
+  completedAt: string;
+  planMonths: number;
+  productName: string;
+  customerName: string;
+  phone: string;
+  email: string;
+  status: string;
+  revenueDzd: number;
+  commissionDzd: number;
+};
+
+/**
+ * A private, server-side view of one Telegram administrator's completed sales.
+ * Finance sales are the source for ownership; order details are only joined for
+ * the authenticated website administrator who is viewing this internal sheet.
+ */
+export async function getAdminClientSheet(adminId: string): Promise<AdminClientSheetRow[]> {
+  const client = getSupabaseServiceClient();
+  const { data: sales, error } = await client
+    .from("finance_sales")
+    .select("order_id, plan_months, revenue_dzd, commission_dzd, completed_at")
+    .eq("admin_telegram_user_id", adminId)
+    .order("completed_at", { ascending: false });
+  if (error) throw new Error("Admin client sheet could not be loaded.");
+
+  const orderIds = (sales ?? []).map((sale) => String(sale.order_id));
+  const { data: orderData, error: ordersError } = orderIds.length
+    ? await client.from("orders").select("*").in("id", orderIds)
+    : { data: [], error: null };
+  if (ordersError) throw new Error("Admin client orders could not be loaded.");
+  const orders = adminOrderSchema.array().catch([]).parse(orderData ?? []);
+  const ordersById = new Map(orders.map((order) => [order.id, order]));
+  return (sales ?? []).map((sale) => {
+    const orderId = String(sale.order_id);
+    const order = ordersById.get(orderId);
+    const item = order?.products[0];
+    return {
+      orderId,
+      completedAt: String(sale.completed_at),
+      planMonths: Number(sale.plan_months),
+      productName: item?.name ?? "Snapchat Plus",
+      customerName: order?.customerName ?? "Customer details incomplete",
+      phone: order?.phone ?? "—",
+      email: order?.email ?? "—",
+      status: order?.status ?? "delivered",
+      revenueDzd: Number(sale.revenue_dzd),
+      commissionDzd: Number(sale.commission_dzd),
+    };
+  });
 }
 
 export async function getFinanceReports() {
