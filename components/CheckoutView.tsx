@@ -4,7 +4,7 @@ import Link from "next/link";
 import { FormEvent, useEffect, useMemo, useState } from "react";
 import { CheckCircle2, Home, MessageCircle, ReceiptText, Upload } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { addCartItem, createCartItem, getCartSubtotal, getProductOffers, readCart, writeCart } from "@/lib/cart";
+import { createCartItem, getCartSubtotal, getProductOffers, readCart, writeCart } from "@/lib/cart";
 import { submitReceiptOrderAction } from "@/app/checkout/actions";
 import type { CartItem, PaymentMethodId, Product, SiteSettings } from "@/lib/types";
 import { formatPriceDZD } from "@/lib/utils";
@@ -45,10 +45,13 @@ export function CheckoutView({ products, directProductSlug, directOption, settin
     if (lockedProductLink) return;
     const timer = window.setTimeout(() => {
       let current = readCart();
-      if (!current.length && directProductSlug) {
+      // Buy Now is deliberately a fresh, one-product checkout. Keeping an
+      // older cart here could show a previous product (for example Snapchat)
+      // after a customer chose a different product page.
+      if (directProductSlug) {
         const product = products.find((entry) => entry.slug === directProductSlug);
         const offer = product ? getProductOffers(product).find((entry) => entry.id === directOption) ?? getProductOffers(product)[0] : undefined;
-        if (product && offer) current = addCartItem(createCartItem(product, offer));
+        if (product && offer) current = [createCartItem(product, offer)];
       }
       const repaired = current.map((item) => {
         const product = products.find((entry) => entry.slug === item.slug);
@@ -56,7 +59,7 @@ export function CheckoutView({ products, directProductSlug, directOption, settin
         const offer = offers.find((entry) => entry.id === item.optionId) ?? offers.find((entry) => entry.label === item.option || entry.labelAr === item.optionAr);
         return product && offer ? createCartItem(product, offer, item.quantity) : item;
       });
-      if (repaired.some((item, index) => item !== current[index])) writeCart(repaired);
+      if (directProductSlug || repaired.some((item, index) => item !== current[index])) writeCart(repaired);
       setItems(repaired);
     }, 0);
     return () => window.clearTimeout(timer);
