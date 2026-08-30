@@ -11,7 +11,6 @@ import { parseTelegramRedeemCardLines } from "@/lib/telegram-card-upload";
 import { completeSnapchatSale } from "@/lib/telegram-warranty";
 import { absoluteUrl } from "@/lib/seo";
 import { getAdminFinanceSummary } from "@/lib/finance";
-import { syncFinanceReporting } from "@/lib/google-finance-sheet";
 import { formatOwnerAnalytics, getOwnerAnalytics, rangeFor, type AnalyticsRange } from "@/lib/owner-analytics";
 import { deleteProduct, getProductById, saveProduct } from "@/lib/admin-store";
 
@@ -65,17 +64,17 @@ function menuKeyboard(locale: TelegramInterfaceLocale, role: TelegramRole): Repl
   const labels = locale === "ar"
     ? {
         snapchat: "🛒 بيع Snapchat", stats: "📊 إحصاءاتي", owner: "👑 لوحة المالك", profit: "💰 صافي الربح",
-        cards: "⬆️ رفع البطاقات", reports: "📈 مزامنة التقارير", ads: "📣 الإعلانات", products: "🛍 المنتجات",
-        approval: "👥 إدارة المشرفين", arabic: "🌐 العربية", english: "🌐 English", help: "ℹ️ المساعدة",
+        cards: "⬆️ رفع البطاقات", ads: "📣 الإعلانات", products: "🛍 المنتجات",
+        approval: "👥 إدارة المشرفين", arabic: "🌐 العربية", english: "🌐 English",
       }
     : {
         snapchat: "🛒 Snapchat sale", stats: "📊 My stats", owner: "👑 Owner controls", profit: "💰 Net profit",
-        cards: "⬆️ Upload cards", reports: "📈 Sync reports", ads: "📣 Advertising", products: "🛍 Products",
-        approval: "👥 Manage admins", arabic: "🌐 العربية", english: "🌐 English", help: "ℹ️ Help",
+        cards: "⬆️ Upload cards", ads: "📣 Advertising", products: "🛍 Products",
+        approval: "👥 Manage admins", arabic: "🌐 العربية", english: "🌐 English",
       };
   const rows = [[labels.snapchat, labels.stats]];
-  if (role === "owner") rows.push([labels.owner, labels.profit], [labels.cards, labels.reports], [labels.ads, labels.products], [labels.approval]);
-  rows.push([labels.arabic, labels.english], [labels.help]);
+  if (role === "owner") rows.push([labels.owner, labels.profit], [labels.cards, labels.ads], [labels.products, labels.approval]);
+  rows.push([labels.arabic, labels.english]);
   return { keyboard: rows.map((row) => row.map((text) => ({ text }))), resize_keyboard: true, is_persistent: true };
 }
 
@@ -87,13 +86,11 @@ function routeMenuButton(value: string | undefined) {
     "👑 لوحة المالك": "/owner", "👑 Owner controls": "/owner",
     "💰 صافي الربح": "/net_profit today", "💰 Net profit": "/net_profit today",
     "⬆️ رفع البطاقات": "/upload_cards", "⬆️ Upload cards": "/upload_cards",
-    "📈 مزامنة التقارير": "/sync_finance", "📈 Sync reports": "/sync_finance",
     "📣 الإعلانات": "/ad_help", "📣 Advertising": "/ad_help",
     "🛍 المنتجات": "/product_help", "🛍 Products": "/product_help",
     "👥 إدارة المشرفين": "/owner", "👥 Manage admins": "/owner",
     "👥 اعتماد مشرف": "/approve_help", "👥 Approve admin": "/approve_help",
     "🌐 العربية": "/ar", "🌐 English": "/en",
-    "ℹ️ المساعدة": "/menu", "ℹ️ Help": "/menu",
   };
   return commands[text] ?? text;
 }
@@ -109,7 +106,8 @@ async function telegramCall(method: string, body: Record<string, unknown>) {
 }
 
 async function reply(chatId: string, text: string, replyMarkup?: ReplyMarkup) {
-  await telegramCall("sendMessage", { chat_id: chatId, text, disable_web_page_preview: true, ...(replyMarkup ? { reply_markup: replyMarkup } : {}) });
+  const startsWithEmoji = /^[\u{1F300}-\u{1FAFF}\u2600-\u27BF]/u.test(text);
+  await telegramCall("sendMessage", { chat_id: chatId, text: startsWithEmoji ? text : `🐯 ${text}`, disable_web_page_preview: true, ...(replyMarkup ? { reply_markup: replyMarkup } : {}) });
 }
 
 async function answerCallback(id: string) { await telegramCall("answerCallbackQuery", { callback_query_id: id }); }
@@ -246,12 +244,35 @@ async function sendPendingPicker(chatId: string, locale: TelegramInterfaceLocale
   });
 }
 
+async function sendCardUploadPicker(chatId: string, locale: TelegramInterfaceLocale) {
+  await reply(chatId, textFor(locale, "اختر نوع البطاقة ثم ألصق الأكواد، كود واحد في كل سطر.", "Choose the card type, then paste the codes one per line."), {
+    inline_keyboard: snapchatCardTypes.map((cardType) => [{ text: cardLabel(cardType, locale), callback_data: `up|${cardType}` }]),
+  });
+}
+
+async function sendCardStock(chatId: string, locale: TelegramInterfaceLocale) {
+  const { data, error } = await getSupabaseServiceClient()
+    .from("redeem_cards")
+    .select("card_type")
+    .eq("status", "available")
+    .eq("source_available", true);
+  if (error) throw new Error("Card stock could not be read.");
+  const counts = new Map<SnapchatCardType, number>();
+  for (const cardType of snapchatCardTypes) counts.set(cardType, 0);
+  for (const row of data ?? []) {
+    const cardType = row.card_type as SnapchatCardType;
+    counts.set(cardType, (counts.get(cardType) ?? 0) + 1);
+  }
+  const stock = snapchatCardTypes.map((cardType) => `${cardLabel(cardType, locale)}: ${counts.get(cardType) ?? 0}`).join("\n");
+  await reply(chatId, textFor(locale, `📦 مخزون البطاقات المتاح\n${stock}`, `📦 Available card inventory\n${stock}`));
+}
+
 async function sendAdminOverview(chatId: string, locale: TelegramInterfaceLocale, adminId: string) {
   const admin = await findAdmin(adminId);
   const summary = await getAdminFinanceSummary(adminId);
   await reply(chatId, textFor(locale,
-    `👤 ${operatorName(admin)}\n📦 الطلبات المكتملة: ${summary.completedOrders}\n💰 العمولة: ${summary.commissionDzd} DZD\n➕/➖ التعديلات: ${summary.adjustmentsDzd} DZD\n💸 المدفوع: ${summary.paidDzd} DZD\n🧾 الرصيد: ${summary.remainingDzd} DZD\n📅 الدفع القادم: ${summary.nextPaymentDate}`,
-    `👤 ${operatorName(admin)}\n📦 Completed orders: ${summary.completedOrders}\n💰 Commission: ${summary.commissionDzd} DZD\n➕/➖ Adjustments: ${summary.adjustmentsDzd} DZD\n💸 Paid: ${summary.paidDzd} DZD\n🧾 Remaining credit: ${summary.remainingDzd} DZD\n📅 Next payment: ${summary.nextPaymentDate}`), {
+    `👤 ${operatorName(admin)}\nالطلبات المكتملة: ${summary.completedOrders}\nالعمولة: ${summary.commissionDzd} DZD\nالتعديلات: ${summary.adjustmentsDzd} DZD\nالمدفوع: ${summary.paidDzd} DZD\nالرصيد: ${summary.remainingDzd} DZD\nالدفع القادم: ${summary.nextPaymentDate}`,
+    `👤 ${operatorName(admin)}\nCompleted orders: ${summary.completedOrders}\nCommission: ${summary.commissionDzd} DZD\nAdjustments: ${summary.adjustmentsDzd} DZD\nPaid: ${summary.paidDzd} DZD\nRemaining credit: ${summary.remainingDzd} DZD\nNext payment: ${summary.nextPaymentDate}`), {
     inline_keyboard: [
       [{ text: textFor(locale, "➕➖ تعديل العمولة", "➕➖ Adjust commission"), callback_data: `adm|${adminId}|adjust` }],
       [{ text: textFor(locale, "💸 تسجيل دفعة", "💸 Record payment"), callback_data: `adm|${adminId}|pay` }],
@@ -312,7 +333,9 @@ export async function handleTelegramOperationsCallback(input: {
     if (!ownerOnly(user)) { await reply(String(input.chatId), textFor(locale, "غير مصرح لك بهذه العملية.", "Not authorised.")); return; }
     try {
       if (selected[1] === "admins") await sendAdminPicker(String(input.chatId), locale);
-      else await sendPendingPicker(String(input.chatId), locale);
+      else if (selected[1] === "pending") await sendPendingPicker(String(input.chatId), locale);
+      else if (selected[1] === "upload") await sendCardUploadPicker(String(input.chatId), locale);
+      else await sendCardStock(String(input.chatId), locale);
     } catch {
       await reply(String(input.chatId), textFor(locale, "تعذر تحميل قائمة المشرفين حالياً.", "The admin list is unavailable right now."));
     }
@@ -602,9 +625,7 @@ export async function handleTelegramOperationsMessage(input: {
 
   if (action === "/upload_cards") {
     if (!ownerOnly(user)) { await reply(chatId, textFor(locale, "غير مصرح لك بهذه العملية.", "Not authorised.")); return; }
-    await reply(chatId, textFor(locale, "اختر نوع البطاقة ثم ألصق الأكواد، كود واحد في كل سطر.", "Choose the card type, then paste the codes one per line."), {
-      inline_keyboard: snapchatCardTypes.map((cardType) => [{ text: cardLabel(cardType, locale), callback_data: `up|${cardType}` }]),
-    });
+    await sendCardUploadPicker(chatId, locale);
     return;
   }
 
@@ -624,6 +645,7 @@ export async function handleTelegramOperationsMessage(input: {
       inline_keyboard: [
         [{ text: textFor(locale, "👥 إدارة المشرفين", "👥 Manage admins"), callback_data: "own|admins" }],
         [{ text: textFor(locale, "✅ طلبات الاعتماد", "✅ Pending approvals"), callback_data: "own|pending" }],
+        [{ text: textFor(locale, "⬆️ رفع البطاقات", "⬆️ Upload cards"), callback_data: "own|upload" }, { text: textFor(locale, "📦 مخزون البطاقات", "📦 Card stock"), callback_data: "own|stock" }],
         [{ text: textFor(locale, "💰 ربح اليوم", "💰 Today net profit"), callback_data: "an|today" }, { text: textFor(locale, "📈 ربح الشهر", "📈 Month net profit"), callback_data: "an|month" }],
       ],
     });
@@ -708,18 +730,8 @@ export async function handleTelegramOperationsMessage(input: {
     if (user.role !== "admin" && user.role !== "owner") { await reply(chatId, textFor(locale, "غير مصرح لك بهذه العملية.", "Not authorised.")); return; }
     try {
       const summary = await getAdminFinanceSummary(identity.userId);
-      await reply(chatId, textFor(locale, `إحصاءاتك:\nطلبات مكتملة: ${summary.completedOrders}\nالعمولة: ${summary.commissionDzd} DZD\nالمدفوع: ${summary.paidDzd} DZD\nالتعديلات: ${summary.adjustmentsDzd} DZD\nالرصيد المتبقي: ${summary.remainingDzd} DZD\nتاريخ الدفع القادم: ${summary.nextPaymentDate}`, `Your statistics:\nCompleted orders: ${summary.completedOrders}\nCommission: ${summary.commissionDzd} DZD\nPaid: ${summary.paidDzd} DZD\nAdjustments: ${summary.adjustmentsDzd} DZD\nRemaining credit: ${summary.remainingDzd} DZD\nNext payment: ${summary.nextPaymentDate}`));
+      await reply(chatId, textFor(locale, `📊 إحصاءاتك\nطلبات مكتملة: ${summary.completedOrders}\nالعمولة: ${summary.commissionDzd} DZD\nالمدفوع: ${summary.paidDzd} DZD\nالتعديلات: ${summary.adjustmentsDzd} DZD\nالرصيد المتبقي: ${summary.remainingDzd} DZD\nتاريخ الدفع القادم: ${summary.nextPaymentDate}`, `📊 Your statistics\nCompleted orders: ${summary.completedOrders}\nCommission: ${summary.commissionDzd} DZD\nPaid: ${summary.paidDzd} DZD\nAdjustments: ${summary.adjustmentsDzd} DZD\nRemaining credit: ${summary.remainingDzd} DZD\nNext payment: ${summary.nextPaymentDate}`));
     } catch { await reply(chatId, textFor(locale, "تعذر عرض الإحصاءات حالياً.", "Statistics are unavailable right now.")); }
-    return;
-  }
-
-  if (action === "/sync_finance") {
-    if (user.role !== "owner") { await reply(chatId, textFor(locale, "غير مصرح لك بهذه العملية.", "Not authorised.")); return; }
-    try {
-      const result = await syncFinanceReporting();
-      await audit(identity.userId, "setting", "finance-reporting", "finance_sheet_synchronized", { sales: String(result.sales), tabs: String(result.tabs) });
-      await reply(chatId, textFor(locale, `تمت مزامنة التقارير المالية: ${result.sales} مبيعات.`, `Finance reports synchronized: ${result.sales} sales.`));
-    } catch { await reply(chatId, textFor(locale, "تعذرت مزامنة التقارير المالية. راجع وصول جدول Google ومعرّفه.", "Finance reporting sync failed. Check the Google sheet ID and editor access.")); }
     return;
   }
 

@@ -2,6 +2,8 @@ import { strict as assert } from "node:assert";
 import { telegramCallbackDataSchema } from "../lib/validation";
 
 assert.equal(telegramCallbackDataSchema.safeParse(["own", "admins"]).success, true);
+assert.equal(telegramCallbackDataSchema.safeParse(["own", "upload"]).success, true);
+assert.equal(telegramCallbackDataSchema.safeParse(["own", "stock"]).success, true);
 assert.equal(telegramCallbackDataSchema.safeParse(["apr", "8915644277"]).success, true);
 assert.equal(telegramCallbackDataSchema.safeParse(["adm", "8915644277", "adjust"]).success, true);
 assert.equal(telegramCallbackDataSchema.safeParse(["adj", "8915644277", "m50"]).success, true);
