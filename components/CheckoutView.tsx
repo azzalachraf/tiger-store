@@ -66,6 +66,12 @@ export function CheckoutView({ products, directProductSlug, directOption, settin
   const instructions = paymentMethod === "BaridiMob" ? `RIP: ${settings.baridiMobRip}` : paymentMethod === "Binance" ? settings.ccpDetails : paymentMethod === "RedotPay" ? settings.redotPayDetails : (ar ? "اخترت Flexy. أرفق وصل الدفع بعد إتمامه." : "Flexy selected. Attach your receipt after payment.");
   const lines = items.map(({ slug, optionId, quantity }) => ({ slug, optionId, quantity }));
 
+  useEffect(() => {
+    if (step !== "complete" || !orderCode || !settings.instagramUrl) return;
+    const timer = window.setTimeout(() => window.location.assign(settings.instagramUrl), 2500);
+    return () => window.clearTimeout(timer);
+  }, [orderCode, settings.instagramUrl, step]);
+
   function progress(event: FormEvent<HTMLFormElement>) { event.preventDefault(); setError(""); if (step === "details") setStep("payment"); else if (step === "payment") setStep("receipt"); }
   async function sendReceipt() { if (!receipt) { setError(copy.required); return; } if (name.trim().length < 2 || phone.trim().length < 6) { setStep("details"); setError(ar ? "أدخل الاسم ورقم الهاتف الصحيح أولاً." : "Enter your name and a valid phone number first."); return; } setSaving(true); setError(""); try { const form = new FormData(); form.set("customerName", name); form.set("phone", phone); form.set("notes", notes); form.set("paymentMethod", paymentMethod); form.set("lines", JSON.stringify(lines)); form.set("receipt", receipt); const result = await submitReceiptOrderAction(form); if (!result.ok) { setStep("details"); setError(result.code === "invalid_phone" ? (ar ? "أدخل رقم هاتف جزائري صحيح، مثلاً 0550 123 456 أو +213 550 123 456." : "Enter a valid Algerian mobile number, for example 0550 123 456 or +213 550 123 456.") : (ar ? "تعذّر حفظ طلبك. راجع معلوماتك ووصل الدفع ثم أعد المحاولة." : "We could not save your order. Check your information and receipt, then try again.")); return; } setOrderCode(result.order.id); if (!lockedProductLink) { writeCart([]); setItems([]); } setStep("complete"); } catch { setError(ar ? "تعذّر إرسال الطلب. أعد المحاولة." : "Unable to save your order."); } finally { setSaving(false); } }
 
