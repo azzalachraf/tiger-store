@@ -56,7 +56,6 @@ function formatOrderMessage(order: AdminOrder) {
     "<b>Products:</b>",
     formatOrderItems(order),
     "",
-    order.receiptPath ? "<b>Receipt:</b> available in the secure admin panel" : "<b>Receipt:</b> not attached",
     notes ? `<b>Notes:</b> ${escapeTelegramHtml(notes)}` : "",
     `<b>Order time:</b> ${formatOrderTime(order.createdAt)}`,
   ]

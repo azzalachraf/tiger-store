@@ -17,7 +17,7 @@ export function readStoredUtm(): Record<string, string> {
 }
 
 /** Get or create a session ID. */
-function getSessionId(): string {
+export function getTrackingSessionId(): string {
   if (typeof window === "undefined") return "";
   let sid = sessionStorage.getItem(SESSION_KEY);
   if (!sid) {
@@ -64,7 +64,7 @@ export function PageTracker() {
     if (pathname.startsWith("/admin")) return;
 
     const utm = readStoredUtm();
-    const sessionId = getSessionId();
+    const sessionId = getTrackingSessionId();
 
     fetch("/api/track", {
       method: "POST",

@@ -53,6 +53,34 @@ export async function countEventsByType(
   return counts;
 }
 
+export type TrafficOverview = {
+  visitors: number;
+  conversions: number;
+  conversionRate: number;
+};
+
+/** Counts unique public browser sessions and successful checkout submissions. */
+export async function getTrafficOverview(): Promise<TrafficOverview> {
+  const { data, error } = await supabaseService
+    .from("page_events")
+    .select("id, event_type, session_id")
+    .in("event_type", ["page_view", "purchase_completed"]);
+
+  if (error || !data) return { visitors: 0, conversions: 0, conversionRate: 0 };
+
+  const visitorSessions = new Set<string>();
+  const conversionSessions = new Set<string>();
+  for (const row of data as { id: string; event_type: string; session_id: string | null }[]) {
+    const sessionKey = row.session_id?.trim() || `legacy:${row.id}`;
+    if (row.event_type === "page_view") visitorSessions.add(sessionKey);
+    if (row.event_type === "purchase_completed") conversionSessions.add(sessionKey);
+  }
+
+  const visitors = visitorSessions.size;
+  const conversions = conversionSessions.size;
+  return { visitors, conversions, conversionRate: visitors > 0 ? Number(((conversions / visitors) * 100).toFixed(1)) : 0 };
+}
+
 /** Get funnel data from page events. */
 export async function getFunnelData(
   startDate?: string,
