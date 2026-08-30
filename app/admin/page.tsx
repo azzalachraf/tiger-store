@@ -22,10 +22,10 @@ export default async function AdminDashboardPage() {
   return (
     <AdminShell title="نظرة عامة" description="طلباتك، المنتجات المتوفرة، والأقسام الحقيقية في مكان واحد.">
       <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-        <Summary href="/admin/orders" label="طلبات بانتظار المراجعة" value={pending} icon={<AlertCircle className="h-5 w-5" />} tone="amber" />
-        <Summary href="/admin/orders" label="طلبات مؤكدة أو مسلّمة" value={fulfilled} icon={<CheckCircle2 className="h-5 w-5" />} tone="green" />
-        <Summary href="/admin/products" label="منتجات متوفرة" value={availableProducts} icon={<Package className="h-5 w-5" />} tone="orange" />
-        <Summary href="/admin/products" label="أقسام الكتالوج" value={categories.length} icon={<ShoppingBag className="h-5 w-5" />} tone="orange" />
+        <Summary href="/admin/orders" label="⏳ طلبات بانتظار المراجعة" value={pending} icon={<AlertCircle className="h-5 w-5" />} tone="amber" />
+        <Summary href="/admin/orders" label="✅ طلبات مؤكدة أو مسلّمة" value={fulfilled} icon={<CheckCircle2 className="h-5 w-5" />} tone="green" />
+        <Summary href="/admin/products" label="📦 منتجات متوفرة" value={availableProducts} icon={<Package className="h-5 w-5" />} tone="orange" />
+        <Summary href="/admin/products" label="🗂️ أقسام الكتالوج" value={categories.length} icon={<ShoppingBag className="h-5 w-5" />} tone="orange" />
       </section>
 
       <section className="mt-5 rounded-md border border-white/10 bg-white/[0.045] p-5 shadow-[0_18px_55px_rgba(0,0,0,0.22)]">

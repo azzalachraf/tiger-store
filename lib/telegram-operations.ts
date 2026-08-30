@@ -6,7 +6,7 @@ import { getSupabaseServiceClient } from "@/lib/supabase";
 import type { TelegramInterfaceLocale, TelegramRole } from "@/lib/types";
 import { advertisingUsdSchema, productSchema, telegramCallbackDataSchema } from "@/lib/validation";
 import { cardLabel, cardsForPlan, snapchatCardTypes, type SnapchatCardType, type SnapchatPlanMonths } from "@/lib/snapchat-cards";
-import { claimSnapchatCard, clearTelegramRedeemCardUploadSession, finishSnapchatOperation, getTelegramRedeemCardUploadSession, startTelegramRedeemCardUploadSession, syncRedeemInventory, uploadRedeemCardsFromTelegram } from "@/lib/snapchat-operations";
+import { claimSnapchatCard, clearTelegramRedeemCardUploadSession, finishSnapchatOperation, getTelegramRedeemCardUploadSession, returnReservedRedeemCardToStock, startTelegramRedeemCardUploadSession, syncRedeemInventory, uploadRedeemCardsFromTelegram } from "@/lib/snapchat-operations";
 import { parseTelegramRedeemCardLines } from "@/lib/telegram-card-upload";
 import { completeSnapchatSale } from "@/lib/telegram-warranty";
 import { absoluteUrl } from "@/lib/seo";
@@ -143,7 +143,6 @@ async function registerIdentity(identity: TelegramIdentity) {
   if (existing) {
     const update = {
       username: identity.username ?? null,
-      first_name: identity.firstName ?? null,
       last_seen_at: new Date().toISOString(),
       ...(owner && existing.role !== "owner" ? { role: "owner" as const, approved_at: new Date().toISOString(), approved_by_telegram_user_id: identity.userId } : {}),
     };
@@ -583,6 +582,20 @@ export async function handleTelegramOperationsMessage(input: {
       await notifyLowStock(result.counts, identity.userId);
     } catch {
       await reply(chatId, textFor(locale, "تعذرت مزامنة المخزون. راجع إعدادات الوصول إلى الجدول.", "Inventory synchronization failed. Check the sheet access settings."));
+    }
+    return;
+  }
+
+  if (action === "/return_card") {
+    if (!ownerOnly(user)) { await reply(chatId, textFor(locale, "غير مصرح لك بهذه العملية.", "Not authorised.")); return; }
+    const redeemCode = (input.text ?? "").replace(/^\/return_card\s*/i, "").trim();
+    if (!redeemCode) { await reply(chatId, textFor(locale, "استعمل: /return_card ثم الصق رابط أو كود البطاقة المحجوزة.", "Use /return_card followed by the reserved card link or code.")); return; }
+    try {
+      const restored = await returnReservedRedeemCardToStock(redeemCode);
+      await audit(identity.userId, "inventory", restored.cardId, "reserved_redeem_card_returned", { cardType: restored.cardType, operationId: restored.operationId });
+      await reply(chatId, textFor(locale, "✅ أُلغيت العملية وأُعيدت البطاقة المحجوزة للمخزون.", "✅ The operation was cancelled and the reserved card was returned to stock."));
+    } catch {
+      await reply(chatId, textFor(locale, "لا يمكن إرجاع هذه البطاقة. يجب أن تكون محجوزة في عملية نشطة؛ البطاقات المكتملة لا تُعاد للمخزون.", "This card cannot be returned. It must be reserved in an active operation; completed cards are not returned to stock."));
     }
     return;
   }

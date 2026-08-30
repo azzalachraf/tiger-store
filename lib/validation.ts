@@ -5,6 +5,7 @@ export const telegramInterfaceLocaleSchema = z.enum(["ar", "en"]);
 export const telegramRoleSchema = z.enum(["pending", "admin", "owner"]);
 export const telegramRegistrationIdSchema = z.string().trim().regex(/^TG-[A-Z0-9]{8}$/);
 export const telegramUserIdSchema = z.string().trim().regex(/^[1-9][0-9]{0,18}$/);
+export const telegramDisplayNameSchema = z.string().trim().min(2).max(80);
 export const telegramWebhookUpdateSchema = z.object({
   update_id: z.number().int().nonnegative(),
   message: z.object({

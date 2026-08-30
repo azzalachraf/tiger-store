@@ -59,18 +59,19 @@ export default async function AdminOrdersPage({ searchParams }: { searchParams: 
         <p className="mb-5 rounded-xl border border-amber-400/25 bg-amber-400/10 px-4 py-3 text-sm font-bold text-amber-100">That order no longer exists.</p>
       ) : null}
       <div className="mb-5 grid gap-3 sm:grid-cols-3">
-        <Metric icon={<ShoppingBag className="h-5 w-5" />} label="Total orders" value={orders.length} />
-        <Metric icon={<Clock3 className="h-5 w-5" />} label="Pending" value={pending} />
-        <Metric icon={<CheckCircle2 className="h-5 w-5" />} label="Completed" value={completed} />
+        <Metric icon={<ShoppingBag className="h-5 w-5" />} label="📦 Total orders" value={orders.length} />
+        <Metric icon={<Clock3 className="h-5 w-5" />} label="⏳ Pending" value={pending} />
+        <Metric icon={<CheckCircle2 className="h-5 w-5" />} label="✅ Completed" value={completed} />
       </div>
 
-      <GoogleSheetsOrderCopy rows={sheetsRows} />
+      <details className="mb-5 rounded-2xl border border-white/10 bg-white/[0.045] p-4">
+        <summary className="cursor-pointer list-none text-sm font-black text-white"><span className="flex items-center gap-2">📋 Google Sheets copy table <span className="text-xs font-semibold text-white/45">Optional export</span></span></summary>
+        <div className="mt-4"><GoogleSheetsOrderCopy rows={sheetsRows} /></div>
+      </details>
 
-      <section className="mb-6 rounded-md border border-white/10 bg-white/[0.045] p-5 shadow-[0_18px_55px_rgba(0,0,0,0.26)]">
-        <div className="mb-4">
-          <h2 className="text-lg font-black text-white">Add Manual Sale</h2>
-          <p className="text-sm font-semibold text-white/55">Use this for WhatsApp or offline sales that should appear in analytics.</p>
-        </div>
+      <details className="mb-6 rounded-2xl border border-white/10 bg-white/[0.045] p-5 shadow-[0_18px_55px_rgba(0,0,0,0.26)]">
+        <summary className="cursor-pointer list-none text-lg font-black text-white"><span className="flex items-center gap-2">➕ Add manual sale</span></summary>
+        <p className="mt-3 text-sm font-semibold text-white/55">Use this for message or offline sales that should appear in analytics.</p>
         <form action={addManualOrderAction} className="grid gap-3 sm:grid-cols-2 xl:grid-cols-[1fr_160px_160px_160px_auto] xl:items-end">
           <label className="grid gap-1 text-sm font-bold text-white">
             Description
@@ -99,7 +100,7 @@ export default async function AdminOrdersPage({ searchParams }: { searchParams: 
             <Plus className="h-4 w-4" /> Add Sale
           </button>
         </form>
-      </section>
+      </details>
 
       <details className="mb-6 rounded-md border border-tiger-ember/25 bg-white/[0.045] p-5 shadow-[0_18px_55px_rgba(0,0,0,0.2)]">
         <summary className="cursor-pointer list-none text-lg font-black text-white"><span className="flex items-center gap-2"><ShieldCheck className="h-5 w-5 text-tiger-ember" /> Generate product payment link</span></summary>

@@ -91,3 +91,42 @@ export async function finishSnapchatOperation(operationId: string, adminTelegram
   const { data, error } = await getSupabaseServiceClient().rpc("finish_snapchat_operation", { p_operation_id: operationId, p_admin_telegram_user_id: adminTelegramUserId, p_outcome: outcome });
   if (error || data !== true) throw new Error("This operation is unavailable.");
 }
+
+/** Owner-only recovery for a card that is still reserved in an active operation.
+ * The code itself is never returned or logged. Completed cards are deliberately
+ * excluded because a code that may have been redeemed must never be reissued. */
+export async function returnReservedRedeemCardToStock(code: string) {
+  const client = getSupabaseServiceClient();
+  const { data: card, error: cardError } = await client
+    .from("redeem_cards")
+    .select("id, card_type, status")
+    .eq("code_hash", redeemCodeHash(code))
+    .maybeSingle();
+  if (cardError || !card || card.status !== "reserved") throw new Error("Reserved card unavailable.");
+
+  const { data: operation, error: operationError } = await client
+    .from("snapchat_operations")
+    .select("id")
+    .eq("redeem_card_id", card.id)
+    .eq("status", "active")
+    .maybeSingle();
+  if (operationError || !operation) throw new Error("Active operation unavailable.");
+
+  const { error: operationUpdateError } = await client
+    .from("snapchat_operations")
+    .update({ status: "cancelled", cancelled_at: new Date().toISOString() })
+    .eq("id", operation.id)
+    .eq("status", "active");
+  if (operationUpdateError) throw new Error("Operation could not be cancelled.");
+
+  const { data: restored, error: restoreError } = await client
+    .from("redeem_cards")
+    .update({ status: "available", reserved_at: null, consumed_at: null })
+    .eq("id", card.id)
+    .eq("status", "reserved")
+    .select("id")
+    .maybeSingle();
+  if (restoreError || !restored) throw new Error("Card could not be restored.");
+
+  return { cardId: String(card.id), cardType: card.card_type as SnapchatCardType, operationId: String(operation.id) };
+}

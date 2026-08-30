@@ -14,7 +14,7 @@ export default async function AdminFinancePage() {
   return <AdminShell title="المالية والمدفوعات" description="Supabase هو مصدر الأرقام. Google Sheets يستقبل تقارير مشتقة فقط.">
     <div className="grid gap-5">
       <form action={saveFinanceSettingsAction} className="grid gap-4 rounded-2xl border border-white/10 bg-white/[0.045] p-5">
-        <h2 className="text-xl font-black">إعدادات Snapchat المالية</h2>
+        <h2 className="text-xl font-black">⚙️ إعدادات Snapchat المالية</h2>
         <div className="grid gap-3 sm:grid-cols-3"><Field label="USD/DZD" name="usdDzdRate" value={settings.usdDzdRate}/><Field label="يوم الدفع الشهري" name="paymentDay" value={settings.paymentDay}/><Field label="Google finance sheet ID" name="reportingSheetId" value={settings.reportingSheetId}/></div>
         <div className="grid gap-3 sm:grid-cols-2">{([1, 2, 3, 6, 12] as const).map((month) => <div key={month} className="grid grid-cols-2 gap-2"><Field label={`${month} months price DZD`} name={`price-${month}`} value={settings.plans[month].priceDzd}/><Field label={`${month} months commission DZD`} name={`commission-${month}`} value={settings.plans[month].commissionDzd}/></div>)}</div>
         <div className="grid gap-3 sm:grid-cols-2">{snapchatCardTypes.map((card) => <Field key={card} label={`${cardLabel(card, "en")} USD cents`} name={`cost-${card}`} value={settings.cardCostsUsdCents[card]}/>)}</div>
@@ -24,8 +24,8 @@ export default async function AdminFinancePage() {
         {reports.admins.map((admin, index) => {
           const summary = summaries[index];
           return <article key={summary.adminId} className="rounded-2xl border border-white/10 bg-white/[0.045] p-5">
-            <div className="flex flex-wrap justify-between gap-2"><h2 className="font-black">{admin.first_name ?? admin.username ?? `Admin ${summary.adminId}`}</h2><p className="font-black text-tiger-gold">المتبقي: {summary.remainingDzd} DZD</p></div>
-            <p className="mt-2 text-sm text-white/60">طلبات مكتملة: {summary.completedOrders} · عمولة: {summary.commissionDzd} · مدفوع: {summary.paidDzd} · تعديلات: {summary.adjustmentsDzd} · الدفع القادم: {summary.nextPaymentDate}</p>
+            <div className="flex flex-wrap justify-between gap-2"><h2 className="font-black">👤 {admin.first_name ?? admin.username ?? `Admin ${summary.adminId}`}</h2><p className="font-black text-tiger-gold">🧾 المتبقي: {summary.remainingDzd} DZD</p></div>
+            <p className="mt-2 text-sm text-white/60">📦 طلبات مكتملة: {summary.completedOrders} · 💰 عمولة: {summary.commissionDzd} · 💸 مدفوع: {summary.paidDzd} · ➕➖ تعديلات: {summary.adjustmentsDzd} · 📅 الدفع القادم: {summary.nextPaymentDate}</p>
             <div className="mt-4 grid gap-3 sm:grid-cols-3">
               <form action={saveAdminPaymentScheduleAction} className="grid gap-2"><input type="hidden" name="adminId" value={summary.adminId}/><label className="text-xs text-white/60">بداية العمل<input required name="workStartedAt" type="date" defaultValue={admin.work_started_at ?? today} className="mt-1 min-h-11 w-full rounded-xl bg-black px-3"/></label><label className="text-xs text-white/60">موعد الدفع<input required name="nextPaymentDate" type="date" defaultValue={admin.next_payment_date ?? summary.nextPaymentDate} className="mt-1 min-h-11 w-full rounded-xl bg-black px-3"/></label><button className="min-h-11 rounded-xl border border-white/20">حفظ الموعد</button></form>
               <form action={addAdminAdjustmentAction} className="grid gap-2"><input type="hidden" name="adminId" value={summary.adminId}/><input required name="amountDzd" type="number" placeholder="+ / - DZD" className="min-h-11 rounded-xl bg-black px-3"/><input required minLength={2} name="reason" placeholder="Reason" className="min-h-11 rounded-xl bg-black px-3"/><button className="min-h-11 rounded-xl border border-white/20">إضافة/خصم</button></form>
