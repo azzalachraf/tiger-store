@@ -64,16 +64,16 @@ function menuKeyboard(locale: TelegramInterfaceLocale, role: TelegramRole): Repl
   const labels = locale === "ar"
     ? {
         snapchat: "🛒 بيع Snapchat", stats: "📊 إحصاءاتي", owner: "👑 لوحة المالك", profit: "💰 صافي الربح",
-        cards: "⬆️ رفع البطاقات", ads: "📣 الإعلانات", products: "🛍 المنتجات",
+        cards: "⬆️ رفع البطاقات", products: "🛍 المنتجات",
         approval: "👥 إدارة المشرفين", arabic: "🌐 العربية", english: "🌐 English",
       }
     : {
         snapchat: "🛒 Snapchat sale", stats: "📊 My stats", owner: "👑 Owner controls", profit: "💰 Net profit",
-        cards: "⬆️ Upload cards", ads: "📣 Advertising", products: "🛍 Products",
+        cards: "⬆️ Upload cards", products: "🛍 Products",
         approval: "👥 Manage admins", arabic: "🌐 العربية", english: "🌐 English",
       };
   const rows = [[labels.snapchat, labels.stats]];
-  if (role === "owner") rows.push([labels.owner, labels.profit], [labels.cards, labels.ads], [labels.products, labels.approval]);
+  if (role === "owner") rows.push([labels.owner, labels.profit], [labels.cards, labels.products], [labels.approval]);
   rows.push([labels.arabic, labels.english]);
   return { keyboard: rows.map((row) => row.map((text) => ({ text }))), resize_keyboard: true, is_persistent: true };
 }
@@ -86,7 +86,6 @@ function routeMenuButton(value: string | undefined) {
     "👑 لوحة المالك": "/owner", "👑 Owner controls": "/owner",
     "💰 صافي الربح": "/net_profit today", "💰 Net profit": "/net_profit today",
     "⬆️ رفع البطاقات": "/upload_cards", "⬆️ Upload cards": "/upload_cards",
-    "📣 الإعلانات": "/ad_help", "📣 Advertising": "/ad_help",
     "🛍 المنتجات": "/product_help", "🛍 Products": "/product_help",
     "👥 إدارة المشرفين": "/owner", "👥 Manage admins": "/owner",
     "👥 اعتماد مشرف": "/approve_help", "👥 Approve admin": "/approve_help",
@@ -655,14 +654,6 @@ export async function handleTelegramOperationsMessage(input: {
   if (action === "/approve_help") {
     if (!ownerOnly(user)) { await reply(chatId, textFor(locale, "غير مصرح لك بهذه العملية.", "Not authorised.")); return; }
     await sendPendingPicker(chatId, locale);
-    return;
-  }
-
-  if (action === "/ad_help") {
-    if (!ownerOnly(user)) { await reply(chatId, textFor(locale, "غير مصرح لك بهذه العملية.", "Not authorised.")); return; }
-    await reply(chatId, textFor(locale,
-      "الإعلانات: أضف إنفاقاً هكذا:\n/ad_add 2026-08-29|instagram|12.50|اسم الحملة|ملاحظة\nلعرض يوم محدد: /ad_list 2026-08-29",
-      "Advertising: add spend with:\n/ad_add 2026-08-29|instagram|12.50|campaign name|note\nTo view a day: /ad_list 2026-08-29"), menuKeyboard(locale, user.role));
     return;
   }
 
