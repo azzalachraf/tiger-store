@@ -5,6 +5,7 @@ import { decryptRedeemCode, encryptRedeemCode, redeemCodeHash, snapchatCardTypes
 import { readRedeemCardsSheet } from "@/lib/google-redeem-sheet";
 
 type ClaimRow = { operation_id: string; card_id: string; code_ciphertext: string };
+type StoredRedeemCardRow = { id: string; code_ciphertext: string; status: "available" | "reserved" | "consumed" | "disabled"; source_available: boolean };
 
 const uploadSessionLifetimeMs = 30 * 60 * 1000;
 
@@ -125,6 +126,66 @@ export async function clearAvailableRedeemCards(cardType: SnapchatCardType) {
     .select("id");
   if (error) throw new Error("Available card stock could not be cleared.");
   return { deleted: data?.length ?? 0 };
+}
+
+/** Cards consumed through a completed Snapchat operation are never restored.
+ * This only reverses a manual "mark used" action for a card that has never
+ * been assigned to a completed operation. */
+export async function restoreManuallyUsedRedeemCard(cardId: string) {
+  const client = getSupabaseServiceClient();
+  const { data: card, error: cardError } = await client
+    .from("redeem_cards")
+    .select("id, status, source_available")
+    .eq("id", cardId)
+    .maybeSingle();
+  if (cardError || !card || card.status !== "consumed" || !card.source_available) throw new Error("This card cannot be restored.");
+
+  const { data: completedOperation, error: operationError } = await client
+    .from("snapchat_operations")
+    .select("id")
+    .eq("redeem_card_id", cardId)
+    .eq("status", "completed")
+    .maybeSingle();
+  if (operationError || completedOperation) throw new Error("Completed operation cards cannot be restored.");
+
+  const { data: restored, error: restoreError } = await client
+    .from("redeem_cards")
+    .update({ status: "available", consumed_at: null })
+    .eq("id", cardId)
+    .eq("status", "consumed")
+    .select("id")
+    .maybeSingle();
+  if (restoreError || !restored) throw new Error("This card could not be restored.");
+}
+
+/** Private owner/admin inventory view. Callers must protect the result: it
+ * decrypts codes only after application-level authentication. */
+export async function getPrivateRedeemCards(cardType: SnapchatCardType) {
+  const client = getSupabaseServiceClient();
+  const { data, error } = await client
+    .from("redeem_cards")
+    .select("id, code_ciphertext, status, source_available")
+    .eq("card_type", cardType)
+    .order("created_at", { ascending: false });
+  if (error) throw new Error("Card stock could not be read.");
+  const rows = (data ?? []) as StoredRedeemCardRow[];
+  const ids = rows.filter((row) => row.status === "consumed").map((row) => row.id);
+  const completedIds = new Set<string>();
+  if (ids.length) {
+    const { data: operations, error: operationError } = await client
+      .from("snapchat_operations")
+      .select("redeem_card_id")
+      .in("redeem_card_id", ids)
+      .eq("status", "completed");
+    if (operationError) throw new Error("Card history could not be read.");
+    for (const operation of operations ?? []) completedIds.add(String(operation.redeem_card_id));
+  }
+  return rows.map((row) => ({
+    id: row.id,
+    code: decryptRedeemCode(row.code_ciphertext),
+    status: row.status,
+    canRestore: row.status === "consumed" && row.source_available && !completedIds.has(row.id),
+  }));
 }
 
 export async function claimSnapchatCard(adminTelegramUserId: string, planMonths: SnapchatPlanMonths, cardType: SnapchatCardType) {

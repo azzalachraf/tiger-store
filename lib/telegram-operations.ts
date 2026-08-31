@@ -6,7 +6,7 @@ import { getSupabaseServiceClient } from "@/lib/supabase";
 import type { TelegramInterfaceLocale, TelegramRole } from "@/lib/types";
 import { advertisingUsdSchema, productSchema, telegramCallbackDataSchema } from "@/lib/validation";
 import { cardLabel, cardsForPlan, snapchatCardTypes, type SnapchatCardType, type SnapchatPlanMonths } from "@/lib/snapchat-cards";
-import { claimSnapchatCard, clearAvailableRedeemCards, clearTelegramRedeemCardUploadSession, finishSnapchatOperation, getTelegramRedeemCardUploadSession, returnReservedRedeemCardToStock, startTelegramRedeemCardUploadSession, syncRedeemInventory, uploadRedeemCardsFromTelegram } from "@/lib/snapchat-operations";
+import { claimSnapchatCard, clearAvailableRedeemCards, clearTelegramRedeemCardUploadSession, finishSnapchatOperation, getPrivateRedeemCards, getTelegramRedeemCardUploadSession, restoreManuallyUsedRedeemCard, returnReservedRedeemCardToStock, startTelegramRedeemCardUploadSession, syncRedeemInventory, uploadRedeemCardsFromTelegram } from "@/lib/snapchat-operations";
 import { parseTelegramRedeemCardLines } from "@/lib/telegram-card-upload";
 import { completeSnapchatSale } from "@/lib/telegram-warranty";
 import { absoluteUrl } from "@/lib/seo";
@@ -276,11 +276,30 @@ async function sendCardStock(chatId: string, locale: TelegramInterfaceLocale, ca
   const counts = await getAvailableCardCounts();
   const stock = snapchatCardTypes.map((cardType) => `${cardLabel(cardType, locale)}: ${counts.get(cardType) ?? 0}`).join("\n");
   await reply(chatId, textFor(locale, `📦 مخزون البطاقات المتاح\n${stock}`, `📦 Available card inventory\n${stock}`), canClear ? {
-    inline_keyboard: snapchatCardTypes.map((cardType) => [{
-      text: textFor(locale, `🗑️ تنظيف ${cardLabel(cardType, locale)}`, `🗑️ Clear ${cardLabel(cardType, locale)}`),
-      callback_data: `cs|${cardType}`,
-    }]),
+    inline_keyboard: snapchatCardTypes.flatMap((cardType) => [[
+      { text: textFor(locale, `🗑️ تنظيف ${cardLabel(cardType, locale)}`, `🗑️ Clear ${cardLabel(cardType, locale)}`), callback_data: `cs|${cardType}` },
+      { text: textFor(locale, `👁️ عرض ${cardLabel(cardType, locale)}`, `👁️ View ${cardLabel(cardType, locale)}`), callback_data: `cv|${cardType}` },
+    ]]),
   } : undefined);
+}
+
+async function sendOwnerCardCodes(chatId: string, locale: TelegramInterfaceLocale, cardType: SnapchatCardType) {
+  const cards = await getPrivateRedeemCards(cardType);
+  if (!cards.length) { await reply(chatId, textFor(locale, "لا توجد بطاقات من هذا النوع.", "There are no cards of this type.")); return; }
+  const statusLabel = (status: "available" | "reserved" | "consumed" | "disabled") => status === "available" ? "🟢" : status === "reserved" ? "🟡" : status === "consumed" ? "🔴" : "⚪";
+  const messages: string[] = [];
+  let current = `👁️ ${cardLabel(cardType, locale)}\n`;
+  for (const card of cards) {
+    const line = `${statusLabel(card.status)} ${card.code}\n`;
+    if (current.length + line.length > 3500) { messages.push(current); current = `👁️ ${cardLabel(cardType, locale)}\n`; }
+    current += line;
+  }
+  if (current.trim()) messages.push(current);
+  for (const message of messages) await reply(chatId, message);
+  const restorable = cards.filter((card) => card.canRestore).slice(0, 20);
+  if (restorable.length) await reply(chatId, textFor(locale, "↩️ البطاقات المستعملة يدوياً فقط يمكن إرجاعها:", "↩️ Only manually used cards can be restored:"), {
+    inline_keyboard: restorable.map((card) => [{ text: `↩️ ${card.code.slice(-8)}`, callback_data: `ru|${card.id}` }]),
+  });
 }
 
 function websiteOrderLabel(order: Awaited<ReturnType<typeof getOrders>>[number]) {
@@ -475,6 +494,20 @@ export async function handleTelegramOperationsCallback(input: {
         `✅ Cleared ${result.deleted} available ${cardLabel(selected[1], locale)} card(s).`));
       await sendCardStock(String(input.chatId), locale, true);
     } catch { await reply(String(input.chatId), textFor(locale, "تعذر حذف البطاقات المتاحة.", "Available cards could not be cleared.")); }
+    return;
+  }
+  if (selected[0] === "cv") {
+    if (!ownerOnly(user)) { await reply(String(input.chatId), textFor(locale, "غير مصرح لك بهذه العملية.", "Not authorised.")); return; }
+    try { await sendOwnerCardCodes(String(input.chatId), locale, selected[1]); } catch { await reply(String(input.chatId), textFor(locale, "تعذر عرض البطاقات حالياً.", "Card codes are unavailable right now.")); }
+    return;
+  }
+  if (selected[0] === "ru") {
+    if (!ownerOnly(user)) { await reply(String(input.chatId), textFor(locale, "غير مصرح لك بهذه العملية.", "Not authorised.")); return; }
+    try {
+      await restoreManuallyUsedRedeemCard(selected[1]);
+      await audit(identity.userId, "inventory", selected[1], "manually_used_redeem_card_restored", {});
+      await reply(String(input.chatId), textFor(locale, "✅ أعيدت البطاقة اليدوية إلى المخزون المتاح.", "✅ The manually used card was restored to available stock."));
+    } catch { await reply(String(input.chatId), textFor(locale, "لا يمكن إرجاع هذه البطاقة؛ قد تكون مستخدمة في عملية مكتملة.", "This card cannot be restored; it may belong to a completed operation.")); }
     return;
   }
   if (selected[0] === "own") {

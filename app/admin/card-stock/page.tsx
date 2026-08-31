@@ -1,7 +1,8 @@
-import { CircleCheck, CircleDashed, CircleX, LockKeyhole, Trash2 } from "lucide-react";
+import { CircleCheck, CircleDashed, CircleX, RotateCcw, Trash2 } from "lucide-react";
 import { AdminShell } from "@/components/admin/AdminShell";
-import { addRedeemCardsAction, markRedeemCardUsedAction, removeRedeemCardAction } from "@/app/admin/card-stock/actions";
-import { cardLabel, snapchatCardTypes, type SnapchatCardType } from "@/lib/snapchat-cards";
+import { addRedeemCardsAction, markRedeemCardUsedAction, removeRedeemCardAction, restoreRedeemCardAction } from "@/app/admin/card-stock/actions";
+import { cardLabel, decryptRedeemCode, snapchatCardTypes, type SnapchatCardType } from "@/lib/snapchat-cards";
+import { requireAdmin } from "@/lib/admin-auth";
 import { getSupabaseServiceClient } from "@/lib/supabase";
 
 export const dynamic = "force-dynamic";
@@ -10,6 +11,7 @@ export const metadata = { title: "Card stock" };
 type RedeemCardRow = {
   id: string;
   card_type: SnapchatCardType;
+  code_ciphertext: string;
   status: "available" | "reserved" | "consumed" | "disabled";
   source_available: boolean;
   created_at: string;
@@ -27,12 +29,19 @@ function cardRef(id: string) {
 }
 
 export default async function CardStockPage() {
+  await requireAdmin();
   const { data, error } = await getSupabaseServiceClient()
     .from("redeem_cards")
-    .select("id, card_type, status, source_available, created_at")
+    .select("id, card_type, code_ciphertext, status, source_available, created_at")
     .order("created_at", { ascending: false });
   if (error) throw new Error("Card stock could not be loaded.");
   const cards = (data ?? []) as RedeemCardRow[];
+  const consumedIds = cards.filter((card) => card.status === "consumed").map((card) => card.id);
+  const { data: completedOperations, error: completedOperationsError } = consumedIds.length
+    ? await getSupabaseServiceClient().from("snapchat_operations").select("redeem_card_id").in("redeem_card_id", consumedIds).eq("status", "completed")
+    : { data: [], error: null };
+  if (completedOperationsError) throw new Error("Card history could not be loaded.");
+  const completedCardIds = new Set((completedOperations ?? []).map((operation) => String(operation.redeem_card_id)));
 
   return <AdminShell title="Card stock" description="Paste cards manually by type. Each entry is encrypted, then shared only with the assigned operator through Telegram.">
     <section className="grid gap-4 xl:grid-cols-2">
@@ -64,18 +73,20 @@ export default async function CardStockPage() {
           </form>
 
           <div className="p-4 sm:p-5">
-            <div className="mb-3 flex items-center gap-2 text-xs font-bold text-white/55"><LockKeyhole className="h-3.5 w-3.5 text-tiger-gold" /> Codes stay hidden here for safe assignment.</div>
+            <p className="mb-3 text-xs font-bold text-white/55">Private inventory view. Do not share these codes before you assign them.</p>
             <div className="max-h-80 space-y-2 overflow-y-auto pr-1">
               {entries.map((card) => {
                 const state = stateDetails[card.status];
                 const StateIcon = state.icon;
                 const mutable = card.status === "available" && card.source_available;
+                const canRestore = card.status === "consumed" && card.source_available && !completedCardIds.has(card.id);
                 return <div key={card.id} className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-white/10 bg-black/20 px-3 py-2.5">
-                  <span className="font-mono text-xs font-bold text-white/70">{cardRef(card.id)}</span>
+                  <div className="min-w-0"><p className="font-mono text-xs font-bold text-white/85 break-all">{decryptRedeemCode(card.code_ciphertext)}</p><p className="mt-1 font-mono text-[10px] text-white/35">{cardRef(card.id)}</p></div>
                   <div className="flex items-center gap-2">
                     <span className={`inline-flex items-center gap-1 rounded-full border px-2 py-1 text-[11px] font-black ${state.className}`}><StateIcon className="h-3.5 w-3.5" />{state.label}</span>
                     {mutable ? <form action={markRedeemCardUsedAction}><input type="hidden" name="cardId" value={card.id} /><button type="submit" className="min-h-9 rounded-lg border border-rose-400/35 px-2 text-[11px] font-black text-rose-200 hover:bg-rose-400/10">Mark used</button></form> : null}
                     {mutable ? <form action={removeRedeemCardAction}><input type="hidden" name="cardId" value={card.id} /><button type="submit" aria-label={`Remove ${cardRef(card.id)}`} className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-white/10 text-white/55 hover:border-rose-400/35 hover:text-rose-200"><Trash2 className="h-4 w-4" /></button></form> : null}
+                    {canRestore ? <form action={restoreRedeemCardAction}><input type="hidden" name="cardId" value={card.id} /><button type="submit" title="Restore manually used card" className="inline-flex min-h-9 items-center gap-1 rounded-lg border border-emerald-400/35 px-2 text-[11px] font-black text-emerald-200 hover:bg-emerald-400/10"><RotateCcw className="h-3.5 w-3.5" />Restore</button></form> : null}
                   </div>
                 </div>;
               })}

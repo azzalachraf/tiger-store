@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { requireAdminAction } from "@/lib/admin-auth";
-import { markAvailableRedeemCardUsed, removeAvailableRedeemCard, uploadRedeemCardsFromTelegram } from "@/lib/snapchat-operations";
+import { markAvailableRedeemCardUsed, removeAvailableRedeemCard, restoreManuallyUsedRedeemCard, uploadRedeemCardsFromTelegram } from "@/lib/snapchat-operations";
 import { parseTelegramRedeemCardLines } from "@/lib/telegram-card-upload";
 import { snapchatCardTypeSchema } from "@/lib/validation";
 
@@ -30,5 +30,11 @@ export async function markRedeemCardUsedAction(formData: FormData) {
 export async function removeRedeemCardAction(formData: FormData) {
   await requireAdminAction();
   await removeAvailableRedeemCard(cardIdSchema.parse(text(formData, "cardId")));
+  revalidatePath("/admin/card-stock");
+}
+
+export async function restoreRedeemCardAction(formData: FormData) {
+  await requireAdminAction();
+  await restoreManuallyUsedRedeemCard(cardIdSchema.parse(text(formData, "cardId")));
   revalidatePath("/admin/card-stock");
 }
