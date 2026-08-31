@@ -16,7 +16,7 @@ export default async function AdminFinancePage() {
       <form action={saveFinanceSettingsAction} className="grid gap-4 rounded-2xl border border-white/10 bg-white/[0.045] p-5">
         <h2 className="text-xl font-black">⚙️ إعدادات Snapchat المالية</h2>
         <div className="grid gap-3 sm:grid-cols-3"><Field label="USD/DZD" name="usdDzdRate" value={settings.usdDzdRate}/><Field label="يوم الدفع الشهري" name="paymentDay" value={settings.paymentDay}/><Field label="Google finance sheet ID" name="reportingSheetId" value={settings.reportingSheetId}/></div>
-        <div className="grid gap-3 sm:grid-cols-2">{([1, 2, 3, 6, 12] as const).map((month) => <div key={month} className="grid grid-cols-2 gap-2"><Field label={`${month} months price DZD`} name={`price-${month}`} value={settings.plans[month].priceDzd}/><Field label={`${month} months commission DZD`} name={`commission-${month}`} value={settings.plans[month].commissionDzd}/></div>)}</div>
+        <div className="grid gap-3 sm:grid-cols-2">{([1, 2, 3, 6, 12] as const).map((month) => <div key={month} className="grid grid-cols-2 gap-2"><Field label={`${month} months price DA`} name={`price-${month}`} value={settings.plans[month].priceDzd}/><Field label={`${month} months commission DA`} name={`commission-${month}`} value={100} readOnly/></div>)}</div>
         <div className="grid gap-3 sm:grid-cols-2">{snapchatCardTypes.map((card) => <Field key={card} label={`${cardLabel(card, "en")} USD cents`} name={`cost-${card}`} value={settings.cardCostsUsdCents[card]}/>)}</div>
         <button className="min-h-12 rounded-xl bg-tiger-ember font-black text-black">حفظ الإعدادات</button>
       </form>
@@ -44,4 +44,4 @@ export default async function AdminFinancePage() {
   </AdminShell>;
 }
 
-function Field({ label, name, value }: { label: string; name: string; value: string | number }) { return <label className="grid gap-1 text-sm font-bold text-white/75">{label}<input required name={name} defaultValue={value} className="min-h-11 rounded-xl bg-black px-3 text-white"/></label>; }
+function Field({ label, name, value, readOnly = false }: { label: string; name: string; value: string | number; readOnly?: boolean }) { return <label className="grid gap-1 text-sm font-bold text-white/75">{label}<input required name={name} defaultValue={value} readOnly={readOnly} className="min-h-11 rounded-xl bg-black px-3 text-white read-only:cursor-not-allowed read-only:opacity-70"/></label>; }

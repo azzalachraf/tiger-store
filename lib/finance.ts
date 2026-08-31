@@ -4,13 +4,16 @@ import { getSupabaseServiceClient } from "@/lib/supabase";
 import { snapchatCardTypes, type SnapchatCardType, type SnapchatPlanMonths } from "@/lib/snapchat-cards";
 import { getOrders } from "@/lib/admin-store";
 import { adminOrderSchema } from "@/lib/validation";
+import { calculateAdminCycleStatistics, type AdminCycleStatistics } from "@/lib/admin-cycle-statistics";
+
+export { calculateAdminCycleStatistics, type AdminCycleStatistics } from "@/lib/admin-cycle-statistics";
 
 export type PlanFinance = { priceDzd: number; commissionDzd: number };
 export type FinanceSettings = { usdDzdRate: number; plans: Record<SnapchatPlanMonths, PlanFinance>; cardCostsUsdCents: Record<SnapchatCardType, number>; paymentDay: number; reportingSheetId: string };
 
 export const financeDefaults: FinanceSettings = {
   usdDzdRate: 250,
-  plans: { 1: { priceDzd: 600, commissionDzd: 100 }, 2: { priceDzd: 800, commissionDzd: 100 }, 3: { priceDzd: 1600, commissionDzd: 100 }, 6: { priceDzd: 2000, commissionDzd: 100 }, 12: { priceDzd: 2300, commissionDzd: 150 } },
+  plans: { 1: { priceDzd: 600, commissionDzd: 100 }, 2: { priceDzd: 800, commissionDzd: 100 }, 3: { priceDzd: 1600, commissionDzd: 100 }, 6: { priceDzd: 2000, commissionDzd: 100 }, 12: { priceDzd: 2300, commissionDzd: 100 } },
   cardCostsUsdCents: { try_24: 54, try_48: 108, inr_100: 115, try_115: 260, inr_199: 215, try_229: 500, inr_298: 335 },
   paymentDay: 1,
   reportingSheetId: "",
@@ -42,7 +45,10 @@ export async function getFinanceSettings() {
 }
 
 export async function saveFinanceSettings(settings: FinanceSettings) {
-  const plans = Object.fromEntries((Object.entries(settings.plans) as [string, PlanFinance][]).map(([month, plan]) => [month, { price_dzd: plan.priceDzd, commission_dzd: plan.commissionDzd }]));
+  // Snapchat sales use one fixed 100 DA credit per completed order. Owner
+  // adjustments remain separate so historic sales never receive an accidental
+  // variable commission value from a form submission.
+  const plans = Object.fromEntries((Object.entries(settings.plans) as [string, PlanFinance][]).map(([month, plan]) => [month, { price_dzd: plan.priceDzd, commission_dzd: 100 }]));
   const { error } = await getSupabaseServiceClient().from("finance_settings").upsert({ id: "main", usd_dzd_rate: settings.usdDzdRate, snapchat_plans: plans, card_costs_usd_cents: settings.cardCostsUsdCents, payment_day: settings.paymentDay, reporting_sheet_id: settings.reportingSheetId });
   if (error) throw new Error("Finance settings could not be saved.");
 }
@@ -50,6 +56,16 @@ export async function saveFinanceSettings(settings: FinanceSettings) {
 export function cardCostDzd(settings: FinanceSettings, cardType: SnapchatCardType) { return Math.floor(settings.cardCostsUsdCents[cardType] * settings.usdDzdRate / 100); }
 
 export type AdminFinanceSummary = { adminId: string; completedOrders: number; commissionDzd: number; paidDzd: number; adjustmentsDzd: number; remainingDzd: number; nextPaymentDate: string };
+/** Sales and earned credit since the last full settlement, for the admin bot. */
+export async function getAdminCycleStatistics(adminId: string): Promise<AdminCycleStatistics> {
+  const client = getSupabaseServiceClient();
+  const [{ data: sales, error: salesError }, { data: settlements, error: settlementsError }] = await Promise.all([
+    client.from("finance_sales").select("commission_dzd, completed_at").eq("admin_telegram_user_id", adminId),
+    client.from("admin_payments").select("paid_at").eq("admin_telegram_user_id", adminId).eq("settles_cycle", true).order("paid_at", { ascending: false }).limit(1),
+  ]);
+  if (salesError || settlementsError) throw new Error("Admin cycle statistics could not be read.");
+  return calculateAdminCycleStatistics(sales ?? [], settlements?.[0]?.paid_at ?? null);
+}
 export async function getAdminFinanceSummary(adminId: string): Promise<AdminFinanceSummary> {
   const client = getSupabaseServiceClient();
   const [{ data: user, error: userError }, { data: sales, error: salesError }, { data: payments, error: paymentsError }, { data: adjustments, error: adjustmentsError }, settings] = await Promise.all([

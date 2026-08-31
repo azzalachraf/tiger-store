@@ -13,6 +13,7 @@
     "test:redeem-sheet": "tsx scripts/test-google-redeem-sheet.ts",
     "test:telegram-warranty-pdf": "tsx scripts/render-telegram-warranty-pdf.ts",
     "test:finance-reporting": "tsx scripts/test-finance-reporting.ts",
+    "test:admin-cycle-statistics": "tsx scripts/test-admin-cycle-statistics.ts",
     "test:owner-analytics": "tsx scripts/test-owner-analytics.ts",
     "test:traffic-range": "tsx scripts/test-traffic-range.ts",
     "test:telegram-card-upload": "tsx scripts/test-telegram-card-upload.ts",

@@ -10,7 +10,7 @@ import { claimSnapchatCard, clearTelegramRedeemCardUploadSession, finishSnapchat
 import { parseTelegramRedeemCardLines } from "@/lib/telegram-card-upload";
 import { completeSnapchatSale } from "@/lib/telegram-warranty";
 import { absoluteUrl } from "@/lib/seo";
-import { getAdminFinanceSummary } from "@/lib/finance";
+import { getAdminCycleStatistics, getAdminFinanceSummary } from "@/lib/finance";
 import { formatOwnerAnalytics, getOwnerAnalytics, rangeFor, type AnalyticsRange } from "@/lib/owner-analytics";
 import { deleteProduct, getProductById, saveProduct } from "@/lib/admin-store";
 
@@ -436,6 +436,7 @@ export async function handleTelegramOperationsCallback(input: {
         amount_dzd: amount,
         recorded_by_telegram_user_id: identity.userId,
         note: "Recorded by owner from Telegram.",
+        settles_cycle: selected[2] === "full",
       });
       if (error) throw error;
       await audit(identity.userId, "payment", adminId, "admin_payment_recorded", { amountDzd: String(amount) });
@@ -728,8 +729,10 @@ export async function handleTelegramOperationsMessage(input: {
   if (action === "/stats") {
     if (user.role !== "admin" && user.role !== "owner") { await reply(chatId, textFor(locale, "غير مصرح لك بهذه العملية.", "Not authorised.")); return; }
     try {
-      const summary = await getAdminFinanceSummary(identity.userId);
-      await reply(chatId, textFor(locale, `📊 إحصاءاتك\n📦 الطلبات المكتملة: ${summary.completedOrders}`, `📊 My statistics\n📦 Completed orders: ${summary.completedOrders}`));
+      const summary = await getAdminCycleStatistics(identity.userId);
+      await reply(chatId, textFor(locale,
+        `📊 إحصاءاتك\n📦 الطلبات المكتملة: ${summary.completedOrders}\n💳 الرصيد المكتسب: ${summary.creditDzd} DA`,
+        `📊 My statistics\n📦 Completed orders: ${summary.completedOrders}\n💳 Credit earned: ${summary.creditDzd} DA`));
     } catch { await reply(chatId, textFor(locale, "تعذر عرض الإحصاءات حالياً.", "Statistics are unavailable right now.")); }
     return;
   }
