@@ -59,7 +59,11 @@ export async function getTigerNewSheetRows(): Promise<TigerNewSheetRow[]> {
     const sale = salesByOrder.get(order.id);
     const amountPaid = flexyAmountPaid(order.paymentMethod, subscription, duration, order.total);
     const costPrice = sale ? Number(sale.card_cost_dzd) : 0;
-    const netProfit = amountPaid - costPrice - 100;
+    // Commission belongs to the individual completed sale. Salary-based
+    // administrators have a saved commission of 0, so their orders must not
+    // lose the old fixed 100 DA amount in Tiger New Sheet.
+    const commissionDzd = sale ? Number(sale.commission_dzd) : 0;
+    const netProfit = amountPaid - costPrice - commissionDzd;
     return {
       orderId: order.id,
       client: order.customerName || "Customer",
