@@ -484,7 +484,7 @@ export async function handleTelegramOperationsCallback(input: {
     try {
       const token = await createExternalWarrantyLink(selected[1]);
       await audit(identity.userId, "order", `external-snapchat-${selected[1]}`, "external_completed_order_warranty_link_created", { plan: String(selected[1]) });
-      await reply(String(input.chatId), textFor(locale, "✅ تم إنشاء طلب خارجي مكتمل. رابط الضمان في الرسالة التالية.", "✅ Completed external order created. The warranty link is in the next message."));
+      await reply(String(input.chatId), textFor(locale, "✅ رابط البيع الخارجي جاهز. بعد أن يكمل العميل نموذج الضمان، يُحفظ الطلب كطلب مُسلَّم. الرابط في الرسالة التالية.", "✅ The external-sale link is ready. Once the customer completes the warranty form, the delivered order is saved. The link is in the next message."));
       await reply(String(input.chatId), absoluteUrl(`/warranty/${token}`));
     } catch { await reply(String(input.chatId), textFor(locale, "تعذر إنشاء رابط الضمان لهذه الخطة.", "A warranty link could not be created for this plan.")); }
     return;
