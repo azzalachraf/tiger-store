@@ -3,6 +3,7 @@ import "server-only";
 import { getOrders } from "@/lib/admin-store";
 import { getFinanceReports } from "@/lib/finance";
 import { getSupabaseServiceClient } from "@/lib/supabase";
+import { getCompletedTelegramWarrantyOrderIds } from "@/lib/telegram-warranty";
 import type { TigerNewSheetRow } from "@/lib/tiger-new-sheet-types";
 export { tigerNewSheetHeaders, type TigerNewSheetRow } from "@/lib/tiger-new-sheet-types";
 
@@ -45,10 +46,14 @@ export async function getTigerNewSheetRows(): Promise<TigerNewSheetRow[]> {
   if (exportsError) throw new Error("Tiger New Sheet could not be loaded.");
 
   const exportIds = new Set((exports ?? []).map((entry) => String(entry.order_id)));
+  // Tiger New Sheet is for finished, customer-complete warranty orders only.
+  // This prevents placeholder Telegram orders from being copied into the
+  // owner's operational sheet before the customer has submitted the form.
+  const completedWarrantyOrderIds = await getCompletedTelegramWarrantyOrderIds([...exportIds]);
   const salesByOrder = new Map(finance.sales.map((sale) => [String(sale.order_id), sale]));
   const adminsById = new Map(finance.admins.map((admin) => [String(admin.telegram_user_id), admin]));
 
-  return orders.filter((order) => exportIds.has(order.id)).map((order) => {
+  return orders.filter((order) => exportIds.has(order.id) && completedWarrantyOrderIds.has(order.id)).map((order) => {
     const subscription = order.products.length ? order.products.map((item) => item.name).join(" + ") : "Manual order";
     const duration = order.products.length ? order.products.map((item) => item.option || item.duration).join(" + ") : "";
     const sale = salesByOrder.get(order.id);
@@ -73,10 +78,15 @@ export async function getTigerNewSheetRows(): Promise<TigerNewSheetRow[]> {
 
 export async function markTigerNewSheetRowsCopied(orderIds: string[]) {
   if (!orderIds.length) return [];
+  // Do not trust an order ID supplied by the browser. A row can be marked as
+  // copied only after its warranty form has been completed server-side.
+  const completedWarrantyOrderIds = await getCompletedTelegramWarrantyOrderIds(orderIds);
+  const eligibleOrderIds = orderIds.filter((orderId) => completedWarrantyOrderIds.has(orderId));
+  if (!eligibleOrderIds.length) return [];
   const { data, error } = await getSupabaseServiceClient()
     .from("order_sheet_exports")
     .update({ copied_at: new Date().toISOString() })
-    .in("order_id", orderIds)
+    .in("order_id", eligibleOrderIds)
     .is("copied_at", null)
     .select("order_id");
   if (error) throw new Error("Tiger New Sheet copy state could not be saved.");

@@ -7,6 +7,8 @@ export type GoogleSheetsOrderRow = {
   client: string;
   phone: string;
   email: string;
+  username: string;
+  activationPlatform: string;
   orderCode: string;
   subscription: string;
   duration: string;
@@ -23,12 +25,12 @@ export type GoogleSheetsOrderRow = {
   completed: boolean;
 };
 
-const headers = ["Client", "Phone", "Email", "Order Code", "Subscription", "Duration", "Quantity", "Cost Price", "Amount Paid", "Spend", "Cost", "Net Profit", "Payment Method", "Status", "Order Date", "Notes"];
+const headers = ["Client", "Phone", "Email", "Username", "Activation Platform", "Order Code", "Subscription", "Duration", "Quantity", "Cost Price", "Amount Paid", "Spend", "Cost", "Net Profit", "Payment Method", "Status", "Order Date", "Notes"];
 
 function cleanCell(value: string) { return value.replace(/[\t\r\n]+/g, " ").trim(); }
 
 function toTsv(rows: GoogleSheetsOrderRow[]) {
-  return [headers, ...rows.map((row) => [row.client, row.phone, row.email, row.orderCode, row.subscription, row.duration, row.quantity, row.costPrice, row.amountPaid, row.spend, row.cost, row.netProfit, row.paymentMethod, row.status, row.orderDate, row.notes].map(cleanCell))]
+  return [headers, ...rows.map((row) => [row.client, row.phone, row.email, row.username, row.activationPlatform, row.orderCode, row.subscription, row.duration, row.quantity, row.costPrice, row.amountPaid, row.spend, row.cost, row.netProfit, row.paymentMethod, row.status, row.orderDate, row.notes].map(cleanCell))]
     .map((row) => row.join("\t"))
     .join("\n");
 }
@@ -64,7 +66,7 @@ export function GoogleSheetsOrderCopy({ rows }: { rows: GoogleSheetsOrderRow[] }
       <div className="mt-4 overflow-x-auto rounded-xl border border-white/10">
         <table className="min-w-max text-left text-xs">
           <thead className="bg-black/35 text-white/65"><tr>{headers.map((header) => <th key={header} className="whitespace-nowrap px-3 py-3 font-black">{header}</th>)}</tr></thead>
-          <tbody>{rows.slice(0, 8).map((row) => <tr key={row.orderCode} className="border-t border-white/8 text-white/80">{[row.client, row.phone, row.email, row.orderCode, row.subscription, row.duration, row.quantity, row.costPrice, row.amountPaid, row.spend, row.cost, row.netProfit, row.paymentMethod, row.status, row.orderDate, row.notes].map((value, index) => <td key={`${row.orderCode}-${headers[index]}`} className="whitespace-nowrap px-3 py-3">{value || <span className="text-white/25">—</span>}</td>)}</tr>)}</tbody>
+          <tbody>{rows.slice(0, 8).map((row) => <tr key={row.orderCode} className="border-t border-white/8 text-white/80">{[row.client, row.phone, row.email, row.username, row.activationPlatform, row.orderCode, row.subscription, row.duration, row.quantity, row.costPrice, row.amountPaid, row.spend, row.cost, row.netProfit, row.paymentMethod, row.status, row.orderDate, row.notes].map((value, index) => <td key={`${row.orderCode}-${headers[index]}`} className="whitespace-nowrap px-3 py-3">{value || <span className="text-white/25">—</span>}</td>)}</tr>)}</tbody>
         </table>
       </div>
       {rows.length > 8 ? <p className="mt-3 text-xs font-semibold text-white/40">Previewing 8 of {rows.length} orders. Copy includes every selected row.</p> : null}

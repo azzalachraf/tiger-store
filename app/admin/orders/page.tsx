@@ -9,6 +9,7 @@ import { verifyWarrantyLink } from "@/lib/warranty";
 import { resolveProductCheckoutLinkTarget } from "@/lib/product-checkout-link";
 import { getFinanceReports } from "@/lib/finance";
 import { GoogleSheetsOrderCopy, type GoogleSheetsOrderRow } from "@/components/admin/GoogleSheetsOrderCopy";
+import { getCompletedTelegramWarrantyDetails } from "@/lib/telegram-warranty";
 
 export const dynamic = "force-dynamic";
 
@@ -23,6 +24,7 @@ export default async function AdminOrdersPage({ searchParams }: { searchParams: 
   const checkoutPayload = checkoutToken ? await resolveProductCheckoutLinkTarget(checkoutToken) : undefined;
   const checkoutLink = checkoutPayload && checkoutToken ? `https://tiger-storedz.com/p/${checkoutToken}` : undefined;
   const [orders, products, finance] = await Promise.all([getOrders(), getProducts(), getFinanceReports().catch(() => null)]);
+  const warrantyDetailsByOrderId = await getCompletedTelegramWarrantyDetails(orders.map((order) => order.id)).catch(() => new Map());
   const receiptLinks = await Promise.all(orders.map((order) => getReceiptSignedUrl(order.receiptPath)));
   const pending = orders.filter((order) => order.status === "pending").length;
   const completed = orders.filter((order) => order.status === "paid" || order.status === "delivered").length;
@@ -31,6 +33,8 @@ export default async function AdminOrdersPage({ searchParams }: { searchParams: 
     client: order.customerName,
     phone: order.phone,
     email: order.email,
+    username: warrantyDetailsByOrderId.get(order.id)?.username ?? "",
+    activationPlatform: warrantyDetailsByOrderId.get(order.id)?.activationPlatform ?? "",
     orderCode: order.id,
     subscription: order.products.length ? order.products.map((item) => item.name).join(" + ") : "Manual order",
     duration: order.products.length ? order.products.map((item) => item.option || item.duration).join(" + ") : "",

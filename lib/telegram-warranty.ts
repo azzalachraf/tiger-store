@@ -57,10 +57,41 @@ export async function getTelegramWarranty(token: string): Promise<TelegramWarran
   return findTelegramWarranty(token);
 }
 
-export async function submitTelegramWarranty(token: string, input: { name: string; username: string; platform: string; phone: string; email: string }) {
+export async function getCompletedTelegramWarrantyOrderIds(orderIds: string[]): Promise<Set<string>> {
+  return new Set((await getCompletedTelegramWarrantyDetails(orderIds)).keys());
+}
+
+export type CompletedTelegramWarrantyDetails = {
+  username: string;
+  activationPlatform: string;
+};
+
+export async function getCompletedTelegramWarrantyDetails(orderIds: string[]): Promise<Map<string, CompletedTelegramWarrantyDetails>> {
+  const uniqueOrderIds = [...new Set(orderIds.filter(Boolean))];
+  if (!uniqueOrderIds.length) return new Map();
+
+  const { data, error } = await getSupabaseServiceClient()
+    .from("warranty_certificates")
+    .select("order_id, customer_username, activation_platform, form_submitted_at")
+    .in("order_id", uniqueOrderIds)
+    .eq("customer_details_complete", true)
+    .not("form_submitted_at", "is", null);
+  if (error) throw new Error("Warranty completion state could not be loaded.");
+  const details = new Map<string, CompletedTelegramWarrantyDetails>();
+  for (const row of data ?? []) {
+    const username = typeof row.customer_username === "string" ? row.customer_username.trim() : "";
+    const activationPlatform = typeof row.activation_platform === "string" ? row.activation_platform.trim() : "";
+    if (username && activationPlatform) {
+      details.set(String(row.order_id), { username, activationPlatform });
+    }
+  }
+  return details;
+}
+
+export async function submitTelegramWarranty(token: string, input: { name: string; username: string; platform: string; phone: string; email?: string }) {
   const warranty = await findTelegramWarranty(token);
   if (!warranty) throw new Error("Warranty form is unavailable.");
-  const { error } = await getSupabaseServiceClient().rpc("submit_snapchat_warranty_form", { p_token_hash: warranty.public_token_hash, p_name: input.name, p_username: input.username, p_platform: input.platform, p_phone: input.phone, p_email: input.email });
+  const { error } = await getSupabaseServiceClient().rpc("submit_snapchat_warranty_form", { p_token_hash: warranty.public_token_hash, p_name: input.name, p_username: input.username, p_platform: input.platform, p_phone: input.phone, p_email: input.email ?? "" });
   if (error) throw new Error("Warranty form is unavailable.");
 }
 
