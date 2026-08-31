@@ -15,6 +15,7 @@ import { formatOwnerAnalytics, getOwnerAnalytics, rangeFor, type AnalyticsRange 
 import { deleteProduct, getOrderById, getOrders, getProductById, getProductBySlug, saveProduct } from "@/lib/admin-store";
 import { issueOrderWarrantyLink } from "@/lib/order-warranty";
 import { createDirectWarrantyLink } from "@/lib/warranty";
+import { clearCustomCommissionInput, getAdminCompensation, saveAdminCompensation, startCustomCommissionInput, takeCustomCommissionInput } from "@/lib/admin-compensation";
 
 type TelegramIdentity = {
   userId: string;
@@ -112,7 +113,7 @@ async function reply(chatId: string, text: string, replyMarkup?: ReplyMarkup) {
 
 async function answerCallback(id: string) { await telegramCall("answerCallbackQuery", { callback_query_id: id }); }
 
-async function audit(actorTelegramUserId: string, entityType: "telegram_user" | "inventory" | "setting" | "adjustment" | "payment" | "order", entityId: string, action: string, metadata: Record<string, string>) {
+async function audit(actorTelegramUserId: string, entityType: "telegram_user" | "inventory" | "setting" | "adjustment" | "payment" | "commission" | "order", entityId: string, action: string, metadata: Record<string, string>) {
   await getSupabaseServiceClient().from("operation_events").insert({
     actor_telegram_user_id: actorTelegramUserId,
     entity_type: entityType,
@@ -354,14 +355,33 @@ async function sendNetProfitPicker(chatId: string, locale: TelegramInterfaceLoca
 
 async function sendAdminOverview(chatId: string, locale: TelegramInterfaceLocale, adminId: string) {
   const admin = await findAdmin(adminId);
-  const summary = await getAdminFinanceSummary(adminId);
+  const [summary, compensation] = await Promise.all([getAdminFinanceSummary(adminId), getAdminCompensation(adminId)]);
+  const compensationLabel = compensation.mode === "salary"
+    ? textFor(locale, "راتب — 0 DA لكل طلب", "Salary — 0 DA per order")
+    : textFor(locale, `عمولة — ${compensation.commissionDzd} DA لكل طلب`, `Commission — ${compensation.commissionDzd} DA per order`);
   await reply(chatId, textFor(locale,
-    `👤 ${operatorName(admin)}\nالطلبات المكتملة: ${summary.completedOrders}\nالعمولة: ${summary.commissionDzd} DA\nالتعديلات: ${summary.adjustmentsDzd} DA\nالمدفوع: ${summary.paidDzd} DA\nالرصيد: ${summary.remainingDzd} DA\nالدفع القادم: ${summary.nextPaymentDate}`,
-    `👤 ${operatorName(admin)}\nCompleted orders: ${summary.completedOrders}\nCommission: ${summary.commissionDzd} DA\nAdjustments: ${summary.adjustmentsDzd} DA\nPaid: ${summary.paidDzd} DA\nRemaining credit: ${summary.remainingDzd} DA\nNext payment: ${summary.nextPaymentDate}`), {
+    `👤 ${operatorName(admin)}\n💼 ${compensationLabel}\nالطلبات المكتملة: ${summary.completedOrders}\nالعمولة: ${summary.commissionDzd} DA\nالتعديلات: ${summary.adjustmentsDzd} DA\nالمدفوع: ${summary.paidDzd} DA\nالرصيد: ${summary.remainingDzd} DA\nالدفع القادم: ${summary.nextPaymentDate}`,
+    `👤 ${operatorName(admin)}\n💼 ${compensationLabel}\nCompleted orders: ${summary.completedOrders}\nCommission earned: ${summary.commissionDzd} DA\nAdjustments: ${summary.adjustmentsDzd} DA\nPaid: ${summary.paidDzd} DA\nRemaining credit: ${summary.remainingDzd} DA\nNext payment: ${summary.nextPaymentDate}`), {
     inline_keyboard: [
+      [{ text: textFor(locale, "💼 الراتب أو العمولة", "💼 Salary or commission"), callback_data: `adm|${adminId}|compensation` }],
       [{ text: textFor(locale, "➕➖ تعديل العمولة", "➕➖ Adjust commission"), callback_data: `adm|${adminId}|adjust` }],
       [{ text: textFor(locale, "💸 تسجيل دفعة", "💸 Record payment"), callback_data: `adm|${adminId}|pay` }],
       [{ text: textFor(locale, "👥 رجوع للمشرفين", "👥 Back to admins"), callback_data: "own|admins" }],
+    ],
+  });
+}
+
+async function sendCompensationPicker(chatId: string, locale: TelegramInterfaceLocale, adminId: string) {
+  const admin = await findAdmin(adminId);
+  await reply(chatId, textFor(locale,
+    `💼 ${operatorName(admin)}\nاختر طريقة التعويض. الراتب لا يخصم أي عمولة من صافي الربح لكل طلب.`,
+    `💼 ${operatorName(admin)}\nChoose compensation. Salary does not deduct any per-order commission from net profit.`), {
+    inline_keyboard: [
+      [{ text: textFor(locale, "💼 راتب (0 DA لكل طلب)", "💼 Salary (0 DA per order)"), callback_data: `cmp|${adminId}|salary|0` }],
+      [{ text: "💳 50 DA", callback_data: `cmp|${adminId}|commission|50` }, { text: "💳 100 DA", callback_data: `cmp|${adminId}|commission|100` }, { text: "💳 150 DA", callback_data: `cmp|${adminId}|commission|150` }],
+      [{ text: "💳 200 DA", callback_data: `cmp|${adminId}|commission|200` }, { text: "💳 300 DA", callback_data: `cmp|${adminId}|commission|300` }, { text: "💳 500 DA", callback_data: `cmp|${adminId}|commission|500` }],
+      [{ text: textFor(locale, "✏️ مبلغ آخر", "✏️ Custom amount"), callback_data: `cmp|${adminId}|custom|0` }],
+      [{ text: textFor(locale, "↩️ رجوع", "↩️ Back"), callback_data: `adm|${adminId}|open` }],
     ],
   });
 }
@@ -396,7 +416,10 @@ export async function handleTelegramOperationsCallback(input: {
   const locale = user.interface_locale;
   if (user.role !== "admin" && user.role !== "owner") { await reply(String(input.chatId), textFor(locale, "غير مصرح لك بهذه العملية.", "Not authorised.")); return; }
   const parts = input.data.split("|");
-  const parsed = telegramCallbackDataSchema.safeParse(parts.map((part, index) => parts[0] === "sc" && index === 1 && /^\d+$/.test(part) ? Number(part) : part));
+  const parsed = telegramCallbackDataSchema.safeParse(parts.map((part, index) => {
+    const numericPlan = (parts[0] === "sc" && index === 1) || (parts[0] === "wc" && index === 3) || (parts[0] === "ex" && index === 1);
+    return numericPlan && /^\d+$/.test(part) ? Number(part) : part;
+  }));
   if (!parsed.success) { await reply(String(input.chatId), textFor(locale, "انتهت صلاحية هذا الاختيار.", "This selection has expired.")); return; }
   const selected = parsed.data;
   if (selected[0] === "an") {
@@ -504,8 +527,10 @@ export async function handleTelegramOperationsCallback(input: {
       approved_at: new Date().toISOString(),
     }).eq("telegram_user_id", candidateId).eq("role", "pending");
     if (updateError) { await reply(String(input.chatId), textFor(locale, "تعذرت الموافقة حالياً. ⚠️", "Approval could not be saved. ⚠️")); return; }
+    await saveAdminCompensation({ adminId: candidateId, updatedByTelegramUserId: identity.userId, mode: "salary", commissionDzd: 0 });
     await audit(identity.userId, "telegram_user", candidateId, "admin_approved", { role: "admin" });
-    await reply(String(input.chatId), textFor(locale, `✅ تمت الموافقة على ${operatorName(candidate as TelegramAdminRow)}.`, `✅ ${operatorName(candidate as TelegramAdminRow)} is now an admin.`));
+    await reply(String(input.chatId), textFor(locale, `✅ تمت الموافقة على ${operatorName(candidate as TelegramAdminRow)}. اختر الآن راتباً أو عمولة.`, `✅ ${operatorName(candidate as TelegramAdminRow)} is now an admin. Choose salary or commission now.`));
+    await sendCompensationPicker(String(input.chatId), locale, candidateId);
     return;
   }
   if (selected[0] === "adm") {
@@ -513,6 +538,7 @@ export async function handleTelegramOperationsCallback(input: {
     const adminId = selected[1];
     try {
       if (selected[2] === "open") await sendAdminOverview(String(input.chatId), locale, adminId);
+      if (selected[2] === "compensation") await sendCompensationPicker(String(input.chatId), locale, adminId);
       if (selected[2] === "adjust") {
         const admin = await findAdmin(adminId);
         await reply(String(input.chatId), textFor(locale, `➕➖ ${operatorName(admin)}\nاختر مقدار الزيادة أو العقوبة.`, `➕➖ ${operatorName(admin)}\nChoose a credit increase or penalty.`), {
@@ -537,6 +563,26 @@ export async function handleTelegramOperationsCallback(input: {
     } catch {
       await reply(String(input.chatId), textFor(locale, "هذا المشرف غير متاح حالياً. ⚠️", "This admin is unavailable right now. ⚠️"));
     }
+    return;
+  }
+  if (selected[0] === "cmp") {
+    if (!ownerOnly(user)) { await reply(String(input.chatId), textFor(locale, "غير مصرح لك بهذه العملية.", "Not authorised.")); return; }
+    const [, adminId, mode, amountText] = selected;
+    try {
+      await findAdmin(adminId);
+      if (mode === "custom") {
+        await startCustomCommissionInput(identity.userId, adminId);
+        await reply(String(input.chatId), textFor(locale, "✏️ أرسل الآن مبلغ العمولة لكل طلب مكتمل بالـ DA فقط، مثل: 60", "✏️ Send the commission amount per completed order in DA only, for example: 60"));
+        return;
+      }
+      const commissionDzd = mode === "salary" ? 0 : Number(amountText);
+      const compensation = await saveAdminCompensation({ adminId, updatedByTelegramUserId: identity.userId, mode, commissionDzd });
+      await audit(identity.userId, "commission", adminId, "admin_compensation_updated", { mode: compensation.mode, commissionDzd: String(compensation.commissionDzd) });
+      await reply(String(input.chatId), compensation.mode === "salary"
+        ? textFor(locale, "✅ تم ضبطه على راتب: لا توجد عمولة لكل طلب.", "✅ Set to salary: there is no per-order commission.")
+        : textFor(locale, `✅ تم ضبط العمولة على ${compensation.commissionDzd} DA لكل طلب مكتمل.`, `✅ Commission set to ${compensation.commissionDzd} DA per completed order.`));
+      await sendAdminOverview(String(input.chatId), locale, adminId);
+    } catch { await reply(String(input.chatId), textFor(locale, "تعذر حفظ إعداد التعويض لهذا المشرف.", "The compensation setting could not be saved for this admin.")); }
     return;
   }
   if (selected[0] === "adj") {
@@ -649,6 +695,24 @@ export async function handleTelegramOperationsMessage(input: {
   const routedText = routeMenuButton(input.text);
   const chatId = telegramId(input.chatId);
   if (ownerOnly(user) && rawText && !rawText.startsWith("/") && routedText === rawText) {
+    const pendingCommissionAdminId = await takeCustomCommissionInput(identity.userId);
+    if (pendingCommissionAdminId) {
+      const amount = /^\d+$/.test(rawText) ? Number(rawText) : Number.NaN;
+      if (!Number.isInteger(amount) || amount < 0 || amount > 100_000) {
+        await reply(chatId, textFor(locale, "أرسل مبلغاً صحيحاً بالـ DA فقط، مثل: 60", "Send a valid DA amount only, for example: 60"));
+        return;
+      }
+      try {
+        const compensation = await saveAdminCompensation({ adminId: pendingCommissionAdminId, updatedByTelegramUserId: identity.userId, mode: amount === 0 ? "salary" : "commission", commissionDzd: amount });
+        await clearCustomCommissionInput(identity.userId);
+        await audit(identity.userId, "commission", pendingCommissionAdminId, "admin_compensation_updated", { mode: compensation.mode, commissionDzd: String(compensation.commissionDzd) });
+        await reply(chatId, compensation.mode === "salary"
+          ? textFor(locale, "✅ تم ضبطه على راتب: لا توجد عمولة لكل طلب.", "✅ Set to salary: there is no per-order commission.")
+          : textFor(locale, `✅ تم ضبط العمولة على ${compensation.commissionDzd} DA لكل طلب مكتمل.`, `✅ Commission set to ${compensation.commissionDzd} DA per completed order.`));
+        await sendAdminOverview(chatId, locale, pendingCommissionAdminId);
+      } catch { await reply(chatId, textFor(locale, "تعذر حفظ مبلغ العمولة.", "The commission amount could not be saved.")); }
+      return;
+    }
     const cardType = await getTelegramRedeemCardUploadSession(identity.userId);
     if (cardType) {
       try {
@@ -703,8 +767,10 @@ export async function handleTelegramOperationsMessage(input: {
       approved_by_telegram_user_id: identity.userId,
       approved_at: new Date().toISOString(),
     }).eq("telegram_user_id", candidateId).eq("role", "pending");
+    await saveAdminCompensation({ adminId: candidateId, updatedByTelegramUserId: identity.userId, mode: "salary", commissionDzd: 0 });
     await audit(identity.userId, "telegram_user", candidateId, "admin_approved", { role: "admin" });
-    await reply(chatId, textFor(locale, "تمت الموافقة ومنح صلاحية الإدارة.", "Approved and granted admin access."));
+    await reply(chatId, textFor(locale, "تمت الموافقة. اختر الآن راتباً أو عمولة.", "Approved. Choose salary or commission now."));
+    await sendCompensationPicker(chatId, locale, candidateId);
     return;
   }
 

@@ -6,6 +6,7 @@ import { getSupabaseServiceClient } from "@/lib/supabase";
 import type { CartItem, ProductPriceOption } from "@/lib/types";
 import type { SnapchatCardType, SnapchatPlanMonths } from "@/lib/snapchat-cards";
 import { cardCostDzd, getFinanceSettings } from "@/lib/finance";
+import { getAdminCommissionDzd } from "@/lib/admin-compensation";
 
 export type TelegramWarrantyRecord = { id: string; order_id: string; certificate_code: string; recipient_name: string; customer_username: string | null; activation_platform: string | null; customer_details_complete: boolean; form_submitted_at: string | null; balance_warning_required: boolean; balance_warning_acknowledged_at: string | null; starts_at: string; ends_at: string; covered_days: number; option_id: string };
 function tokenHashes(token: string) {
@@ -40,14 +41,15 @@ export async function completeSnapchatSale(input: { operationId: string; adminTe
   if (!product) throw new Error("The Snapchat product is unavailable.");
   const settings = await getFinanceSettings();
   const configuredPlan = settings.plans[planMonths];
+  const commissionDzd = await getAdminCommissionDzd(input.adminTelegramUserId);
   const catalogOffer = offerForPlan(product.priceOptions, planMonths);
   const offer = catalogOffer ?? { id: `snapchat-${planMonths}-months`, label: `${planMonths} month${planMonths === 1 ? "" : "s"}`, labelAr: `${planMonths} ${planMonths === 1 ? "شهر" : "أشهر"}`, duration: `${planMonths} month${planMonths === 1 ? "" : "s"}`, durationAr: `${planMonths} ${planMonths === 1 ? "شهر" : "أشهر"}` };
-  if (!Number.isInteger(configuredPlan.priceDzd) || configuredPlan.priceDzd < 1 || !Number.isInteger(configuredPlan.commissionDzd) || configuredPlan.commissionDzd < 0) throw new Error("The finance plan is unavailable.");
+  if (!Number.isInteger(configuredPlan.priceDzd) || configuredPlan.priceDzd < 1 || !Number.isInteger(commissionDzd) || commissionDzd < 0) throw new Error("The finance plan is unavailable.");
   const token = createTelegramWarrantyToken(); const now = new Date(); const endsAt = expiry(now, planMonths, cardType);
   const item: CartItem = { id: `${product.id}:${offer.id}`, productId: product.id, slug: product.slug, name: product.name, nameAr: product.nameAr, image: product.image, option: offer.label, optionId: offer.id, optionAr: offer.labelAr, duration: offer.duration, durationAr: offer.durationAr, price: configuredPlan.priceDzd, quantity: 1 };
   const orderId = `TS-${crypto.randomUUID().replace(/-/g, "").slice(0, 10).toUpperCase()}`;
   const certificateCode = `TW-${randomBytes(6).toString("hex").toUpperCase()}`;
-  const { error } = await getSupabaseServiceClient().rpc("complete_snapchat_operation_sale", { p_operation_id: input.operationId, p_admin_telegram_user_id: input.adminTelegramUserId, p_order_id: orderId, p_product_item: item, p_total: configuredPlan.priceDzd, p_commission: configuredPlan.commissionDzd, p_card_cost_usd_cents: settings.cardCostsUsdCents[cardType], p_card_cost_dzd: cardCostDzd(settings, cardType), p_certificate_code: certificateCode, p_token_hash: tokenHashes(token)[0], p_token_hint: token.slice(-6), p_covered_days: Math.max(1, Math.ceil((endsAt.getTime() - now.getTime()) / 86_400_000)), p_ends_at: endsAt.toISOString(), p_balance_warning_required: cardType === "inr_100" || cardType === "inr_199" });
+  const { error } = await getSupabaseServiceClient().rpc("complete_snapchat_operation_sale", { p_operation_id: input.operationId, p_admin_telegram_user_id: input.adminTelegramUserId, p_order_id: orderId, p_product_item: item, p_total: configuredPlan.priceDzd, p_commission: commissionDzd, p_card_cost_usd_cents: settings.cardCostsUsdCents[cardType], p_card_cost_dzd: cardCostDzd(settings, cardType), p_certificate_code: certificateCode, p_token_hash: tokenHashes(token)[0], p_token_hint: token.slice(-6), p_covered_days: Math.max(1, Math.ceil((endsAt.getTime() - now.getTime()) / 86_400_000)), p_ends_at: endsAt.toISOString(), p_balance_warning_required: cardType === "inr_100" || cardType === "inr_199" });
   if (error) throw new Error("The sale could not be completed.");
   return { orderId, token };
 }
