@@ -17,7 +17,8 @@
     "test:owner-analytics": "tsx scripts/test-owner-analytics.ts",
     "test:traffic-range": "tsx scripts/test-traffic-range.ts",
     "test:telegram-card-upload": "tsx scripts/test-telegram-card-upload.ts",
-    "test:telegram-owner-controls": "tsx scripts/test-telegram-owner-controls.ts"
+    "test:telegram-owner-controls": "tsx scripts/test-telegram-owner-controls.ts",
+    "test:tiger-new-sheet": "tsx scripts/test-tiger-new-sheet.ts"
   },
   "dependencies": {
     "@radix-ui/react-slot": "^1.1.2",

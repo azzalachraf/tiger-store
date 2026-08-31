@@ -6,7 +6,9 @@ import { getSupabaseServiceClient } from "@/lib/supabase";
 import type { TigerNewSheetRow } from "@/lib/tiger-new-sheet-types";
 export { tigerNewSheetHeaders, type TigerNewSheetRow } from "@/lib/tiger-new-sheet-types";
 
-const flexyPaidByMonths: Record<number, number> = { 1: 635, 2: 850, 3: 1615, 6: 2040, 12: 2380 };
+// Flexy is only offered for Snapchat Plus. The copied Amount Paid is the
+// customer-facing Flexy price less the agreed 15% provider deduction.
+const flexyGrossByMonths: Record<number, number> = { 1: 750, 2: 1000, 3: 1900, 6: 2400, 12: 2800 };
 
 function monthsFromDuration(value: string) {
   const match = value.match(/(?:^|\D)(12|6|3|2|1)(?:\D|$)/);
@@ -21,15 +23,16 @@ function displayAdmin(admin: { first_name: string | null; username: string | nul
 
 function flexyAmountPaid(paymentMethod: string, subscription: string, duration: string, total: number) {
   if (paymentMethod !== "Flexy" || !/snapchat/i.test(subscription)) return total;
-  const value = flexyPaidByMonths[monthsFromDuration(duration) ?? 0];
-  return value ?? total;
+  const grossAmount = flexyGrossByMonths[monthsFromDuration(duration) ?? 0];
+  return grossAmount ? Math.floor(grossAmount * 85 / 100) : total;
 }
 
 function sheetPaymentMethod(paymentMethod: string) {
   // Telegram identifies where an operation originated; it is never a customer
   // payment method. Leave old incomplete records blank until an admin records
   // the actual method in the order panel.
-  return paymentMethod === "Telegram" ? "" : paymentMethod;
+  if (paymentMethod === "Telegram") return "Not recorded";
+  return paymentMethod === "Flexy" ? "Flexy (15% deducted)" : paymentMethod;
 }
 
 export async function getTigerNewSheetRows(): Promise<TigerNewSheetRow[]> {
