@@ -6,6 +6,8 @@ assert.equal(telegramCallbackDataSchema.safeParse(["own", "upload"]).success, tr
 assert.equal(telegramCallbackDataSchema.safeParse(["own", "stock"]).success, true);
 assert.equal(telegramCallbackDataSchema.safeParse(["own", "orders"]).success, true);
 assert.equal(telegramCallbackDataSchema.safeParse(["own", "external"]).success, true);
+assert.equal(telegramCallbackDataSchema.safeParse(["cs", "try_24"]).success, true);
+assert.equal(telegramCallbackDataSchema.safeParse(["cc", "try_24", "confirm"]).success, true);
 assert.equal(telegramCallbackDataSchema.safeParse(["ops", "orders"]).success, true);
 assert.equal(telegramCallbackDataSchema.safeParse(["ops", "external"]).success, true);
 assert.equal(telegramCallbackDataSchema.safeParse(["ops", "stock"]).success, true);
@@ -31,5 +33,6 @@ assert.equal(telegramCallbackDataSchema.safeParse(["adj", "8915644277", "m50"]).
 assert.equal(telegramCallbackDataSchema.safeParse(["pay", "8915644277", "full"]).success, true);
 assert.equal(telegramCallbackDataSchema.safeParse(["adj", "invalid", "p50"]).success, false);
 assert.equal(telegramCallbackDataSchema.safeParse(["pay", "8915644277", "10000"]).success, false);
+assert.equal(telegramCallbackDataSchema.safeParse(["cc", "try_24", "delete"]).success, false);
 
 console.log("Telegram owner-control callback validation passed.");

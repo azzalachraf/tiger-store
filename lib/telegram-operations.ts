@@ -6,7 +6,7 @@ import { getSupabaseServiceClient } from "@/lib/supabase";
 import type { TelegramInterfaceLocale, TelegramRole } from "@/lib/types";
 import { advertisingUsdSchema, productSchema, telegramCallbackDataSchema } from "@/lib/validation";
 import { cardLabel, cardsForPlan, snapchatCardTypes, type SnapchatCardType, type SnapchatPlanMonths } from "@/lib/snapchat-cards";
-import { claimSnapchatCard, clearTelegramRedeemCardUploadSession, finishSnapchatOperation, getTelegramRedeemCardUploadSession, returnReservedRedeemCardToStock, startTelegramRedeemCardUploadSession, syncRedeemInventory, uploadRedeemCardsFromTelegram } from "@/lib/snapchat-operations";
+import { claimSnapchatCard, clearAvailableRedeemCards, clearTelegramRedeemCardUploadSession, finishSnapchatOperation, getTelegramRedeemCardUploadSession, returnReservedRedeemCardToStock, startTelegramRedeemCardUploadSession, syncRedeemInventory, uploadRedeemCardsFromTelegram } from "@/lib/snapchat-operations";
 import { parseTelegramRedeemCardLines } from "@/lib/telegram-card-upload";
 import { completeSnapchatSale } from "@/lib/telegram-warranty";
 import { absoluteUrl } from "@/lib/seo";
@@ -256,7 +256,7 @@ async function sendCardUploadPicker(chatId: string, locale: TelegramInterfaceLoc
   });
 }
 
-async function sendCardStock(chatId: string, locale: TelegramInterfaceLocale) {
+async function getAvailableCardCounts() {
   const { data, error } = await getSupabaseServiceClient()
     .from("redeem_cards")
     .select("card_type")
@@ -269,8 +269,18 @@ async function sendCardStock(chatId: string, locale: TelegramInterfaceLocale) {
     const cardType = row.card_type as SnapchatCardType;
     counts.set(cardType, (counts.get(cardType) ?? 0) + 1);
   }
+  return counts;
+}
+
+async function sendCardStock(chatId: string, locale: TelegramInterfaceLocale, canClear = false) {
+  const counts = await getAvailableCardCounts();
   const stock = snapchatCardTypes.map((cardType) => `${cardLabel(cardType, locale)}: ${counts.get(cardType) ?? 0}`).join("\n");
-  await reply(chatId, textFor(locale, `📦 مخزون البطاقات المتاح\n${stock}`, `📦 Available card inventory\n${stock}`));
+  await reply(chatId, textFor(locale, `📦 مخزون البطاقات المتاح\n${stock}`, `📦 Available card inventory\n${stock}`), canClear ? {
+    inline_keyboard: snapchatCardTypes.map((cardType) => [{
+      text: textFor(locale, `🗑️ تنظيف ${cardLabel(cardType, locale)}`, `🗑️ Clear ${cardLabel(cardType, locale)}`),
+      callback_data: `cs|${cardType}`,
+    }]),
+  } : undefined);
 }
 
 function websiteOrderLabel(order: Awaited<ReturnType<typeof getOrders>>[number]) {
@@ -442,6 +452,31 @@ export async function handleTelegramOperationsCallback(input: {
       `Ready to upload ${cardLabel(cardType, locale)} cards. Paste 1–100 codes now, one code per line.`));
     return;
   }
+  if (selected[0] === "cs") {
+    if (!ownerOnly(user)) { await reply(String(input.chatId), textFor(locale, "غير مصرح لك بهذه العملية.", "Not authorised.")); return; }
+    try {
+      const counts = await getAvailableCardCounts();
+      const available = counts.get(selected[1]) ?? 0;
+      await reply(String(input.chatId), textFor(locale,
+        `⚠️ سيتم حذف ${available} بطاقة متاحة من نوع ${cardLabel(selected[1], locale)} فقط. البطاقات المحجوزة أو المستعملة لن تتأثر.`,
+        `⚠️ This deletes only ${available} available ${cardLabel(selected[1], locale)} card(s). Reserved and used cards stay protected.`), {
+        inline_keyboard: [[{ text: textFor(locale, "🗑️ تأكيد الحذف", "🗑️ Confirm clear"), callback_data: `cc|${selected[1]}|confirm` }]],
+      });
+    } catch { await reply(String(input.chatId), textFor(locale, "تعذر تحميل المخزون حالياً.", "Card stock is unavailable right now.")); }
+    return;
+  }
+  if (selected[0] === "cc") {
+    if (!ownerOnly(user)) { await reply(String(input.chatId), textFor(locale, "غير مصرح لك بهذه العملية.", "Not authorised.")); return; }
+    try {
+      const result = await clearAvailableRedeemCards(selected[1]);
+      await audit(identity.userId, "inventory", selected[1], "available_redeem_cards_cleared", { deleted: String(result.deleted) });
+      await reply(String(input.chatId), textFor(locale,
+        `✅ تم حذف ${result.deleted} بطاقة متاحة من ${cardLabel(selected[1], locale)}.`,
+        `✅ Cleared ${result.deleted} available ${cardLabel(selected[1], locale)} card(s).`));
+      await sendCardStock(String(input.chatId), locale, true);
+    } catch { await reply(String(input.chatId), textFor(locale, "تعذر حذف البطاقات المتاحة.", "Available cards could not be cleared.")); }
+    return;
+  }
   if (selected[0] === "own") {
     if (!ownerOnly(user)) { await reply(String(input.chatId), textFor(locale, "غير مصرح لك بهذه العملية.", "Not authorised.")); return; }
     try {
@@ -450,7 +485,7 @@ export async function handleTelegramOperationsCallback(input: {
       else if (selected[1] === "upload") await sendCardUploadPicker(String(input.chatId), locale);
       else if (selected[1] === "orders") await sendPendingWebsiteOrderPicker(String(input.chatId), locale);
       else if (selected[1] === "external") await sendExternalOrderPlans(String(input.chatId), locale);
-      else await sendCardStock(String(input.chatId), locale);
+      else await sendCardStock(String(input.chatId), locale, true);
     } catch {
       await reply(String(input.chatId), textFor(locale, "تعذر تحميل قائمة المشرفين حالياً.", "The admin list is unavailable right now."));
     }
@@ -461,7 +496,7 @@ export async function handleTelegramOperationsCallback(input: {
     try {
       if (selected[1] === "orders") await sendPendingWebsiteOrderPicker(String(input.chatId), locale);
       else if (selected[1] === "external") await sendExternalOrderPlans(String(input.chatId), locale);
-      else await sendCardStock(String(input.chatId), locale);
+      else await sendCardStock(String(input.chatId), locale, ownerOnly(user));
     } catch { await reply(String(input.chatId), textFor(locale, "تعذر تحميل هذه العملية حالياً.", "This operation could not be loaded right now.")); }
     return;
   }
@@ -823,7 +858,7 @@ export async function handleTelegramOperationsMessage(input: {
     try {
       if (action === "/website_orders") await sendPendingWebsiteOrderPicker(chatId, locale);
       else if (action === "/external_order") await sendExternalOrderPlans(chatId, locale);
-      else await sendCardStock(chatId, locale);
+      else await sendCardStock(chatId, locale, ownerOnly(user));
     } catch {
       await reply(chatId, textFor(locale, "تعذر تحميل هذه العملية حالياً.", "This operation could not be loaded right now."));
     }

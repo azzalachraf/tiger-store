@@ -113,6 +113,20 @@ export async function removeAvailableRedeemCard(cardId: string) {
   if (error || !data) throw new Error("Only an available card can be removed.");
 }
 
+/** Owner-only bulk cleanup for cards that have never been assigned. Reserved
+ * and consumed cards are deliberately kept for operational history. */
+export async function clearAvailableRedeemCards(cardType: SnapchatCardType) {
+  const { data, error } = await getSupabaseServiceClient()
+    .from("redeem_cards")
+    .delete()
+    .eq("card_type", cardType)
+    .eq("status", "available")
+    .eq("source_available", true)
+    .select("id");
+  if (error) throw new Error("Available card stock could not be cleared.");
+  return { deleted: data?.length ?? 0 };
+}
+
 export async function claimSnapchatCard(adminTelegramUserId: string, planMonths: SnapchatPlanMonths, cardType: SnapchatCardType) {
   const { data, error } = await getSupabaseServiceClient().rpc("claim_snapchat_redeem_card", { p_admin_telegram_user_id: adminTelegramUserId, p_plan_months: planMonths, p_card_type: cardType });
   const row = (data as unknown as ClaimRow[] | null)?.[0];
