@@ -60,11 +60,13 @@ export type TrafficOverview = {
 };
 
 /** Counts unique public browser sessions and successful checkout submissions. */
-export async function getTrafficOverview(): Promise<TrafficOverview> {
-  const { data, error } = await supabaseService
+export async function getTrafficOverview(range?: { startIso: string; endExclusiveIso: string }): Promise<TrafficOverview> {
+  let query = supabaseService
     .from("page_events")
     .select("id, event_type, session_id")
     .in("event_type", ["page_view", "purchase_completed"]);
+  if (range) query = query.gte("created_at", range.startIso).lt("created_at", range.endExclusiveIso);
+  const { data, error } = await query;
 
   if (error || !data) return { visitors: 0, conversions: 0, conversionRate: 0 };
 
