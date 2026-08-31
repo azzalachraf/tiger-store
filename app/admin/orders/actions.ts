@@ -5,7 +5,7 @@ import { getOrderById, getProductBySlug, saveOrder } from "@/lib/admin-store";
 import { AdminOrder, Product, ProductPriceOption } from "@/lib/types";
 import { requireAdmin } from "@/lib/admin-auth";
 import { adminOrderIdSchema, manualOrderInputSchema, orderStatusSchema, productCheckoutLinkIssueSchema, warrantyIssueSchema } from "@/lib/validation";
-import { createWarrantyLink } from "@/lib/warranty";
+import { issueOrderWarrantyLink } from "@/lib/order-warranty";
 import { createProductCheckoutLink } from "@/lib/product-checkout-link";
 import { redirect } from "next/navigation";
 
@@ -81,11 +81,7 @@ export async function createWarrantyLinkAction(formData: FormData) {
     itemIndex: text(formData, "itemIndex"),
     coveredDays: text(formData, "coveredDays"),
   });
-  const order = await getOrderById(input.orderId);
-  if (!order || order.status !== "delivered" || !order.products[input.itemIndex]) {
-    throw new Error("A warranty link can only be issued for a delivered order item.");
-  }
-  const token = createWarrantyLink(input);
+  const token = await issueOrderWarrantyLink(input);
   redirect(`/admin/orders?warranty=${encodeURIComponent(token)}`);
 }
 

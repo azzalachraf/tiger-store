@@ -12,7 +12,8 @@ import { completeSnapchatSale } from "@/lib/telegram-warranty";
 import { absoluteUrl } from "@/lib/seo";
 import { getAdminCycleStatistics, getAdminFinanceSummary } from "@/lib/finance";
 import { formatOwnerAnalytics, getOwnerAnalytics, rangeFor, type AnalyticsRange } from "@/lib/owner-analytics";
-import { deleteProduct, getProductById, saveProduct } from "@/lib/admin-store";
+import { deleteProduct, getOrderById, getOrders, getProductById, saveProduct } from "@/lib/admin-store";
+import { issueOrderWarrantyLink } from "@/lib/order-warranty";
 
 type TelegramIdentity = {
   userId: string;
@@ -110,7 +111,7 @@ async function reply(chatId: string, text: string, replyMarkup?: ReplyMarkup) {
 
 async function answerCallback(id: string) { await telegramCall("answerCallbackQuery", { callback_query_id: id }); }
 
-async function audit(actorTelegramUserId: string, entityType: "telegram_user" | "inventory" | "setting" | "adjustment" | "payment", entityId: string, action: string, metadata: Record<string, string>) {
+async function audit(actorTelegramUserId: string, entityType: "telegram_user" | "inventory" | "setting" | "adjustment" | "payment" | "order", entityId: string, action: string, metadata: Record<string, string>) {
   await getSupabaseServiceClient().from("operation_events").insert({
     actor_telegram_user_id: actorTelegramUserId,
     entity_type: entityType,
@@ -265,6 +266,34 @@ async function sendCardStock(chatId: string, locale: TelegramInterfaceLocale) {
   await reply(chatId, textFor(locale, `📦 مخزون البطاقات المتاح\n${stock}`, `📦 Available card inventory\n${stock}`));
 }
 
+function websiteOrderLabel(order: Awaited<ReturnType<typeof getOrders>>[number]) {
+  const item = order.products[0];
+  const customer = order.customerName.trim() || "Customer";
+  return `📋 ${customer} — ${item?.name ?? "Order"}`.slice(0, 60);
+}
+
+async function sendPendingWebsiteOrderPicker(chatId: string, locale: TelegramInterfaceLocale) {
+  const orders = (await getOrders()).filter((order) => order.status === "pending" && order.products.length > 0).slice(0, 30);
+  if (!orders.length) {
+    await reply(chatId, textFor(locale, "📋 لا توجد طلبات موقع معلقة حالياً.", "📋 There are no pending website orders."));
+    return;
+  }
+  await reply(chatId, textFor(locale, "📋 اختر طلب الموقع لإصدار رابط الضمان وتسليمه.", "📋 Choose a website order to mark delivered and issue its warranty link."), {
+    inline_keyboard: orders.map((order) => [{ text: websiteOrderLabel(order), callback_data: `wo|${order.id}` }]),
+  });
+}
+
+async function sendWebsiteOrderItemPicker(chatId: string, locale: TelegramInterfaceLocale, orderId: string) {
+  const order = await getOrderById(orderId);
+  if (!order || order.status !== "pending" || !order.products.length) {
+    await reply(chatId, textFor(locale, "هذا الطلب لم يعد معلقاً أو غير متاح.", "This order is no longer pending or available."));
+    return;
+  }
+  await reply(chatId, textFor(locale, "🛡️ اختر المنتج لإصدار رابط الضمان. سيتم وضع الطلب كمسلم.", "🛡️ Choose the product to issue its warranty link. The order will be marked delivered."), {
+    inline_keyboard: order.products.map((item, itemIndex) => [{ text: `🛡️ ${item.name} — ${item.option}`.slice(0, 60), callback_data: `wi|${order.id}|${itemIndex}` }]),
+  });
+}
+
 async function sendNetProfitPicker(chatId: string, locale: TelegramInterfaceLocale) {
   await reply(chatId, textFor(locale, "📈 اختر الفترة لعرض صافي الربح.", "📈 Choose a period for net profit."), {
     inline_keyboard: [
@@ -342,10 +371,26 @@ export async function handleTelegramOperationsCallback(input: {
       if (selected[1] === "admins") await sendAdminPicker(String(input.chatId), locale);
       else if (selected[1] === "pending") await sendPendingPicker(String(input.chatId), locale);
       else if (selected[1] === "upload") await sendCardUploadPicker(String(input.chatId), locale);
+      else if (selected[1] === "orders") await sendPendingWebsiteOrderPicker(String(input.chatId), locale);
       else await sendCardStock(String(input.chatId), locale);
     } catch {
       await reply(String(input.chatId), textFor(locale, "تعذر تحميل قائمة المشرفين حالياً.", "The admin list is unavailable right now."));
     }
+    return;
+  }
+  if (selected[0] === "wo") {
+    if (!ownerOnly(user)) { await reply(String(input.chatId), textFor(locale, "غير مصرح لك بهذه العملية.", "Not authorised.")); return; }
+    try { await sendWebsiteOrderItemPicker(String(input.chatId), locale, selected[1]); } catch { await reply(String(input.chatId), textFor(locale, "تعذر تحميل الطلب حالياً.", "The order could not be loaded right now.")); }
+    return;
+  }
+  if (selected[0] === "wi") {
+    if (!ownerOnly(user)) { await reply(String(input.chatId), textFor(locale, "غير مصرح لك بهذه العملية.", "Not authorised.")); return; }
+    try {
+      const token = await issueOrderWarrantyLink({ orderId: selected[1], itemIndex: Number(selected[2]), coveredDays: 365, markDelivered: true });
+      await audit(identity.userId, "order", selected[1], "website_order_delivered_with_warranty", { itemIndex: selected[2] });
+      await reply(String(input.chatId), textFor(locale, "✅ تم تسليم الطلب. رابط الضمان في الرسالة التالية.", "✅ The order is delivered. The warranty link is in the next message."));
+      await reply(String(input.chatId), absoluteUrl(`/warranty/${token}`));
+    } catch { await reply(String(input.chatId), textFor(locale, "تعذر إصدار رابط الضمان لهذا الطلب.", "A warranty link could not be issued for this order.")); }
     return;
   }
   if (selected[0] === "apr") {
@@ -655,6 +700,7 @@ export async function handleTelegramOperationsMessage(input: {
         [{ text: textFor(locale, "👥 إدارة المشرفين", "👥 Manage admins"), callback_data: "own|admins" }],
         [{ text: textFor(locale, "✅ طلبات الاعتماد", "✅ Pending approvals"), callback_data: "own|pending" }],
         [{ text: textFor(locale, "⬆️ رفع البطاقات", "⬆️ Upload cards"), callback_data: "own|upload" }, { text: textFor(locale, "📦 مخزون البطاقات", "📦 Card stock"), callback_data: "own|stock" }],
+        [{ text: textFor(locale, "📋 طلبات الموقع", "📋 Website orders"), callback_data: "own|orders" }],
       ],
     });
     return;
