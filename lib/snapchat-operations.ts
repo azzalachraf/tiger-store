@@ -53,7 +53,11 @@ export async function syncRedeemInventory() {
   return { synchronized, counts };
 }
 
-/** Owner-only callers import codes from a private Telegram message. */
+/**
+ * Owner-only callers import codes from a private Telegram message or the
+ * protected website inventory panel. Codes are encrypted before persistence
+ * and are never returned from this function.
+ */
 export async function uploadRedeemCardsFromTelegram(cardType: SnapchatCardType, codes: string[]) {
   const client = getSupabaseServiceClient();
   const hashes = codes.map(redeemCodeHash);
@@ -78,6 +82,35 @@ export async function uploadRedeemCardsFromTelegram(cardType: SnapchatCardType, 
   const counts = availableCards.reduce<Partial<Record<SnapchatCardType, number>>>((result, item) => ({ ...result, [item.card_type]: (result[item.card_type] ?? 0) + 1 }), {});
   for (const type of snapchatCardTypes) counts[type] ??= 0;
   return { added: newCodes.length, duplicates: codes.length - newCodes.length, counts };
+}
+
+/** Mark an unassigned card as used when it was redeemed outside an operation.
+ * Reserved cards are deliberately excluded: their active operation must be
+ * completed or cancelled through the normal workflow. */
+export async function markAvailableRedeemCardUsed(cardId: string) {
+  const { data, error } = await getSupabaseServiceClient()
+    .from("redeem_cards")
+    .update({ status: "consumed", consumed_at: new Date().toISOString() })
+    .eq("id", cardId)
+    .eq("status", "available")
+    .eq("source_available", true)
+    .select("id")
+    .maybeSingle();
+  if (error || !data) throw new Error("Only an available card can be marked used.");
+}
+
+/** Remove an unused card entered by mistake. Assigned or used codes keep their
+ * audit history and can never be removed from this control. */
+export async function removeAvailableRedeemCard(cardId: string) {
+  const { data, error } = await getSupabaseServiceClient()
+    .from("redeem_cards")
+    .delete()
+    .eq("id", cardId)
+    .eq("status", "available")
+    .eq("source_available", true)
+    .select("id")
+    .maybeSingle();
+  if (error || !data) throw new Error("Only an available card can be removed.");
 }
 
 export async function claimSnapchatCard(adminTelegramUserId: string, planMonths: SnapchatPlanMonths, cardType: SnapchatCardType) {

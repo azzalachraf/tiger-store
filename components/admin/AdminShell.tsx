@@ -1,12 +1,12 @@
 import Image from "next/image";
 import Link from "next/link";
 import { ReactNode } from "react";
-import { BarChart3, Boxes, ClipboardCopy, CreditCard, ExternalLink, LayoutDashboard, LogOut, Settings, ShoppingBag, Users, WalletCards } from "lucide-react";
+import { BarChart3, Boxes, ClipboardCopy, CreditCard, ExternalLink, LayoutDashboard, LogOut, Settings, ShoppingBag, TicketCheck, Users, WalletCards } from "lucide-react";
 import { logoutAction } from "@/app/admin/login/actions";
 import { requireAdmin } from "@/lib/admin-auth";
 import { Button } from "@/components/ui/button";
 
-const adminNav = [{ href: "/admin", label: "Overview", icon: LayoutDashboard, group: "Store" }, { href: "/admin/orders", label: "Orders", icon: ShoppingBag, group: "Store" }, { href: "/admin/tiger-new-sheet", label: "Tiger New Sheet", icon: ClipboardCopy, group: "Store" }, { href: "/admin/products", label: "Products", icon: Boxes, group: "Store" }, { href: "/admin/team", label: "Team", icon: Users, group: "Store" }, { href: "/admin/marketing/funnel", label: "Traffic", icon: BarChart3, group: "Store" }, { href: "/admin/payment-methods", label: "Payments", icon: CreditCard, group: "Store" }, { href: "/admin/stock-alerts", label: "Alerts", icon: Boxes, group: "Store" }, { href: "/admin/finance", label: "Finance", icon: WalletCards, group: "Store" }, { href: "/admin/settings", label: "Settings", icon: Settings, group: "Store" }];
+const adminNav = [{ href: "/admin", label: "Overview", icon: LayoutDashboard, group: "Store" }, { href: "/admin/orders", label: "Orders", icon: ShoppingBag, group: "Store" }, { href: "/admin/tiger-new-sheet", label: "Tiger New Sheet", icon: ClipboardCopy, group: "Store" }, { href: "/admin/products", label: "Products", icon: Boxes, group: "Store" }, { href: "/admin/card-stock", label: "Card stock", icon: TicketCheck, group: "Store" }, { href: "/admin/team", label: "Team", icon: Users, group: "Store" }, { href: "/admin/marketing/funnel", label: "Traffic", icon: BarChart3, group: "Store" }, { href: "/admin/payment-methods", label: "Payments", icon: CreditCard, group: "Store" }, { href: "/admin/stock-alerts", label: "Alerts", icon: Boxes, group: "Store" }, { href: "/admin/finance", label: "Finance", icon: WalletCards, group: "Store" }, { href: "/admin/settings", label: "Settings", icon: Settings, group: "Store" }];
 
 const groupedNav = adminNav.reduce<Record<string, typeof adminNav>>((groups, item) => {
   groups[item.group] = [...(groups[item.group] ?? []), item];
