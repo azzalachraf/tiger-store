@@ -179,7 +179,18 @@ export default async function AdminOrdersPage({ searchParams }: { searchParams: 
 
               <form action={saveOrderStatusAction}>
                 <input type="hidden" name="id" value={order.id} />
-                <div className="mt-4 grid gap-3 md:grid-cols-[1fr]">
+                <div className="mt-4 grid gap-3 md:grid-cols-2">
+                  <label className="grid gap-2 text-sm font-bold text-white">
+                    Client payment method
+                    <select name="paymentMethod" defaultValue={order.paymentMethod} className="min-h-11 rounded-xl border border-white/10 bg-black/45 px-3 text-white outline-none focus:border-tiger-ember">
+                      <option value="Telegram">Not recorded — choose the client method</option>
+                      <option value="BaridiMob">BaridiMob</option>
+                      <option value="Binance">Binance</option>
+                      <option value="RedotPay">RedotPay</option>
+                      <option value="Flexy">Flexy</option>
+                      <option value="CCP">CCP (legacy)</option>
+                    </select>
+                  </label>
                   <label className="grid gap-2 text-sm font-bold text-white">
                     Admin notes
                     <input name="adminNotes" defaultValue={order.adminNotes ?? ""} className="min-h-11 rounded-xl border border-white/10 bg-black/45 px-3 text-white outline-none focus:border-tiger-ember" />

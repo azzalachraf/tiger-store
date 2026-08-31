@@ -25,6 +25,13 @@ function flexyAmountPaid(paymentMethod: string, subscription: string, duration: 
   return value ?? total;
 }
 
+function sheetPaymentMethod(paymentMethod: string) {
+  // Telegram identifies where an operation originated; it is never a customer
+  // payment method. Leave old incomplete records blank until an admin records
+  // the actual method in the order panel.
+  return paymentMethod === "Telegram" ? "" : paymentMethod;
+}
+
 export async function getTigerNewSheetRows(): Promise<TigerNewSheetRow[]> {
   const client = getSupabaseServiceClient();
   const [{ data: exports, error: exportsError }, orders, finance] = await Promise.all([
@@ -55,7 +62,7 @@ export async function getTigerNewSheetRows(): Promise<TigerNewSheetRow[]> {
       spend: "",
       cost: "",
       netProfit: String(netProfit),
-      paymentMethod: order.paymentMethod,
+      paymentMethod: sheetPaymentMethod(order.paymentMethod),
       admin: displayAdmin(sale ? adminsById.get(String(sale.admin_telegram_user_id)) : undefined),
     };
   });

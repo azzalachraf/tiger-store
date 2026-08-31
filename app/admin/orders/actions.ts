@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { getOrderById, getProductBySlug, saveOrder } from "@/lib/admin-store";
 import { AdminOrder, Product, ProductPriceOption } from "@/lib/types";
 import { requireAdmin } from "@/lib/admin-auth";
-import { adminOrderIdSchema, manualOrderInputSchema, orderStatusSchema, productCheckoutLinkIssueSchema, warrantyIssueSchema } from "@/lib/validation";
+import { adminOrderIdSchema, manualOrderInputSchema, orderStatusSchema, productCheckoutLinkIssueSchema, storedPaymentMethodSchema, warrantyIssueSchema } from "@/lib/validation";
 import { issueOrderWarrantyLink } from "@/lib/order-warranty";
 import { createProductCheckoutLink } from "@/lib/product-checkout-link";
 import { redirect } from "next/navigation";
@@ -29,6 +29,7 @@ export async function saveOrderStatusAction(formData: FormData) {
   const order: AdminOrder = {
     ...existingOrder,
     status: orderStatusSchema.parse(text(formData, "status") || existingOrder.status),
+    paymentMethod: storedPaymentMethodSchema.parse(text(formData, "paymentMethod") || existingOrder.paymentMethod),
     adminNotes: text(formData, "adminNotes"),
   };
 
