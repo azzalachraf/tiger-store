@@ -11,11 +11,13 @@ const report = buildOwnerAnalytics(
   [{ id: "ad", spend_date: "2026-08-29", amount_usd_cents: 125, source_id: "instagram" }],
   250,
   4,
+  { "10": "@lalo", "11": "@other" },
 );
 assert.equal(report.advertisingDzd, 312);
 assert.equal(report.telegramOrders, 2);
 assert.equal(report.websiteOrders, 1);
 assert.equal(report.totalOrders, 3);
+assert.equal(report.adminLabels["10"], "@lalo");
 assert.equal(report.telegramNetProfitDzd, 522);
 assert.equal(report.websiteNetProfitDzd, 896);
 assert.equal(report.netProfitDzd, 1418);

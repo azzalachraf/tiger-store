@@ -6,14 +6,15 @@ export function algeriaDate(value: Date | string) {
   return new Intl.DateTimeFormat("en-CA", { timeZone: "Africa/Algiers", year: "numeric", month: "2-digit", day: "2-digit" }).format(new Date(value));
 }
 
-export function rangeFor(kind: "today" | "month" | "yesterday", now = new Date()): AnalyticsRange {
+export function rangeFor(kind: "today" | "month" | "yesterday" | "7d" | "30d", now = new Date()): AnalyticsRange {
   const today = algeriaDate(now);
   if (kind === "today") return { start: today, end: today, label: "today" };
   if (kind === "yesterday") { const date = new Date(`${today}T12:00:00+01:00`); date.setDate(date.getDate() - 1); const day = algeriaDate(date); return { start: day, end: day, label: "yesterday" }; }
+  if (kind === "7d" || kind === "30d") { const date = new Date(`${today}T12:00:00+01:00`); date.setDate(date.getDate() - (kind === "7d" ? 6 : 29)); return { start: algeriaDate(date), end: today, label: kind }; }
   return { start: `${today.slice(0, 7)}-01`, end: today, label: "month" };
 }
 
-export function buildOwnerAnalytics(range: AnalyticsRange, sales: AnalyticsSale[], spends: AnalyticsSpend[], usdDzdRate: number, inventoryAvailable = 0) {
+export function buildOwnerAnalytics(range: AnalyticsRange, sales: AnalyticsSale[], spends: AnalyticsSpend[], usdDzdRate: number, inventoryAvailable = 0, adminLabels: Record<string, string> = {}) {
   const selectedSales = sales.filter((sale) => { const day = algeriaDate(sale.completed_at); return day >= range.start && day <= range.end; });
   const selectedSpends = spends.filter((spend) => spend.spend_date >= range.start && spend.spend_date <= range.end);
   const spendByDay = new Map<string, number>();
@@ -55,6 +56,6 @@ export function buildOwnerAnalytics(range: AnalyticsRange, sales: AnalyticsSale[
     telegramNetProfitDzd: telegramRevenueDzd - telegramCostsDzd - advertisingBySource.telegram,
     websiteOrders: websiteSales.length,
     websiteNetProfitDzd: websiteRevenueDzd - websiteCostsDzd - advertisingBySource.website,
-    planCounts, adminCounts, inventoryAvailable, missingAdvertisingDates,
+    planCounts, adminCounts, adminLabels, inventoryAvailable, missingAdvertisingDates,
   };
 }

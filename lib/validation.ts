@@ -40,7 +40,7 @@ export const telegramCallbackDataSchema = z.union([
   z.tuple([z.literal("sc"), snapchatPlanSchema]),
   z.tuple([z.literal("sc"), snapchatPlanSchema, snapchatCardTypeSchema]),
   z.tuple([z.literal("op"), z.string().uuid(), z.enum(["complete", "cancel"])]),
-  z.tuple([z.literal("an"), z.enum(["today", "month"])]),
+  z.tuple([z.literal("an"), z.enum(["today", "yesterday", "7d", "30d"])]),
   z.tuple([z.literal("up"), snapchatCardTypeSchema]),
   z.tuple([z.literal("own"), z.enum(["admins", "pending", "upload", "stock"])]),
   z.tuple([z.literal("adm"), telegramCallbackUserIdSchema, z.enum(["open", "adjust", "pay"])]),

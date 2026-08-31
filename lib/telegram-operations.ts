@@ -46,8 +46,8 @@ function ownerOnly(user: TelegramUserRow) { return user.role === "owner"; }
 function commandParts(value: string | undefined) { return (value ?? "").split("|").map((part) => part.trim()); }
 
 function customRange(argument?: string, second?: string): AnalyticsRange | null {
-  if (!argument) return rangeFor("today");
-  if (argument === "today" || argument === "month") return rangeFor(argument);
+  if (!argument) return null;
+  if (argument === "today" || argument === "yesterday" || argument === "7d" || argument === "30d" || argument === "month") return rangeFor(argument);
   if (!second || !/^\d{4}-\d{2}-\d{2}$/.test(argument) || !/^\d{4}-\d{2}-\d{2}$/.test(second) || argument > second) return null;
   return { start: argument, end: second, label: "custom" };
 }
@@ -64,16 +64,16 @@ function menuKeyboard(locale: TelegramInterfaceLocale, role: TelegramRole): Repl
   const labels = locale === "ar"
     ? {
         snapchat: "🛒 بيع Snapchat", stats: "📊 إحصاءاتي", owner: "👑 لوحة المالك", profit: "💰 صافي الربح",
-        cards: "⬆️ رفع البطاقات", products: "🛍 المنتجات",
+        cards: "⬆️ رفع البطاقات",
         approval: "👥 إدارة المشرفين", arabic: "🌐 العربية", english: "🌐 English",
       }
     : {
         snapchat: "🛒 Snapchat sale", stats: "📊 My stats", owner: "👑 Owner controls", profit: "💰 Net profit",
-        cards: "⬆️ Upload cards", products: "🛍 Products",
+        cards: "⬆️ Upload cards",
         approval: "👥 Manage admins", arabic: "🌐 العربية", english: "🌐 English",
       };
   const rows = [[labels.snapchat, labels.stats]];
-  if (role === "owner") rows.push([labels.owner, labels.profit], [labels.cards, labels.products], [labels.approval]);
+  if (role === "owner") rows.push([labels.owner, labels.profit], [labels.cards], [labels.approval]);
   rows.push([labels.arabic, labels.english]);
   return { keyboard: rows.map((row) => row.map((text) => ({ text }))), resize_keyboard: true, is_persistent: true };
 }
@@ -84,9 +84,8 @@ function routeMenuButton(value: string | undefined) {
     "🛒 بيع Snapchat": "/snapchat", "🛒 Snapchat sale": "/snapchat",
     "📊 إحصاءاتي": "/stats", "📊 My stats": "/stats",
     "👑 لوحة المالك": "/owner", "👑 Owner controls": "/owner",
-    "💰 صافي الربح": "/net_profit today", "💰 Net profit": "/net_profit today",
+    "💰 صافي الربح": "/net_profit", "💰 Net profit": "/net_profit",
     "⬆️ رفع البطاقات": "/upload_cards", "⬆️ Upload cards": "/upload_cards",
-    "🛍 المنتجات": "/product_help", "🛍 Products": "/product_help",
     "👥 إدارة المشرفين": "/owner", "👥 Manage admins": "/owner",
     "👥 اعتماد مشرف": "/approve_help", "👥 Approve admin": "/approve_help",
     "🌐 العربية": "/ar", "🌐 English": "/en",
@@ -266,12 +265,21 @@ async function sendCardStock(chatId: string, locale: TelegramInterfaceLocale) {
   await reply(chatId, textFor(locale, `📦 مخزون البطاقات المتاح\n${stock}`, `📦 Available card inventory\n${stock}`));
 }
 
+async function sendNetProfitPicker(chatId: string, locale: TelegramInterfaceLocale) {
+  await reply(chatId, textFor(locale, "📈 اختر الفترة لعرض صافي الربح.", "📈 Choose a period for net profit."), {
+    inline_keyboard: [
+      [{ text: textFor(locale, "📅 اليوم", "📅 Today"), callback_data: "an|today" }, { text: textFor(locale, "🕘 أمس", "🕘 Yesterday"), callback_data: "an|yesterday" }],
+      [{ text: textFor(locale, "🗓 آخر 7 أيام", "🗓 Last 7 days"), callback_data: "an|7d" }, { text: textFor(locale, "📆 آخر 30 يومًا", "📆 Last 30 days"), callback_data: "an|30d" }],
+    ],
+  });
+}
+
 async function sendAdminOverview(chatId: string, locale: TelegramInterfaceLocale, adminId: string) {
   const admin = await findAdmin(adminId);
   const summary = await getAdminFinanceSummary(adminId);
   await reply(chatId, textFor(locale,
-    `👤 ${operatorName(admin)}\nالطلبات المكتملة: ${summary.completedOrders}\nالعمولة: ${summary.commissionDzd} DZD\nالتعديلات: ${summary.adjustmentsDzd} DZD\nالمدفوع: ${summary.paidDzd} DZD\nالرصيد: ${summary.remainingDzd} DZD\nالدفع القادم: ${summary.nextPaymentDate}`,
-    `👤 ${operatorName(admin)}\nCompleted orders: ${summary.completedOrders}\nCommission: ${summary.commissionDzd} DZD\nAdjustments: ${summary.adjustmentsDzd} DZD\nPaid: ${summary.paidDzd} DZD\nRemaining credit: ${summary.remainingDzd} DZD\nNext payment: ${summary.nextPaymentDate}`), {
+    `👤 ${operatorName(admin)}\nالطلبات المكتملة: ${summary.completedOrders}\nالعمولة: ${summary.commissionDzd} DA\nالتعديلات: ${summary.adjustmentsDzd} DA\nالمدفوع: ${summary.paidDzd} DA\nالرصيد: ${summary.remainingDzd} DA\nالدفع القادم: ${summary.nextPaymentDate}`,
+    `👤 ${operatorName(admin)}\nCompleted orders: ${summary.completedOrders}\nCommission: ${summary.commissionDzd} DA\nAdjustments: ${summary.adjustmentsDzd} DA\nPaid: ${summary.paidDzd} DA\nRemaining credit: ${summary.remainingDzd} DA\nNext payment: ${summary.nextPaymentDate}`), {
     inline_keyboard: [
       [{ text: textFor(locale, "➕➖ تعديل العمولة", "➕➖ Adjust commission"), callback_data: `adm|${adminId}|adjust` }],
       [{ text: textFor(locale, "💸 تسجيل دفعة", "💸 Record payment"), callback_data: `adm|${adminId}|pay` }],
@@ -368,8 +376,8 @@ export async function handleTelegramOperationsCallback(input: {
         const admin = await findAdmin(adminId);
         await reply(String(input.chatId), textFor(locale, `➕➖ ${operatorName(admin)}\nاختر مقدار الزيادة أو العقوبة.`, `➕➖ ${operatorName(admin)}\nChoose a credit increase or penalty.`), {
           inline_keyboard: [
-            [{ text: "➕ 10 DZD", callback_data: `adj|${adminId}|p10` }, { text: "➕ 50 DZD", callback_data: `adj|${adminId}|p50` }, { text: "➕ 100 DZD", callback_data: `adj|${adminId}|p100` }],
-            [{ text: "➖ 10 DZD", callback_data: `adj|${adminId}|m10` }, { text: "➖ 50 DZD", callback_data: `adj|${adminId}|m50` }, { text: "➖ 100 DZD", callback_data: `adj|${adminId}|m100` }],
+            [{ text: "➕ 10 DA", callback_data: `adj|${adminId}|p10` }, { text: "➕ 50 DA", callback_data: `adj|${adminId}|p50` }, { text: "➕ 100 DA", callback_data: `adj|${adminId}|p100` }],
+            [{ text: "➖ 10 DA", callback_data: `adj|${adminId}|m10` }, { text: "➖ 50 DA", callback_data: `adj|${adminId}|m50` }, { text: "➖ 100 DA", callback_data: `adj|${adminId}|m100` }],
             [{ text: textFor(locale, "↩️ رجوع", "↩️ Back"), callback_data: `adm|${adminId}|open` }],
           ],
         });
@@ -377,9 +385,9 @@ export async function handleTelegramOperationsCallback(input: {
       if (selected[2] === "pay") {
         const admin = await findAdmin(adminId);
         const summary = await getAdminFinanceSummary(adminId);
-        await reply(String(input.chatId), textFor(locale, `💸 ${operatorName(admin)}\nالرصيد الحالي: ${summary.remainingDzd} DZD\nاختر الدفعة.`, `💸 ${operatorName(admin)}\nCurrent credit: ${summary.remainingDzd} DZD\nChoose a payment.`), {
+        await reply(String(input.chatId), textFor(locale, `💸 ${operatorName(admin)}\nالرصيد الحالي: ${summary.remainingDzd} DA\nاختر الدفعة.`, `💸 ${operatorName(admin)}\nCurrent credit: ${summary.remainingDzd} DA\nChoose a payment.`), {
           inline_keyboard: [
-            [{ text: "💸 50 DZD", callback_data: `pay|${adminId}|50` }, { text: "💸 100 DZD", callback_data: `pay|${adminId}|100` }, { text: "💸 500 DZD", callback_data: `pay|${adminId}|500` }],
+            [{ text: "💸 50 DA", callback_data: `pay|${adminId}|50` }, { text: "💸 100 DA", callback_data: `pay|${adminId}|100` }, { text: "💸 500 DA", callback_data: `pay|${adminId}|500` }],
             [{ text: textFor(locale, "✅ دفع كل الرصيد", "✅ Mark full balance paid"), callback_data: `pay|${adminId}|full` }],
             [{ text: textFor(locale, "↩️ رجوع", "↩️ Back"), callback_data: `adm|${adminId}|open` }],
           ],
@@ -405,7 +413,7 @@ export async function handleTelegramOperationsCallback(input: {
       });
       if (error) throw error;
       await audit(identity.userId, "adjustment", adminId, amount > 0 ? "admin_credit_added" : "admin_penalty_applied", { amountDzd: String(amount) });
-      await reply(String(input.chatId), textFor(locale, `✅ تم تسجيل ${amount > 0 ? "زيادة" : "عقوبة"} بقيمة ${Math.abs(amount)} DZD.`, `✅ ${amount > 0 ? "Credit" : "Penalty"} of ${Math.abs(amount)} DZD recorded.`));
+      await reply(String(input.chatId), textFor(locale, `✅ تم تسجيل ${amount > 0 ? "زيادة" : "عقوبة"} بقيمة ${Math.abs(amount)} DA.`, `✅ ${amount > 0 ? "Credit" : "Penalty"} of ${Math.abs(amount)} DA recorded.`));
       await sendAdminOverview(String(input.chatId), locale, adminId);
     } catch {
       await reply(String(input.chatId), textFor(locale, "تعذر حفظ التعديل. ⚠️", "The adjustment could not be saved. ⚠️"));
@@ -431,7 +439,7 @@ export async function handleTelegramOperationsCallback(input: {
       });
       if (error) throw error;
       await audit(identity.userId, "payment", adminId, "admin_payment_recorded", { amountDzd: String(amount) });
-      await reply(String(input.chatId), textFor(locale, `✅ تم تسجيل دفعة ${amount} DZD.`, `✅ Payment of ${amount} DZD recorded.`));
+      await reply(String(input.chatId), textFor(locale, `✅ تم تسجيل دفعة ${amount} DA.`, `✅ Payment of ${amount} DA recorded.`));
       await sendAdminOverview(String(input.chatId), locale, adminId);
     } catch {
       await reply(String(input.chatId), textFor(locale, "تعذر تسجيل الدفعة. ⚠️", "The payment could not be recorded. ⚠️"));
@@ -630,8 +638,9 @@ export async function handleTelegramOperationsMessage(input: {
 
   if (action === "/net_profit") {
     if (!ownerOnly(user)) { await reply(chatId, textFor(locale, "غير مصرح لك بهذه العملية.", "Not authorised.")); return; }
+    if (!argument) { await sendNetProfitPicker(chatId, locale); return; }
     const range = customRange(argument, secondArgument);
-    if (!range) { await reply(chatId, textFor(locale, "استعمل: /net_profit today أو /net_profit month أو /net_profit YYYY-MM-DD YYYY-MM-DD", "Use: /net_profit today, /net_profit month, or /net_profit YYYY-MM-DD YYYY-MM-DD")); return; }
+    if (!range) { await sendNetProfitPicker(chatId, locale); return; }
     try { await reply(chatId, formatOwnerAnalytics(locale, await getOwnerAnalytics(range))); } catch { await reply(chatId, textFor(locale, "تعذر إعداد التقرير حالياً.", "The report is unavailable right now.")); }
     return;
   }
@@ -645,7 +654,6 @@ export async function handleTelegramOperationsMessage(input: {
         [{ text: textFor(locale, "👥 إدارة المشرفين", "👥 Manage admins"), callback_data: "own|admins" }],
         [{ text: textFor(locale, "✅ طلبات الاعتماد", "✅ Pending approvals"), callback_data: "own|pending" }],
         [{ text: textFor(locale, "⬆️ رفع البطاقات", "⬆️ Upload cards"), callback_data: "own|upload" }, { text: textFor(locale, "📦 مخزون البطاقات", "📦 Card stock"), callback_data: "own|stock" }],
-        [{ text: textFor(locale, "💰 ربح اليوم", "💰 Today net profit"), callback_data: "an|today" }, { text: textFor(locale, "📈 ربح الشهر", "📈 Month net profit"), callback_data: "an|month" }],
       ],
     });
     return;
@@ -721,7 +729,7 @@ export async function handleTelegramOperationsMessage(input: {
     if (user.role !== "admin" && user.role !== "owner") { await reply(chatId, textFor(locale, "غير مصرح لك بهذه العملية.", "Not authorised.")); return; }
     try {
       const summary = await getAdminFinanceSummary(identity.userId);
-      await reply(chatId, textFor(locale, `📊 إحصاءاتك\nطلبات مكتملة: ${summary.completedOrders}\nالعمولة: ${summary.commissionDzd} DZD\nالمدفوع: ${summary.paidDzd} DZD\nالتعديلات: ${summary.adjustmentsDzd} DZD\nالرصيد المتبقي: ${summary.remainingDzd} DZD\nتاريخ الدفع القادم: ${summary.nextPaymentDate}`, `📊 Your statistics\nCompleted orders: ${summary.completedOrders}\nCommission: ${summary.commissionDzd} DZD\nPaid: ${summary.paidDzd} DZD\nAdjustments: ${summary.adjustmentsDzd} DZD\nRemaining credit: ${summary.remainingDzd} DZD\nNext payment: ${summary.nextPaymentDate}`));
+      await reply(chatId, textFor(locale, `📊 إحصاءاتك\n📦 الطلبات المكتملة: ${summary.completedOrders}`, `📊 My statistics\n📦 Completed orders: ${summary.completedOrders}`));
     } catch { await reply(chatId, textFor(locale, "تعذر عرض الإحصاءات حالياً.", "Statistics are unavailable right now.")); }
     return;
   }
