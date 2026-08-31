@@ -22,7 +22,7 @@ export type WarrantyDirectLinkPayload = WarrantyPayloadBase & {
   slug: string;
   optionId: string;
   amountPaid: number;
-  paymentMethod: "BaridiMob" | "Binance" | "RedotPay";
+  paymentMethod: "BaridiMob" | "Binance" | "RedotPay" | "External";
 };
 
 export type WarrantyLinkPayload = WarrantyOrderLinkPayload | WarrantyDirectLinkPayload;
@@ -46,11 +46,11 @@ function compactNonce() {
 }
 
 function paymentCode(paymentMethod: WarrantyDirectLinkPayload["paymentMethod"]) {
-  return paymentMethod === "BaridiMob" ? "b" : paymentMethod === "Binance" ? "n" : "r";
+  return paymentMethod === "BaridiMob" ? "b" : paymentMethod === "Binance" ? "n" : paymentMethod === "RedotPay" ? "r" : "e";
 }
 
 function paymentFromCode(value: string): WarrantyDirectLinkPayload["paymentMethod"] | undefined {
-  return value === "b" ? "BaridiMob" : value === "n" ? "Binance" : value === "r" ? "RedotPay" : undefined;
+  return value === "b" ? "BaridiMob" : value === "n" ? "Binance" : value === "r" ? "RedotPay" : value === "e" ? "External" : undefined;
 }
 
 function encodeCompact(fields: string[]) {
@@ -132,7 +132,7 @@ export function verifyWarrantyLink(token: string): WarrantyLinkPayload | undefin
       Date.parse(payload.expiresAt) >= Date.now();
     if (!hasValidBase) return undefined;
     if (payload.source === "direct") {
-      if (!/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(payload.slug) || !/^[A-Za-z0-9:_-]{1,160}$/.test(payload.optionId) || !Number.isInteger(payload.amountPaid) || payload.amountPaid < 1 || payload.amountPaid > 10_000_000 || !["BaridiMob", "Binance", "RedotPay"].includes(payload.paymentMethod)) return undefined;
+      if (!/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(payload.slug) || !/^[A-Za-z0-9:_-]{1,160}$/.test(payload.optionId) || !Number.isInteger(payload.amountPaid) || payload.amountPaid < 1 || payload.amountPaid > 10_000_000 || !["BaridiMob", "Binance", "RedotPay", "External"].includes(payload.paymentMethod)) return undefined;
       return payload;
     }
     if (

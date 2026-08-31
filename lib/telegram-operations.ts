@@ -12,8 +12,9 @@ import { completeSnapchatSale } from "@/lib/telegram-warranty";
 import { absoluteUrl } from "@/lib/seo";
 import { getAdminCycleStatistics, getAdminFinanceSummary } from "@/lib/finance";
 import { formatOwnerAnalytics, getOwnerAnalytics, rangeFor, type AnalyticsRange } from "@/lib/owner-analytics";
-import { deleteProduct, getOrderById, getOrders, getProductById, saveProduct } from "@/lib/admin-store";
+import { deleteProduct, getOrderById, getOrders, getProductById, getProductBySlug, saveProduct } from "@/lib/admin-store";
 import { issueOrderWarrantyLink } from "@/lib/order-warranty";
+import { createDirectWarrantyLink } from "@/lib/warranty";
 
 type TelegramIdentity = {
   userId: string;
@@ -289,8 +290,56 @@ async function sendWebsiteOrderItemPicker(chatId: string, locale: TelegramInterf
     await reply(chatId, textFor(locale, "هذا الطلب لم يعد معلقاً أو غير متاح.", "This order is no longer pending or available."));
     return;
   }
-  await reply(chatId, textFor(locale, "🛡️ اختر المنتج لإصدار رابط الضمان. سيتم وضع الطلب كمسلم.", "🛡️ Choose the product to issue its warranty link. The order will be marked delivered."), {
+  await reply(chatId, textFor(locale, "🛡️ اختر المنتج. لطلبات Snapchat ستختار البطاقة أولاً، ثم يُسلَّم الطلب ويصدر رابط الضمان.", "🛡️ Choose the product. Snapchat orders continue with card selection before the order is delivered and the warranty link is issued."), {
     inline_keyboard: order.products.map((item, itemIndex) => [{ text: `🛡️ ${item.name} — ${item.option}`.slice(0, 60), callback_data: `wi|${order.id}|${itemIndex}` }]),
+  });
+}
+
+function websiteSnapchatPlan(item: { slug?: string; option?: string; optionId?: string; duration?: string }): SnapchatPlanMonths | null {
+  if (item.slug !== "snapchat-plus") return null;
+  const match = `${item.optionId ?? ""} ${item.option ?? ""} ${item.duration ?? ""}`.match(/(?:^|\D)(1|2|3|6|12)(?:\D|$)/);
+  const plan = match ? Number(match[1]) : 0;
+  return [1, 2, 3, 6, 12].includes(plan) ? plan as SnapchatPlanMonths : null;
+}
+
+async function sendWebsiteCardPicker(chatId: string, locale: TelegramInterfaceLocale, orderId: string, itemIndex: number) {
+  const order = await getOrderById(orderId);
+  const item = order?.products[itemIndex];
+  const plan = item ? websiteSnapchatPlan(item) : null;
+  if (!order || order.status !== "pending" || !item || !plan) {
+    await reply(chatId, textFor(locale, "هذا الخيار غير متاح لعملية Snapchat حالياً.", "This item is not available for a Snapchat operation."));
+    return;
+  }
+  await reply(chatId, textFor(locale, `🛒 ${planLabel(plan, locale)}\nاختر نوع البطاقة لإكمال طلب الموقع.`, `🛒 ${planLabel(plan, locale)}\nChoose the card type to continue this website order.`), {
+    inline_keyboard: cardsForPlan(plan).map((cardType) => [{ text: cardLabel(cardType, locale), callback_data: `wc|${orderId}|${itemIndex}|${plan}|${cardType}` }]),
+  });
+}
+
+async function sendExternalOrderPlans(chatId: string, locale: TelegramInterfaceLocale) {
+  const plans: SnapchatPlanMonths[] = [1, 2, 3, 6, 12];
+  await reply(chatId, textFor(locale, "📝 اختر مدة اشتراك Snapchat Plus الذي تم تسليمه من مصدر آخر.", "📝 Choose the Snapchat Plus plan delivered from another source."), {
+    inline_keyboard: plans.map((plan) => [{ text: planLabel(plan, locale), callback_data: `ex|${plan}` }]),
+  });
+}
+
+async function createExternalWarrantyLink(plan: SnapchatPlanMonths) {
+  const product = await getProductBySlug("snapchat-plus");
+  const offer = product?.priceOptions?.find((option) => new RegExp(`(^|\\D)${plan}(\\D|$)`).test(`${option.id} ${option.label} ${option.duration}`));
+  if (!product || !offer) throw new Error("Snapchat plan unavailable.");
+  return createDirectWarrantyLink({
+    slug: product.slug,
+    optionId: offer.id,
+    coveredDays: plan * 30,
+    amountPaid: offer.price,
+    paymentMethod: "External",
+  });
+}
+
+async function sendExternalOrderConfirmation(chatId: string, locale: TelegramInterfaceLocale, plan: SnapchatPlanMonths) {
+  await reply(chatId, textFor(locale,
+    `✅ هل تم تسليم اشتراك Snapchat Plus لمدة ${planLabel(plan, locale)} من مصدر آخر؟\nبعد التأكيد، ستحصل على رابط الضمان للعميل.`,
+    `✅ Was the ${planLabel(plan, locale)} Snapchat Plus subscription delivered from another source?\nAfter confirmation, you will receive the customer's warranty link.`), {
+    inline_keyboard: [[{ text: textFor(locale, "✅ نعم، إصدار رابط الضمان", "✅ Yes, issue warranty link"), callback_data: `ex|${plan}|confirm` }]],
   });
 }
 
@@ -372,6 +421,7 @@ export async function handleTelegramOperationsCallback(input: {
       else if (selected[1] === "pending") await sendPendingPicker(String(input.chatId), locale);
       else if (selected[1] === "upload") await sendCardUploadPicker(String(input.chatId), locale);
       else if (selected[1] === "orders") await sendPendingWebsiteOrderPicker(String(input.chatId), locale);
+      else if (selected[1] === "external") await sendExternalOrderPlans(String(input.chatId), locale);
       else await sendCardStock(String(input.chatId), locale);
     } catch {
       await reply(String(input.chatId), textFor(locale, "تعذر تحميل قائمة المشرفين حالياً.", "The admin list is unavailable right now."));
@@ -386,11 +436,57 @@ export async function handleTelegramOperationsCallback(input: {
   if (selected[0] === "wi") {
     if (!ownerOnly(user)) { await reply(String(input.chatId), textFor(locale, "غير مصرح لك بهذه العملية.", "Not authorised.")); return; }
     try {
-      const token = await issueOrderWarrantyLink({ orderId: selected[1], itemIndex: Number(selected[2]), coveredDays: 365, markDelivered: true });
-      await audit(identity.userId, "order", selected[1], "website_order_delivered_with_warranty", { itemIndex: selected[2] });
-      await reply(String(input.chatId), textFor(locale, "✅ تم تسليم الطلب. رابط الضمان في الرسالة التالية.", "✅ The order is delivered. The warranty link is in the next message."));
-      await reply(String(input.chatId), absoluteUrl(`/warranty/${token}`));
+      const order = await getOrderById(selected[1]);
+      const item = order?.products[Number(selected[2])];
+      if (item && websiteSnapchatPlan(item)) await sendWebsiteCardPicker(String(input.chatId), locale, selected[1], Number(selected[2]));
+      else {
+        const token = await issueOrderWarrantyLink({ orderId: selected[1], itemIndex: Number(selected[2]), coveredDays: 365, markDelivered: true });
+        await audit(identity.userId, "order", selected[1], "website_order_delivered_with_warranty", { itemIndex: selected[2] });
+        await reply(String(input.chatId), textFor(locale, "✅ تم تسليم الطلب. رابط الضمان في الرسالة التالية.", "✅ The order is delivered. The warranty link is in the next message."));
+        await reply(String(input.chatId), absoluteUrl(`/warranty/${token}`));
+      }
     } catch { await reply(String(input.chatId), textFor(locale, "تعذر إصدار رابط الضمان لهذا الطلب.", "A warranty link could not be issued for this order.")); }
+    return;
+  }
+  if (selected[0] === "wc") {
+    if (!ownerOnly(user)) { await reply(String(input.chatId), textFor(locale, "غير مصرح لك بهذه العملية.", "Not authorised.")); return; }
+    const [, orderId, itemIndex, plan, cardType] = selected;
+    try {
+      const operation = await claimSnapchatCard(identity.userId, plan, cardType);
+      await reply(String(input.chatId), textFor(locale, "✅ تم حجز البطاقة. رابط التفعيل في الرسالة التالية.", "✅ Card reserved. The activation link is in the next message."), { inline_keyboard: [[
+        { text: textFor(locale, "✅ إكمال طلب الموقع", "✅ Complete website order"), callback_data: `wp|${operation.operationId}|${orderId}|${itemIndex}|complete` },
+        { text: textFor(locale, "❌ إلغاء", "❌ Cancel"), callback_data: `wp|${operation.operationId}|${orderId}|${itemIndex}|cancel` },
+      ]] });
+      await reply(String(input.chatId), `https://apps.apple.com/redeem?code=${encodeURIComponent(operation.code)}`);
+    } catch { await reply(String(input.chatId), textFor(locale, "لا يوجد كود متاح لهذا النوع حالياً.", "No code is currently available for this card type.")); }
+    return;
+  }
+  if (selected[0] === "wp") {
+    if (!ownerOnly(user)) { await reply(String(input.chatId), textFor(locale, "غير مصرح لك بهذه العملية.", "Not authorised.")); return; }
+    const [, operationId, orderId, itemIndex, outcome] = selected;
+    try {
+      if (outcome === "cancel") {
+        await finishSnapchatOperation(operationId, identity.userId, "cancelled");
+        await reply(String(input.chatId), textFor(locale, "❌ أُلغيت العملية وأُعيدت البطاقة للمخزون.", "❌ Operation cancelled and the card was returned to stock."));
+      } else {
+        await finishSnapchatOperation(operationId, identity.userId, "completed");
+        const token = await issueOrderWarrantyLink({ orderId, itemIndex: Number(itemIndex), coveredDays: 365, markDelivered: true });
+        await audit(identity.userId, "order", orderId, "website_snapchat_order_completed_with_card", { itemIndex, operationId });
+        await reply(String(input.chatId), textFor(locale, "✅ اكتمل طلب الموقع. رابط الضمان في الرسالة التالية.", "✅ Website order completed. The warranty link is in the next message."));
+        await reply(String(input.chatId), absoluteUrl(`/warranty/${token}`));
+      }
+    } catch { await reply(String(input.chatId), textFor(locale, "تعذر إكمال عملية طلب الموقع. تحقق من حالة الطلب والبطاقة.", "The website order could not be completed. Check the order and card status.")); }
+    return;
+  }
+  if (selected[0] === "ex") {
+    if (!ownerOnly(user)) { await reply(String(input.chatId), textFor(locale, "غير مصرح لك بهذه العملية.", "Not authorised.")); return; }
+    if (selected.length === 2) { await sendExternalOrderConfirmation(String(input.chatId), locale, selected[1]); return; }
+    try {
+      const token = await createExternalWarrantyLink(selected[1]);
+      await audit(identity.userId, "order", `external-snapchat-${selected[1]}`, "external_completed_order_warranty_link_created", { plan: String(selected[1]) });
+      await reply(String(input.chatId), textFor(locale, "✅ تم إنشاء طلب خارجي مكتمل. رابط الضمان في الرسالة التالية.", "✅ Completed external order created. The warranty link is in the next message."));
+      await reply(String(input.chatId), absoluteUrl(`/warranty/${token}`));
+    } catch { await reply(String(input.chatId), textFor(locale, "تعذر إنشاء رابط الضمان لهذه الخطة.", "A warranty link could not be created for this plan.")); }
     return;
   }
   if (selected[0] === "apr") {
@@ -701,6 +797,7 @@ export async function handleTelegramOperationsMessage(input: {
         [{ text: textFor(locale, "✅ طلبات الاعتماد", "✅ Pending approvals"), callback_data: "own|pending" }],
         [{ text: textFor(locale, "⬆️ رفع البطاقات", "⬆️ Upload cards"), callback_data: "own|upload" }, { text: textFor(locale, "📦 مخزون البطاقات", "📦 Card stock"), callback_data: "own|stock" }],
         [{ text: textFor(locale, "📋 طلبات الموقع", "📋 Website orders"), callback_data: "own|orders" }],
+        [{ text: textFor(locale, "📝 طلب خارجي مكتمل", "📝 Completed external order"), callback_data: "own|external" }],
       ],
     });
     return;

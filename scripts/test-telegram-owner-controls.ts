@@ -5,8 +5,13 @@ assert.equal(telegramCallbackDataSchema.safeParse(["own", "admins"]).success, tr
 assert.equal(telegramCallbackDataSchema.safeParse(["own", "upload"]).success, true);
 assert.equal(telegramCallbackDataSchema.safeParse(["own", "stock"]).success, true);
 assert.equal(telegramCallbackDataSchema.safeParse(["own", "orders"]).success, true);
+assert.equal(telegramCallbackDataSchema.safeParse(["own", "external"]).success, true);
 assert.equal(telegramCallbackDataSchema.safeParse(["wo", "TS-123456"]).success, true);
 assert.equal(telegramCallbackDataSchema.safeParse(["wi", "TS-123456", "0"]).success, true);
+assert.equal(telegramCallbackDataSchema.safeParse(["wc", "TS-123456", "0", 12, "inr_199"]).success, true);
+assert.equal(telegramCallbackDataSchema.safeParse(["wp", "b964657e-9b61-4e05-b787-b902a2fa1a7c", "TS-123456", "0", "complete"]).success, true);
+assert.equal(telegramCallbackDataSchema.safeParse(["ex", 3]).success, true);
+assert.equal(telegramCallbackDataSchema.safeParse(["ex", 3, "confirm"]).success, true);
 assert.equal(telegramCallbackDataSchema.safeParse(["wi", "TS-123456", "100"]).success, false);
 assert.equal(telegramCallbackDataSchema.safeParse(["an", "today"]).success, true);
 assert.equal(telegramCallbackDataSchema.safeParse(["an", "yesterday"]).success, true);

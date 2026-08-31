@@ -42,9 +42,13 @@ export const telegramCallbackDataSchema = z.union([
   z.tuple([z.literal("op"), z.string().uuid(), z.enum(["complete", "cancel"])]),
   z.tuple([z.literal("an"), z.enum(["today", "yesterday", "7d", "30d"])]),
   z.tuple([z.literal("up"), snapchatCardTypeSchema]),
-  z.tuple([z.literal("own"), z.enum(["admins", "pending", "upload", "stock", "orders"])]),
+  z.tuple([z.literal("own"), z.enum(["admins", "pending", "upload", "stock", "orders", "external"])]),
   z.tuple([z.literal("wo"), z.string().regex(/^[A-Za-z0-9_-]{1,160}$/)]),
   z.tuple([z.literal("wi"), z.string().regex(/^[A-Za-z0-9_-]{1,160}$/), z.string().regex(/^(?:0|[1-9][0-9]?)$/)]),
+  z.tuple([z.literal("wc"), z.string().regex(/^[A-Za-z0-9_-]{1,160}$/), z.string().regex(/^(?:0|[1-9][0-9]?)$/), snapchatPlanSchema, snapchatCardTypeSchema]),
+  z.tuple([z.literal("wp"), z.string().uuid(), z.string().regex(/^[A-Za-z0-9_-]{1,160}$/), z.string().regex(/^(?:0|[1-9][0-9]?)$/), z.enum(["complete", "cancel"])]),
+  z.tuple([z.literal("ex"), snapchatPlanSchema]),
+  z.tuple([z.literal("ex"), snapchatPlanSchema, z.literal("confirm")]),
   z.tuple([z.literal("adm"), telegramCallbackUserIdSchema, z.enum(["open", "adjust", "pay"])]),
   z.tuple([z.literal("adj"), telegramCallbackUserIdSchema, z.enum(["p10", "p50", "p100", "m10", "m50", "m100"])]),
   z.tuple([z.literal("pay"), telegramCallbackUserIdSchema, z.enum(["50", "100", "500", "full"])]),
@@ -73,7 +77,7 @@ export const directWarrantyIssueSchema = z.object({
   optionId: z.string().trim().min(1).max(160),
   coveredDays: z.coerce.number().int().min(1).max(3650),
   amountPaid: z.coerce.number().int().positive().max(10_000_000),
-  paymentMethod: paymentMethodSchema,
+  paymentMethod: z.enum(["BaridiMob", "Binance", "RedotPay", "External"]),
 });
 export const productCheckoutLinkIssueSchema = z.object({
   slug: z.string().trim().min(1).max(160).regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/),
