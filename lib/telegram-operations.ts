@@ -62,7 +62,7 @@ function registrationId() {
 
 type InlineKeyboard = { inline_keyboard: { text: string; callback_data: string }[][] };
 type ReplyKeyboard = { keyboard: { text: string }[][]; resize_keyboard: true; is_persistent: true };
-type ReplyMarkup = InlineKeyboard | ReplyKeyboard;
+type ReplyMarkup = InlineKeyboard | ReplyKeyboard | { force_reply: true; input_field_placeholder?: string };
 
 function menuKeyboard(locale: TelegramInterfaceLocale, role: TelegramRole): ReplyKeyboard {
   const labels = locale === "ar"
@@ -534,6 +534,11 @@ export async function handleTelegramOperationsCallback(input: {
     try { await sendStockValue(String(input.chatId), locale); } catch { await reply(String(input.chatId), textFor(locale, "تعذر حساب قيمة المخزون حالياً.", "Stock value is unavailable right now.")); }
     return;
   }
+  if (selected[0] === "nn") {
+    if (!canOperate(user)) { await reply(String(input.chatId), textFor(locale, "غير مصرح لك بهذه العملية.", "Not authorised.")); return; }
+    await reply(String(input.chatId), textFor(locale, `✏️ اكتب لقباً مؤقتاً لهذا الطلب ثم أرسل كـ رد على هذه الرسالة.\n#nickname:${selected[1]}`, `✏️ Reply to this message with a temporary nickname for this order.\n#nickname:${selected[1]}`), { force_reply: true, input_field_placeholder: textFor(locale, "مثال: زبون سارة", "Example: Sarah client") });
+    return;
+  }
   if (selected[0] === "own") {
     if (!ownerOnly(user)) { await reply(String(input.chatId), textFor(locale, "غير مصرح لك بهذه العملية.", "Not authorised.")); return; }
     try {
@@ -753,6 +758,7 @@ export async function handleTelegramOperationsCallback(input: {
       await reply(String(input.chatId), textFor(locale, "✅ تم إنشاء العملية. رابط التفعيل في الرسالة التالية.", "✅ Operation created. Your activation link is in the next message."), { inline_keyboard: [[
         { text: textFor(locale, "✅ إكمال", "✅ Complete"), callback_data: `op|${operation.operationId}|complete` },
         { text: textFor(locale, "❌ إلغاء", "❌ Cancel"), callback_data: `op|${operation.operationId}|cancel` },
+        { text: textFor(locale, "✏️ لقب", "✏️ Nickname"), callback_data: `nn|${operation.operationId}` },
       ]] });
       await reply(String(input.chatId), activationLink);
     } catch {
@@ -784,6 +790,7 @@ export async function handleTelegramOperationsMessage(input: {
   username?: string;
   languageCode?: string;
   text?: string;
+  replyToText?: string;
 }) {
   // Operations commands are private by design: group membership is not an
   // authorization boundary and registration IDs must never be posted in groups.
@@ -800,6 +807,17 @@ export async function handleTelegramOperationsMessage(input: {
   const rawText = (input.text ?? "").trim();
   const routedText = routeMenuButton(input.text);
   const chatId = telegramId(input.chatId);
+  const nicknameOperationId = input.replyToText?.match(/#nickname:([0-9a-f-]{36})/i)?.[1];
+  if (nicknameOperationId && canOperate(user) && rawText && rawText.length <= 60) {
+    const { data: operation } = await getSupabaseServiceClient().from("snapchat_operations").select("id").eq("id", nicknameOperationId).eq("admin_telegram_user_id", identity.userId).eq("status", "active").maybeSingle();
+    if (operation) {
+      await reply(chatId, textFor(locale, `📝 الطلب: ${rawText}\nاللقب مؤقت ويظهر هنا فقط.`, `📝 Order: ${rawText}\nThis nickname is temporary and appears only here.`), { inline_keyboard: [[
+        { text: textFor(locale, "✅ إكمال", "✅ Complete"), callback_data: `op|${nicknameOperationId}|complete` },
+        { text: textFor(locale, "❌ إلغاء", "❌ Cancel"), callback_data: `op|${nicknameOperationId}|cancel` },
+      ]] });
+      return;
+    }
+  }
   if (ownerOnly(user) && rawText && !rawText.startsWith("/") && routedText === rawText) {
     const pendingCommissionAdminId = await takeCustomCommissionInput(identity.userId);
     if (pendingCommissionAdminId) {

@@ -45,6 +45,7 @@ export async function POST(request: Request) {
       username: message.from.username,
       languageCode: message.from.language_code,
       text: message.text,
+      replyToText: message.reply_to_message?.text,
     });
   } catch {
     // Telegram retries transient failures. Do not log the update payload:

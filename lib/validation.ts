@@ -19,6 +19,7 @@ export const telegramWebhookUpdateSchema = z.object({
       language_code: z.string().max(16).optional(),
     }),
     chat: z.object({ id: z.number().int(), type: z.string().max(32) }),
+    reply_to_message: z.object({ text: z.string().max(4096).optional() }).optional(),
   }).optional(),
   callback_query: z.object({
     id: z.string().trim().min(1).max(128),
@@ -48,6 +49,7 @@ export const telegramCallbackDataSchema = z.union([
   z.tuple([z.literal("cr"), snapchatCardTypeSchema]),
   z.tuple([z.literal("ru"), z.string().uuid()]),
   z.tuple([z.literal("sv")]),
+  z.tuple([z.literal("nn"), z.string().uuid()]),
   z.tuple([z.literal("own"), z.enum(["admins", "pending", "upload", "stock", "orders", "external"])]),
   z.tuple([z.literal("ops"), z.enum(["orders", "external", "stock"])]),
   z.tuple([z.literal("wo"), z.string().regex(/^[A-Za-z0-9_-]{1,160}$/)]),
