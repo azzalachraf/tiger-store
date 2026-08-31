@@ -10,7 +10,7 @@ import { claimSnapchatCard, clearAvailableRedeemCards, clearTelegramRedeemCardUp
 import { parseTelegramRedeemCardLines } from "@/lib/telegram-card-upload";
 import { completeSnapchatSale } from "@/lib/telegram-warranty";
 import { absoluteUrl } from "@/lib/seo";
-import { getAdminCycleStatistics, getAdminFinanceSummary } from "@/lib/finance";
+import { getAdminCycleStatistics, getAdminFinanceSummary, getFinanceSettings } from "@/lib/finance";
 import { formatOwnerAnalytics, getOwnerAnalytics, rangeFor, type AnalyticsRange } from "@/lib/owner-analytics";
 import { deleteProduct, getOrderById, getOrders, getProductById, getProductBySlug, saveProduct } from "@/lib/admin-store";
 import { issueOrderWarrantyLink } from "@/lib/order-warranty";
@@ -279,8 +279,27 @@ async function sendCardStock(chatId: string, locale: TelegramInterfaceLocale, ca
     inline_keyboard: snapchatCardTypes.flatMap((cardType) => [[
       { text: textFor(locale, `🗑️ تنظيف ${cardLabel(cardType, locale)}`, `🗑️ Clear ${cardLabel(cardType, locale)}`), callback_data: `cs|${cardType}` },
       { text: textFor(locale, `👁️ عرض ${cardLabel(cardType, locale)}`, `👁️ View ${cardLabel(cardType, locale)}`), callback_data: `cv|${cardType}` },
-    ]]),
+    ]]).concat([[{ text: textFor(locale, "💵 قيمة المخزون", "💵 Stock value"), callback_data: "sv" }]]),
   } : undefined);
+}
+
+function usd(valueInCents: number) {
+  return `$${(valueInCents / 100).toFixed(2)}`;
+}
+
+async function sendStockValue(chatId: string, locale: TelegramInterfaceLocale) {
+  const [counts, settings] = await Promise.all([getAvailableCardCounts(), getFinanceSettings()]);
+  let totalCents = 0;
+  const lines = snapchatCardTypes.map((cardType) => {
+    const count = counts.get(cardType) ?? 0;
+    const unitCents = settings.cardCostsUsdCents[cardType];
+    const subtotalCents = count * unitCents;
+    totalCents += subtotalCents;
+    return `${cardLabel(cardType, locale)}: ${count} × ${usd(unitCents)} = ${usd(subtotalCents)}`;
+  });
+  await reply(chatId, textFor(locale,
+    `💵 قيمة مخزون البطاقات\n${lines.join("\n")}\n\nالإجمالي: ${usd(totalCents)}`,
+    `💵 Card stock value\n${lines.join("\n")}\n\nTotal: ${usd(totalCents)}`));
 }
 
 async function sendOwnerCardCodes(chatId: string, locale: TelegramInterfaceLocale, cardType: SnapchatCardType) {
@@ -508,6 +527,11 @@ export async function handleTelegramOperationsCallback(input: {
       await audit(identity.userId, "inventory", selected[1], "manually_used_redeem_card_restored", {});
       await reply(String(input.chatId), textFor(locale, "✅ أعيدت البطاقة اليدوية إلى المخزون المتاح.", "✅ The manually used card was restored to available stock."));
     } catch { await reply(String(input.chatId), textFor(locale, "لا يمكن إرجاع هذه البطاقة؛ قد تكون مستخدمة في عملية مكتملة.", "This card cannot be restored; it may belong to a completed operation.")); }
+    return;
+  }
+  if (selected[0] === "sv") {
+    if (!ownerOnly(user)) { await reply(String(input.chatId), textFor(locale, "غير مصرح لك بهذه العملية.", "Not authorised.")); return; }
+    try { await sendStockValue(String(input.chatId), locale); } catch { await reply(String(input.chatId), textFor(locale, "تعذر حساب قيمة المخزون حالياً.", "Stock value is unavailable right now.")); }
     return;
   }
   if (selected[0] === "own") {
@@ -801,10 +825,10 @@ export async function handleTelegramOperationsMessage(input: {
         const codes = parseTelegramRedeemCardLines(cardType, rawText);
         const result = await uploadRedeemCardsFromTelegram(cardType, codes);
         await clearTelegramRedeemCardUploadSession(identity.userId);
-        await audit(identity.userId, "inventory", cardType, "redeem_cards_uploaded_from_telegram", { added: String(result.added), duplicates: String(result.duplicates) });
+        await audit(identity.userId, "inventory", cardType, "redeem_cards_uploaded_from_telegram", { added: String(result.added), restored: String(result.restored), duplicates: String(result.duplicates) });
         await reply(chatId, textFor(locale,
-          `تمت إضافة ${result.added} بطاقة من نوع ${cardLabel(cardType, locale)}.${result.duplicates ? ` تم تجاهل ${result.duplicates} مكرر.` : ""}`,
-          `${result.added} ${cardLabel(cardType, locale)} cards were added.${result.duplicates ? ` ${result.duplicates} duplicate(s) were skipped.` : ""}`));
+          `تمت إضافة ${result.added} بطاقة من نوع ${cardLabel(cardType, locale)}.${result.restored ? ` وأُعيدت ${result.restored} بطاقة مستعملة يدوياً إلى المخزون.` : ""}${result.duplicates ? ` تم تجاهل ${result.duplicates} مكرر.` : ""}`,
+          `${result.added} ${cardLabel(cardType, locale)} cards were added.${result.restored ? ` ${result.restored} manually used card(s) were restored to stock.` : ""}${result.duplicates ? ` ${result.duplicates} duplicate(s) were skipped.` : ""}`));
         await notifyLowStock(result.counts, identity.userId);
       } catch {
         await reply(chatId, textFor(locale,

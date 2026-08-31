@@ -10,6 +10,7 @@ assert.equal(telegramCallbackDataSchema.safeParse(["cs", "try_24"]).success, tru
 assert.equal(telegramCallbackDataSchema.safeParse(["cc", "try_24", "confirm"]).success, true);
 assert.equal(telegramCallbackDataSchema.safeParse(["cv", "try_24"]).success, true);
 assert.equal(telegramCallbackDataSchema.safeParse(["ru", "b964657e-9b61-4e05-b787-b902a2fa1a7c"]).success, true);
+assert.equal(telegramCallbackDataSchema.safeParse(["sv"]).success, true);
 assert.equal(telegramCallbackDataSchema.safeParse(["ops", "orders"]).success, true);
 assert.equal(telegramCallbackDataSchema.safeParse(["ops", "external"]).success, true);
 assert.equal(telegramCallbackDataSchema.safeParse(["ops", "stock"]).success, true);
