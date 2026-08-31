@@ -364,7 +364,7 @@ async function sendAdminOverview(chatId: string, locale: TelegramInterfaceLocale
     `👤 ${operatorName(admin)}\n💼 ${compensationLabel}\nCompleted orders: ${summary.completedOrders}\nCommission earned: ${summary.commissionDzd} DA\nAdjustments: ${summary.adjustmentsDzd} DA\nPaid: ${summary.paidDzd} DA\nRemaining credit: ${summary.remainingDzd} DA\nNext payment: ${summary.nextPaymentDate}`), {
     inline_keyboard: [
       [{ text: textFor(locale, "💼 الراتب أو العمولة", "💼 Salary or commission"), callback_data: `adm|${adminId}|compensation` }],
-      [{ text: textFor(locale, "➕➖ تعديل العمولة", "➕➖ Adjust commission"), callback_data: `adm|${adminId}|adjust` }],
+      [{ text: textFor(locale, "➕➖ إضافة راتب أو تعديل", "➕➖ Add salary or adjustment"), callback_data: `adm|${adminId}|adjust` }],
       [{ text: textFor(locale, "💸 تسجيل دفعة", "💸 Record payment"), callback_data: `adm|${adminId}|pay` }],
       [{ text: textFor(locale, "👥 رجوع للمشرفين", "👥 Back to admins"), callback_data: "own|admins" }],
     ],
@@ -541,7 +541,7 @@ export async function handleTelegramOperationsCallback(input: {
       if (selected[2] === "compensation") await sendCompensationPicker(String(input.chatId), locale, adminId);
       if (selected[2] === "adjust") {
         const admin = await findAdmin(adminId);
-        await reply(String(input.chatId), textFor(locale, `➕➖ ${operatorName(admin)}\nاختر مقدار الزيادة أو العقوبة.`, `➕➖ ${operatorName(admin)}\nChoose a credit increase or penalty.`), {
+        await reply(String(input.chatId), textFor(locale, `➕➖ ${operatorName(admin)}\nأضف راتباً أو مكافأة، أو اختر عقوبة.`, `➕➖ ${operatorName(admin)}\nAdd salary or a bonus, or choose a penalty.`), {
           inline_keyboard: [
             [{ text: "➕ 10 DA", callback_data: `adj|${adminId}|p10` }, { text: "➕ 50 DA", callback_data: `adj|${adminId}|p50` }, { text: "➕ 100 DA", callback_data: `adj|${adminId}|p100` }],
             [{ text: "➖ 10 DA", callback_data: `adj|${adminId}|m10` }, { text: "➖ 50 DA", callback_data: `adj|${adminId}|m50` }, { text: "➖ 100 DA", callback_data: `adj|${adminId}|m100` }],
