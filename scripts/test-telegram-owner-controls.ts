@@ -6,6 +6,9 @@ assert.equal(telegramCallbackDataSchema.safeParse(["own", "upload"]).success, tr
 assert.equal(telegramCallbackDataSchema.safeParse(["own", "stock"]).success, true);
 assert.equal(telegramCallbackDataSchema.safeParse(["own", "orders"]).success, true);
 assert.equal(telegramCallbackDataSchema.safeParse(["own", "external"]).success, true);
+assert.equal(telegramCallbackDataSchema.safeParse(["ops", "orders"]).success, true);
+assert.equal(telegramCallbackDataSchema.safeParse(["ops", "external"]).success, true);
+assert.equal(telegramCallbackDataSchema.safeParse(["ops", "stock"]).success, true);
 assert.equal(telegramCallbackDataSchema.safeParse(["wo", "TS-123456"]).success, true);
 assert.equal(telegramCallbackDataSchema.safeParse(["wi", "TS-123456", "0"]).success, true);
 assert.equal(telegramCallbackDataSchema.safeParse(["wc", "TS-123456", "0", 12, "inr_199"]).success, true);

@@ -43,6 +43,7 @@ export const telegramCallbackDataSchema = z.union([
   z.tuple([z.literal("an"), z.enum(["today", "yesterday", "7d", "30d"])]),
   z.tuple([z.literal("up"), snapchatCardTypeSchema]),
   z.tuple([z.literal("own"), z.enum(["admins", "pending", "upload", "stock", "orders", "external"])]),
+  z.tuple([z.literal("ops"), z.enum(["orders", "external", "stock"])]),
   z.tuple([z.literal("wo"), z.string().regex(/^[A-Za-z0-9_-]{1,160}$/)]),
   z.tuple([z.literal("wi"), z.string().regex(/^[A-Za-z0-9_-]{1,160}$/), z.string().regex(/^(?:0|[1-9][0-9]?)$/)]),
   z.tuple([z.literal("wc"), z.string().regex(/^[A-Za-z0-9_-]{1,160}$/), z.string().regex(/^(?:0|[1-9][0-9]?)$/), snapchatPlanSchema, snapchatCardTypeSchema]),

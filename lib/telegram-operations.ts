@@ -45,6 +45,7 @@ function usdCents(value: string) {
 }
 
 function ownerOnly(user: TelegramUserRow) { return user.role === "owner"; }
+function canOperate(user: TelegramUserRow) { return user.role === "owner" || user.role === "admin"; }
 
 function commandParts(value: string | undefined) { return (value ?? "").split("|").map((part) => part.trim()); }
 
@@ -67,16 +68,17 @@ function menuKeyboard(locale: TelegramInterfaceLocale, role: TelegramRole): Repl
   const labels = locale === "ar"
     ? {
         snapchat: "🛒 بيع Snapchat", stats: "📊 إحصاءاتي", owner: "👑 لوحة المالك", profit: "💰 صافي الربح",
-        cards: "⬆️ رفع البطاقات",
+        cards: "⬆️ رفع البطاقات", websiteOrders: "📋 طلبات الموقع", externalOrder: "📝 طلب خارجي", cardStock: "📦 مخزون البطاقات",
         approval: "👥 إدارة المشرفين", arabic: "🌐 العربية", english: "🌐 English",
       }
     : {
         snapchat: "🛒 Snapchat sale", stats: "📊 My stats", owner: "👑 Owner controls", profit: "💰 Net profit",
-        cards: "⬆️ Upload cards",
+        cards: "⬆️ Upload cards", websiteOrders: "📋 Website orders", externalOrder: "📝 External order", cardStock: "📦 Card stock",
         approval: "👥 Manage admins", arabic: "🌐 العربية", english: "🌐 English",
       };
   const rows = [[labels.snapchat, labels.stats]];
   if (role === "owner") rows.push([labels.owner, labels.profit], [labels.cards], [labels.approval]);
+  if (role === "owner" || role === "admin") rows.push([labels.websiteOrders, labels.externalOrder], [labels.cardStock]);
   rows.push([labels.arabic, labels.english]);
   return { keyboard: rows.map((row) => row.map((text) => ({ text }))), resize_keyboard: true, is_persistent: true };
 }
@@ -91,6 +93,9 @@ function routeMenuButton(value: string | undefined) {
     "⬆️ رفع البطاقات": "/upload_cards", "⬆️ Upload cards": "/upload_cards",
     "👥 إدارة المشرفين": "/owner", "👥 Manage admins": "/owner",
     "👥 اعتماد مشرف": "/approve_help", "👥 Approve admin": "/approve_help",
+    "📋 طلبات الموقع": "/website_orders", "📋 Website orders": "/website_orders",
+    "📝 طلب خارجي": "/external_order", "📝 External order": "/external_order",
+    "📦 مخزون البطاقات": "/card_stock", "📦 Card stock": "/card_stock",
     "🌐 العربية": "/ar", "🌐 English": "/en",
   };
   return commands[text] ?? text;
@@ -451,13 +456,22 @@ export async function handleTelegramOperationsCallback(input: {
     }
     return;
   }
+  if (selected[0] === "ops") {
+    if (!canOperate(user)) { await reply(String(input.chatId), textFor(locale, "غير مصرح لك بهذه العملية.", "Not authorised.")); return; }
+    try {
+      if (selected[1] === "orders") await sendPendingWebsiteOrderPicker(String(input.chatId), locale);
+      else if (selected[1] === "external") await sendExternalOrderPlans(String(input.chatId), locale);
+      else await sendCardStock(String(input.chatId), locale);
+    } catch { await reply(String(input.chatId), textFor(locale, "تعذر تحميل هذه العملية حالياً.", "This operation could not be loaded right now.")); }
+    return;
+  }
   if (selected[0] === "wo") {
-    if (!ownerOnly(user)) { await reply(String(input.chatId), textFor(locale, "غير مصرح لك بهذه العملية.", "Not authorised.")); return; }
+    if (!canOperate(user)) { await reply(String(input.chatId), textFor(locale, "غير مصرح لك بهذه العملية.", "Not authorised.")); return; }
     try { await sendWebsiteOrderItemPicker(String(input.chatId), locale, selected[1]); } catch { await reply(String(input.chatId), textFor(locale, "تعذر تحميل الطلب حالياً.", "The order could not be loaded right now.")); }
     return;
   }
   if (selected[0] === "wi") {
-    if (!ownerOnly(user)) { await reply(String(input.chatId), textFor(locale, "غير مصرح لك بهذه العملية.", "Not authorised.")); return; }
+    if (!canOperate(user)) { await reply(String(input.chatId), textFor(locale, "غير مصرح لك بهذه العملية.", "Not authorised.")); return; }
     try {
       const order = await getOrderById(selected[1]);
       const item = order?.products[Number(selected[2])];
@@ -472,7 +486,7 @@ export async function handleTelegramOperationsCallback(input: {
     return;
   }
   if (selected[0] === "wc") {
-    if (!ownerOnly(user)) { await reply(String(input.chatId), textFor(locale, "غير مصرح لك بهذه العملية.", "Not authorised.")); return; }
+    if (!canOperate(user)) { await reply(String(input.chatId), textFor(locale, "غير مصرح لك بهذه العملية.", "Not authorised.")); return; }
     const [, orderId, itemIndex, plan, cardType] = selected;
     try {
       const operation = await claimSnapchatCard(identity.userId, plan, cardType);
@@ -485,7 +499,7 @@ export async function handleTelegramOperationsCallback(input: {
     return;
   }
   if (selected[0] === "wp") {
-    if (!ownerOnly(user)) { await reply(String(input.chatId), textFor(locale, "غير مصرح لك بهذه العملية.", "Not authorised.")); return; }
+    if (!canOperate(user)) { await reply(String(input.chatId), textFor(locale, "غير مصرح لك بهذه العملية.", "Not authorised.")); return; }
     const [, operationId, orderId, itemIndex, outcome] = selected;
     try {
       if (outcome === "cancel") {
@@ -502,7 +516,7 @@ export async function handleTelegramOperationsCallback(input: {
     return;
   }
   if (selected[0] === "ex") {
-    if (!ownerOnly(user)) { await reply(String(input.chatId), textFor(locale, "غير مصرح لك بهذه العملية.", "Not authorised.")); return; }
+    if (!canOperate(user)) { await reply(String(input.chatId), textFor(locale, "غير مصرح لك بهذه العملية.", "Not authorised.")); return; }
     if (selected.length === 2) { await sendExternalOrderConfirmation(String(input.chatId), locale, selected[1]); return; }
     try {
       const token = await createExternalWarrantyLink(selected[1]);
@@ -798,6 +812,21 @@ export async function handleTelegramOperationsMessage(input: {
       return;
     }
     await sendSnapchatPlans(chatId, locale);
+    return;
+  }
+
+  if (action === "/website_orders" || action === "/external_order" || action === "/card_stock") {
+    if (!canOperate(user)) {
+      await reply(chatId, textFor(locale, "غير مصرح لك بهذه العملية.", "Not authorised."));
+      return;
+    }
+    try {
+      if (action === "/website_orders") await sendPendingWebsiteOrderPicker(chatId, locale);
+      else if (action === "/external_order") await sendExternalOrderPlans(chatId, locale);
+      else await sendCardStock(chatId, locale);
+    } catch {
+      await reply(chatId, textFor(locale, "تعذر تحميل هذه العملية حالياً.", "This operation could not be loaded right now."));
+    }
     return;
   }
 
