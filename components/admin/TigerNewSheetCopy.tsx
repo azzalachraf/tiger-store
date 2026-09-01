@@ -28,13 +28,13 @@ export function TigerNewSheetCopy({ initialData }: { initialData: TigerNewSheetD
   }
 
   const groups: { scope: TigerNewSheetScope; title: string; note: string; rows: TigerNewSheetRow[] }[] = [
-    { scope: "completed", title: "Completed orders", note: "Customer warranty details and payment method are confirmed.", rows: data.completedRows },
-    { scope: "incomplete", title: "Incomplete orders", note: "Warranty links issued but customer details are still missing.", rows: data.incompleteRows },
+    { scope: "completed", title: "Completed sales", note: "The admin completed the operation and received the activation link.", rows: data.completedRows },
+    { scope: "incomplete", title: "Missing customer details", note: "Completed sales whose customer has not submitted the warranty form yet.", rows: data.incompleteRows },
   ];
 
   return <section className="rounded-md border border-tiger-ember/25 bg-white/[0.045] p-5 shadow-[0_18px_55px_rgba(0,0,0,0.2)]">
     <div><h2 className="text-lg font-black text-white">Tiger New Sheet</h2><p className="mt-1 max-w-3xl text-sm font-semibold leading-6 text-white/55">Copy each group as spreadsheet-ready rows. Spend and Cost stay empty so your formulas and manual values remain in the right columns.</p></div>
-    <div className="mt-4 grid gap-3 sm:grid-cols-3"><Stat label="All warranty orders" value={data.totals.all}/><Stat label="Completed" value={data.totals.completed}/><Stat label="Incomplete" value={data.totals.incomplete}/></div>
+    <div className="mt-4 grid gap-3 sm:grid-cols-3"><Stat label="All warranty orders" value={data.totals.all}/><Stat label="Completed sales" value={data.totals.completed}/><Stat label="Missing customer form" value={data.totals.incomplete}/></div>
     <div className="mt-6 grid gap-6">{groups.map((group) => <section key={group.scope} className="rounded-xl border border-white/10 p-4"><div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between"><div><h3 className="font-black text-white">{group.title}</h3><p className="mt-1 text-sm font-semibold text-white/55">{group.note}</p></div><button type="button" disabled={!group.rows.length || state === "copying"} onClick={() => copyRows(group.scope)} className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-tiger-ember px-4 text-sm font-black text-black disabled:cursor-not-allowed disabled:opacity-50">{state === "copied" && activeScope === group.scope ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}{state === "copying" && activeScope === group.scope ? "Copying…" : state === "copied" && activeScope === group.scope ? "Copied" : `Copy new rows (${group.rows.length})`}</button></div><RowsTable rows={group.rows}/>{!group.rows.length ? <p className="mt-4 text-sm font-semibold text-white/55">No new rows are waiting to be copied.</p> : null}</section>)}</div>
     {state === "error" ? <p className="mt-4 text-sm font-bold text-red-300">Clipboard data is still available, but the copied state could not be saved. Try again before pasting.</p> : null}
   </section>;

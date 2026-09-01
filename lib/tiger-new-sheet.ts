@@ -88,7 +88,10 @@ export async function getTigerNewSheetData(): Promise<TigerNewSheetData> {
     return Boolean(certificate?.customer_details_complete && certificate.form_submitted_at);
   };
 
-  const completedOrders = includedOrders.filter((order) => isComplete(order.id));
+  // Issuing this warranty record happens only after the admin completes the
+  // Telegram operation and consumes the assigned activation card. Customer
+  // form completion is a separate state and must not delay sale reporting.
+  const completedOrders = includedOrders;
   const incompleteOrders = includedOrders.filter((order) => !isComplete(order.id));
   const completedRows = completedOrders.filter((order) => !exportByOrderId.get(order.id)?.copied_at).map((order) => toRow(order, salesByOrder, adminsById));
   const incompleteRows = incompleteOrders.filter((order) => !incompleteCopiedOrderIds.has(order.id)).map((order) => toRow(order, salesByOrder, adminsById));
@@ -110,8 +113,8 @@ export async function markTigerNewSheetRowsCopied(orderIds: string[], scope: Tig
   const states = new Map((certificates ?? []).map((certificate) => [String(certificate.order_id), certificate as CertificateState]));
   const eligibleOrderIds = orderIds.filter((orderId) => {
     const certificate = states.get(orderId);
-    const complete = Boolean(certificate?.customer_details_complete && certificate.form_submitted_at);
-    return scope === "completed" ? complete : Boolean(certificate) && !complete;
+    const customerDetailsComplete = Boolean(certificate?.customer_details_complete && certificate.form_submitted_at);
+    return scope === "completed" ? Boolean(certificate) : Boolean(certificate) && !customerDetailsComplete;
   });
   if (!eligibleOrderIds.length) return [];
   const copiedAt = new Date().toISOString();
