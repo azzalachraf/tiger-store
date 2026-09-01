@@ -3,12 +3,9 @@ import "server-only";
 import { getOrders } from "@/lib/admin-store";
 import { getFinanceReports } from "@/lib/finance";
 import { getSupabaseServiceClient } from "@/lib/supabase";
-import { getCompletedTelegramWarrantyOrderIds } from "@/lib/telegram-warranty";
-import type { TigerNewSheetRow } from "@/lib/tiger-new-sheet-types";
-export { tigerNewSheetHeaders, type TigerNewSheetRow } from "@/lib/tiger-new-sheet-types";
+import type { TigerNewSheetData, TigerNewSheetRow, TigerNewSheetScope } from "@/lib/tiger-new-sheet-types";
+export { tigerNewSheetHeaders, type TigerNewSheetData, type TigerNewSheetRow, type TigerNewSheetScope } from "@/lib/tiger-new-sheet-types";
 
-// Flexy is only offered for Snapchat Plus. The copied Amount Paid is the
-// customer-facing Flexy price less the agreed 15% provider deduction.
 const flexyGrossByMonths: Record<number, number> = { 1: 750, 2: 1000, 3: 1900, 6: 2400, 12: 2800 };
 
 function monthsFromDuration(value: string) {
@@ -29,70 +26,112 @@ function flexyAmountPaid(paymentMethod: string, subscription: string, duration: 
 }
 
 function sheetPaymentMethod(paymentMethod: string) {
-  // Telegram identifies where an operation originated; it is never a customer
-  // payment method. Leave old incomplete records blank until an admin records
-  // the actual method in the order panel.
-  if (paymentMethod === "Telegram") return "Not recorded";
+  if (paymentMethod === "Telegram" || !paymentMethod.trim()) return "Not submitted";
   return paymentMethod === "Flexy" ? "Flexy (15% deducted)" : paymentMethod;
 }
 
-export async function getTigerNewSheetRows(): Promise<TigerNewSheetRow[]> {
+function toRow(
+  order: Awaited<ReturnType<typeof getOrders>>[number],
+  salesByOrder: Map<string, Awaited<ReturnType<typeof getFinanceReports>>["sales"][number]>,
+  adminsById: Map<string, Awaited<ReturnType<typeof getFinanceReports>>["admins"][number]>,
+): TigerNewSheetRow {
+  const subscription = order.products.length ? order.products.map((item) => item.name).join(" + ") : "Manual order";
+  const duration = order.products.length ? order.products.map((item) => item.option || item.duration).join(" + ") : "";
+  const sale = salesByOrder.get(order.id);
+  const amountPaid = flexyAmountPaid(order.paymentMethod, subscription, duration, order.total);
+  const costPrice = sale ? Number(sale.card_cost_dzd) : 0;
+  const commissionDzd = sale ? Number(sale.commission_dzd) : 0;
+  return {
+    orderId: order.id,
+    client: order.customerName || "Customer details incomplete",
+    subscription,
+    duration,
+    costPrice: sale ? String(costPrice) : "",
+    amountPaid: String(amountPaid),
+    spend: "",
+    cost: "",
+    netProfit: String(amountPaid - costPrice - commissionDzd),
+    paymentMethod: sheetPaymentMethod(order.paymentMethod),
+    admin: displayAdmin(sale ? adminsById.get(String(sale.admin_telegram_user_id)) : undefined),
+  };
+}
+
+type CertificateState = { order_id: string; customer_details_complete: boolean; form_submitted_at: string | null };
+
+export async function getTigerNewSheetData(): Promise<TigerNewSheetData> {
   const client = getSupabaseServiceClient();
-  const [{ data: exports, error: exportsError }, orders, finance] = await Promise.all([
-    client.from("order_sheet_exports").select("order_id, warranty_issued_at").is("copied_at", null).order("warranty_issued_at", { ascending: true }),
+  const [{ data: exports, error: exportsError }, { data: copyEvents, error: copyEventsError }, orders, finance] = await Promise.all([
+    client.from("order_sheet_exports").select("order_id, copied_at, warranty_issued_at").order("warranty_issued_at", { ascending: true }),
+    client.from("operation_events").select("entity_id, action").eq("entity_type", "order").eq("action", "tiger_new_sheet_incomplete_copied"),
     getOrders(),
     getFinanceReports(),
   ]);
   if (exportsError) throw new Error("Tiger New Sheet could not be loaded.");
+  if (copyEventsError) throw new Error("Tiger New Sheet copy state could not be loaded.");
 
-  const exportIds = new Set((exports ?? []).map((entry) => String(entry.order_id)));
-  // Tiger New Sheet is for finished, customer-complete warranty orders only.
-  // This prevents placeholder Telegram orders from being copied into the
-  // owner's operational sheet before the customer has submitted the form.
-  const completedWarrantyOrderIds = await getCompletedTelegramWarrantyOrderIds([...exportIds]);
+  const exportRows = exports ?? [];
+  const exportIds = exportRows.map((entry) => String(entry.order_id));
+  const { data: certificates, error: certificatesError } = exportIds.length
+    ? await client.from("warranty_certificates").select("order_id, customer_details_complete, form_submitted_at").in("order_id", exportIds)
+    : { data: [], error: null };
+  if (certificatesError) throw new Error("Tiger New Sheet warranty state could not be loaded.");
+
+  const certificateByOrderId = new Map<string, CertificateState>();
+  for (const certificate of certificates ?? []) certificateByOrderId.set(String(certificate.order_id), certificate as CertificateState);
+  const incompleteCopiedOrderIds = new Set((copyEvents ?? []).map((event) => String(event.entity_id)));
+  const exportByOrderId = new Map(exportRows.map((entry) => [String(entry.order_id), entry]));
   const salesByOrder = new Map(finance.sales.map((sale) => [String(sale.order_id), sale]));
   const adminsById = new Map(finance.admins.map((admin) => [String(admin.telegram_user_id), admin]));
+  const includedOrders = orders.filter((order) => certificateByOrderId.has(order.id) && exportByOrderId.has(order.id));
+  const isComplete = (orderId: string) => {
+    const certificate = certificateByOrderId.get(orderId);
+    return Boolean(certificate?.customer_details_complete && certificate.form_submitted_at);
+  };
 
-  return orders.filter((order) => exportIds.has(order.id) && completedWarrantyOrderIds.has(order.id)).map((order) => {
-    const subscription = order.products.length ? order.products.map((item) => item.name).join(" + ") : "Manual order";
-    const duration = order.products.length ? order.products.map((item) => item.option || item.duration).join(" + ") : "";
-    const sale = salesByOrder.get(order.id);
-    const amountPaid = flexyAmountPaid(order.paymentMethod, subscription, duration, order.total);
-    const costPrice = sale ? Number(sale.card_cost_dzd) : 0;
-    // Commission belongs to the individual completed sale. Salary-based
-    // administrators have a saved commission of 0, so their orders must not
-    // lose the old fixed 100 DA amount in Tiger New Sheet.
-    const commissionDzd = sale ? Number(sale.commission_dzd) : 0;
-    const netProfit = amountPaid - costPrice - commissionDzd;
-    return {
-      orderId: order.id,
-      client: order.customerName || "Customer",
-      subscription,
-      duration,
-      costPrice: sale ? String(costPrice) : "",
-      amountPaid: String(amountPaid),
-      spend: "",
-      cost: "",
-      netProfit: String(netProfit),
-      paymentMethod: sheetPaymentMethod(order.paymentMethod),
-      admin: displayAdmin(sale ? adminsById.get(String(sale.admin_telegram_user_id)) : undefined),
-    };
-  });
+  const completedOrders = includedOrders.filter((order) => isComplete(order.id));
+  const incompleteOrders = includedOrders.filter((order) => !isComplete(order.id));
+  const completedRows = completedOrders.filter((order) => !exportByOrderId.get(order.id)?.copied_at).map((order) => toRow(order, salesByOrder, adminsById));
+  const incompleteRows = incompleteOrders.filter((order) => !incompleteCopiedOrderIds.has(order.id)).map((order) => toRow(order, salesByOrder, adminsById));
+
+  return { completedRows, incompleteRows, totals: { all: includedOrders.length, completed: completedOrders.length, incomplete: incompleteOrders.length } };
 }
 
-export async function markTigerNewSheetRowsCopied(orderIds: string[]) {
+/** Backwards-compatible completed-only accessor for older server callers. */
+export async function getTigerNewSheetRows(): Promise<TigerNewSheetRow[]> {
+  return (await getTigerNewSheetData()).completedRows;
+}
+
+export async function markTigerNewSheetRowsCopied(orderIds: string[], scope: TigerNewSheetScope) {
   if (!orderIds.length) return [];
-  // Do not trust an order ID supplied by the browser. A row can be marked as
-  // copied only after its warranty form has been completed server-side.
-  const completedWarrantyOrderIds = await getCompletedTelegramWarrantyOrderIds(orderIds);
-  const eligibleOrderIds = orderIds.filter((orderId) => completedWarrantyOrderIds.has(orderId));
+  const client = getSupabaseServiceClient();
+  const { data: certificates, error: certificatesError } = await client.from("warranty_certificates")
+    .select("order_id, customer_details_complete, form_submitted_at").in("order_id", orderIds);
+  if (certificatesError) throw new Error("Tiger New Sheet warranty state could not be loaded.");
+  const states = new Map((certificates ?? []).map((certificate) => [String(certificate.order_id), certificate as CertificateState]));
+  const eligibleOrderIds = orderIds.filter((orderId) => {
+    const certificate = states.get(orderId);
+    const complete = Boolean(certificate?.customer_details_complete && certificate.form_submitted_at);
+    return scope === "completed" ? complete : Boolean(certificate) && !complete;
+  });
   if (!eligibleOrderIds.length) return [];
-  const { data, error } = await getSupabaseServiceClient()
-    .from("order_sheet_exports")
-    .update({ copied_at: new Date().toISOString() })
-    .in("order_id", eligibleOrderIds)
-    .is("copied_at", null)
-    .select("order_id");
-  if (error) throw new Error("Tiger New Sheet copy state could not be saved.");
-  return (data ?? []).map((row) => String(row.order_id));
+  const copiedAt = new Date().toISOString();
+  if (scope === "completed") {
+    const { data, error } = await client.from("order_sheet_exports").update({ copied_at: copiedAt })
+      .in("order_id", eligibleOrderIds).is("copied_at", null).select("order_id");
+    if (error) throw new Error("Tiger New Sheet copy state could not be saved.");
+    return (data ?? []).map((row) => String(row.order_id));
+  }
+
+  const { data: existingEvents, error: existingError } = await client.from("operation_events").select("entity_id")
+    .eq("entity_type", "order").eq("action", "tiger_new_sheet_incomplete_copied").in("entity_id", eligibleOrderIds);
+  if (existingError) throw new Error("Tiger New Sheet copy state could not be saved.");
+  const existingIds = new Set((existingEvents ?? []).map((event) => String(event.entity_id)));
+  const newIds = eligibleOrderIds.filter((orderId) => !existingIds.has(orderId));
+  if (newIds.length) {
+    const { error } = await client.from("operation_events").insert(newIds.map((orderId) => ({
+      entity_type: "order", entity_id: orderId, action: "tiger_new_sheet_incomplete_copied", metadata: {},
+    })));
+    if (error) throw new Error("Tiger New Sheet copy state could not be saved.");
+  }
+  return eligibleOrderIds;
 }

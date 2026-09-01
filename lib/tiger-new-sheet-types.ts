@@ -13,3 +13,11 @@ export type TigerNewSheetRow = {
   paymentMethod: string;
   admin: string;
 };
+
+export type TigerNewSheetScope = "completed" | "incomplete";
+
+export type TigerNewSheetData = {
+  completedRows: TigerNewSheetRow[];
+  incompleteRows: TigerNewSheetRow[];
+  totals: { all: number; completed: number; incomplete: number };
+};
