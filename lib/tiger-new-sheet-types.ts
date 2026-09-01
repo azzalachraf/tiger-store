@@ -2,6 +2,9 @@ export const tigerNewSheetHeaders = ["Client", "Subscription", "Duration", "Cost
 
 export type TigerNewSheetRow = {
   orderId: string;
+  orderStatus: "completed" | "pending" | "cancelled";
+  missingDetails: boolean;
+  copied: boolean;
   client: string;
   subscription: string;
   duration: string;
@@ -14,10 +17,7 @@ export type TigerNewSheetRow = {
   admin: string;
 };
 
-export type TigerNewSheetScope = "completed" | "incomplete";
-
 export type TigerNewSheetData = {
-  completedRows: TigerNewSheetRow[];
-  incompleteRows: TigerNewSheetRow[];
-  totals: { all: number; completed: number; incomplete: number };
+  rows: TigerNewSheetRow[];
+  totals: { all: number; completed: number; pending: number; cancelled: number; missingDetails: number; copied: number; uncopied: number };
 };

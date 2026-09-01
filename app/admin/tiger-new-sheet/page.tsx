@@ -7,5 +7,5 @@ export const metadata = { title: "Tiger New Sheet" };
 
 export default async function TigerNewSheetPage() {
   const data = await getTigerNewSheetData();
-  return <AdminShell title="Tiger New Sheet" description="Copy completed Telegram sales immediately, and separately review orders still missing customer warranty details."><TigerNewSheetCopy initialData={data} /></AdminShell>;
+  return <AdminShell title="Tiger New Sheet" description="View every order, filter the list, and copy only rows that have not been exported before."><TigerNewSheetCopy initialData={data} /></AdminShell>;
 }
