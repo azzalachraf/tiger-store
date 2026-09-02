@@ -108,13 +108,7 @@ export const telegramWarrantyFormSchema = z.object({
   platform: z.enum(["Instagram", "Snapchat", "Facebook"]),
   phone: z.string().trim().min(6).max(40),
   paymentMethod: paymentMethodSchema,
-  // Email is helpful for the owner but intentionally optional on the public
-  // warranty form. Empty browser form values become undefined before email
-  // validation so a blank value is not treated as an invalid address.
-  email: z.preprocess(
-    (value) => typeof value === "string" && !value.trim() ? undefined : value,
-    z.string().trim().email().max(180).optional(),
-  ),
+  email: z.string().trim().email().max(180),
 });
 export const financeSettingsSchema = z.object({
   usdDzdRate: z.coerce.number().int().min(1).max(100000),

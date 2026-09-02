@@ -5,9 +5,9 @@ type Copy = { review: string; name: string; user: string; platform: string; phon
 export function WarrantyForm({ token, copy, action }: { token: string; copy: Copy; action: (formData: FormData) => void | Promise<void> }) {
   const [review, setReview] = useState(false);
   const [values, setValues] = useState({ name: "", username: "", platform: "", phone: "", email: "", paymentMethod: "" });
-  const fields: [Exclude<keyof typeof values, "platform">, string, string, boolean][] = [["name", copy.name, "text", true], ["username", copy.user, "text", true], ["phone", copy.phone, "tel", true], ["email", copy.email, "email", false]];
+  const fields: [Exclude<keyof typeof values, "platform">, string, string, boolean][] = [["name", copy.name, "text", true], ["username", copy.user, "text", true], ["phone", copy.phone, "tel", true], ["email", copy.email, "email", true]];
   const reviewFields: [keyof typeof values, string][] = [["name", copy.name], ["username", copy.user], ["platform", copy.platform], ["phone", copy.phone], ["paymentMethod", copy.paymentMethod], ["email", copy.email]];
-  const requiredValuesComplete = Boolean(values.name.trim() && values.username.trim() && values.platform && values.phone.trim() && values.paymentMethod);
+  const requiredValuesComplete = Boolean(values.name.trim() && values.username.trim() && values.platform && values.phone.trim() && values.email.trim() && values.paymentMethod);
 
   if (review) return <form action={action} className="grid gap-4"><input type="hidden" name="token" value={token} /><p className="rounded-xl bg-[var(--page)] p-3 text-sm text-[var(--muted-text)]">{copy.review}</p>{reviewFields.map(([key, label]) => <div key={key} className="rounded-xl border border-[var(--border-color)] p-3"><b>{label}</b><p>{values[key]}</p><input type="hidden" name={key} value={values[key]} /></div>)}<button type="button" onClick={() => setReview(false)} className="min-h-11 rounded-xl border border-[var(--border-color)] font-black text-[var(--text)]">{copy.back}</button><button className="min-h-12 rounded-xl bg-[#FF7300] font-black text-black">{copy.confirm}</button></form>;
 

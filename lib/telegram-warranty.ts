@@ -88,13 +88,13 @@ export async function getCompletedTelegramWarrantyDetails(orderIds: string[]): P
   return details;
 }
 
-export async function submitTelegramWarranty(token: string, input: { name: string; username: string; platform: string; phone: string; email?: string; paymentMethod: "BaridiMob" | "Binance" | "RedotPay" | "Flexy" }) {
+export async function submitTelegramWarranty(token: string, input: { name: string; username: string; platform: string; phone: string; email: string; paymentMethod: "BaridiMob" | "Binance" | "RedotPay" | "Flexy" }) {
   const warranty = await findTelegramWarranty(token);
   if (!warranty) throw new Error("Warranty form is unavailable.");
   const client = getSupabaseServiceClient();
   const { error: paymentError } = await client.from("orders").update({ paymentMethod: input.paymentMethod }).eq("id", warranty.order_id);
   if (paymentError) throw new Error("Warranty payment method could not be saved.");
-  const { error } = await client.rpc("submit_snapchat_warranty_form", { p_token_hash: warranty.public_token_hash, p_name: input.name, p_username: input.username, p_platform: input.platform, p_phone: input.phone, p_email: input.email ?? "" });
+  const { error } = await client.rpc("submit_snapchat_warranty_form", { p_token_hash: warranty.public_token_hash, p_name: input.name, p_username: input.username, p_platform: input.platform, p_phone: input.phone, p_email: input.email });
   if (error) throw new Error("Warranty form is unavailable.");
 }
 
