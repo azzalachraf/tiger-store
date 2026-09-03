@@ -29,6 +29,8 @@ assert.equal(telegramCallbackDataSchema.safeParse(["an", "month"]).success, fals
 assert.equal(telegramCallbackDataSchema.safeParse(["apr", "8915644277"]).success, true);
 assert.equal(telegramCallbackDataSchema.safeParse(["adm", "8915644277", "adjust"]).success, true);
 assert.equal(telegramCallbackDataSchema.safeParse(["adm", "8915644277", "compensation"]).success, true);
+assert.equal(telegramCallbackDataSchema.safeParse(["adm", "8915644277", "gender"]).success, false);
+assert.equal(telegramCallbackDataSchema.safeParse(["apg", "8915644277", "male"]).success, false);
 assert.equal(telegramCallbackDataSchema.safeParse(["cmp", "8915644277", "salary", "0"]).success, true);
 assert.equal(telegramCallbackDataSchema.safeParse(["cmp", "8915644277", "commission", "150"]).success, true);
 assert.equal(telegramCallbackDataSchema.safeParse(["cmp", "8915644277", "custom", "0"]).success, true);

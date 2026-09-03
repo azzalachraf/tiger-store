@@ -10,13 +10,13 @@ export const metadata = { title: "Warranty certificate", robots: { index: false,
 
 const copy = {
   ar: {
-    title: "ضمان Snapchat", form: "أكمل بيانات الضمان", review: "راجع المعلومات جيداً: بعد التأكيد لا يمكن تعديلها.", name: "الاسم الكامل", user: "اسم المستخدم", platform: "منصة التفعيل", phone: "رقم الهاتف", email: "البريد الإلكتروني", paymentMethod: "طريقة الدفع", confirm: "تأكيد وإصدار الشهادة", ready: "شهادتك جاهزة", download: "تحميل شهادة PDF", accept: "فهمت التنبيه وأتابع", order: "الطلب", product: "المنتج", plan: "الخطة", expiry: "تاريخ الانتهاء",
+    title: "ضمان Snapchat", form: "أكمل بيانات الضمان", review: "راجع المعلومات جيداً: بعد التأكيد لا يمكن تعديلها.", name: "الاسم الكامل", user: "اسم المستخدم", platform: "منصة التفعيل", phone: "رقم الهاتف", email: "البريد الإلكتروني", paymentMethod: "طريقة الدفع", confirm: "تأكيد وإصدار الشهادة", ready: "شهادتك جاهزة", download: "تحميل شهادة PDF", follow: "تابع Tiger Store على Telegram", accept: "فهمت التنبيه وأتابع", order: "الطلب", product: "المنتج", plan: "الخطة", expiry: "تاريخ الانتهاء",
     warningTitle: "تنبيه بخصوص رصيد INR",
     warning: "قد يطلب Snapchat رصيداً متاحاً في حساب Apple أو Google بحسب البلد ونشاط الحساب. قد يُستخدم الرصيد في Bitmoji أو استرجاع Streaks أو مشتريات داخل بعض الألعاب أو خدمات Snapchat. توفر هذه الخيارات ورسومها وأهليتها يحدده Snapchat ومتجر الحساب، وTiger Store لا يضمن أي ميزة أو شراء أو قيمة إضافية للرصيد. تأكد من الرصيد والبلد قبل المتابعة.",
     platformOptions: { placeholder: "اختر المنصة", instagram: "Instagram", snapchat: "Snapchat", facebook: "Facebook" }, paymentOptions: { placeholder: "اختر طريقة الدفع", baridiMob: "BaridiMob", binance: "Binance", redotPay: "RedotPay", flexy: "Flexy" },
   },
   en: {
-    title: "Snapchat warranty", form: "Complete warranty details", review: "Review carefully: details cannot be changed after confirmation.", name: "Full name", user: "Username", platform: "Activation platform", phone: "Phone", email: "Email", paymentMethod: "Payment method", confirm: "Confirm and issue certificate", ready: "Your certificate is ready", download: "Download PDF certificate", accept: "I understand and continue", order: "Order", product: "Product", plan: "Plan", expiry: "Expiry",
+    title: "Snapchat warranty", form: "Complete warranty details", review: "Review carefully: details cannot be changed after confirmation.", name: "Full name", user: "Username", platform: "Activation platform", phone: "Phone", email: "Email", paymentMethod: "Payment method", confirm: "Confirm and issue certificate", ready: "Your certificate is ready", download: "Download PDF certificate", follow: "Follow Tiger Store on Telegram", accept: "I understand and continue", order: "Order", product: "Product", plan: "Plan", expiry: "Expiry",
     warningTitle: "INR balance notice",
     warning: "Snapchat may require available Apple or Google account balance depending on the account country and activity. The balance may be used for Bitmoji, restoring Streaks, or purchases in some games or Snapchat services. Snapchat and the account store decide availability, fees, and eligibility; Tiger Store does not guarantee any feature, purchase, or extra value from that balance. Check your balance and country before continuing.",
     platformOptions: { placeholder: "Choose a platform", instagram: "Instagram", snapchat: "Snapchat", facebook: "Facebook" }, paymentOptions: { placeholder: "Choose a payment method", baridiMob: "BaridiMob", binance: "Binance", redotPay: "RedotPay", flexy: "Flexy" },
@@ -48,6 +48,7 @@ export default async function TelegramWarrantyPage({ params }: { params: Promise
           <input type="hidden" name="token" value={token} />
           <button className="mt-3 min-h-11 rounded-xl bg-[#FF7300] px-4 font-black text-black">{c.accept}</button>
         </form> : <a className="mt-5 flex min-h-12 items-center justify-center rounded-xl bg-[#FF7300] font-black text-black" href={"/w/" + token + "/certificate.pdf"}>{c.download}</a>}
+        <a className="flex min-h-12 items-center justify-center rounded-xl border border-[var(--border-color)] px-4 text-center font-black text-[var(--text)]" href="https://t.me/Tigerstoredz" target="_blank" rel="noreferrer">{c.follow}</a>
       </div> : <div className="mt-6"><WarrantyForm token={token} action={submitTelegramWarrantyAction} copy={{ ...c, back: ar ? "رجوع" : "Back", next: ar ? "مراجعة المعلومات" : "Review details" }} /></div>}
     </section>
   </main>;

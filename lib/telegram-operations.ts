@@ -16,7 +16,6 @@ import { deleteProduct, getOrderById, getOrders, getProductById, getProductBySlu
 import { issueOrderWarrantyLink } from "@/lib/order-warranty";
 import { createDirectWarrantyLink } from "@/lib/warranty";
 import { clearCustomCommissionInput, getAdminCompensation, saveAdminCompensation, startCustomCommissionInput, takeCustomCommissionInput } from "@/lib/admin-compensation";
-import { getCompletionCompliment, type TelegramAdminGender } from "@/lib/telegram-completion-compliments";
 
 type TelegramIdentity = {
   userId: string;
@@ -30,7 +29,6 @@ type TelegramUserRow = {
   interface_locale: TelegramInterfaceLocale;
   role: TelegramRole;
   registration_id: string;
-  gender: TelegramAdminGender | null;
 };
 
 function telegramId(value: number) {
@@ -118,6 +116,10 @@ async function reply(chatId: string, text: string, replyMarkup?: ReplyMarkup) {
   await telegramCall("sendMessage", { chat_id: chatId, text: startsWithEmoji ? text : `🐯 ${text}`, disable_web_page_preview: true, ...(replyMarkup ? { reply_markup: replyMarkup } : {}) });
 }
 
+async function replyPlain(chatId: string, text: string) {
+  await telegramCall("sendMessage", { chat_id: chatId, text, disable_web_page_preview: true });
+}
+
 async function answerCallback(id: string) { await telegramCall("answerCallbackQuery", { callback_query_id: id }); }
 
 async function audit(actorTelegramUserId: string, entityType: "telegram_user" | "inventory" | "setting" | "adjustment" | "payment" | "commission" | "order", entityId: string, action: string, metadata: Record<string, string>) {
@@ -133,7 +135,7 @@ async function audit(actorTelegramUserId: string, entityType: "telegram_user" | 
 async function findOperator(userId: string) {
   const { data } = await getSupabaseServiceClient()
     .from("telegram_users")
-    .select("telegram_user_id, interface_locale, role, registration_id, gender")
+    .select("telegram_user_id, interface_locale, role, registration_id")
     .eq("telegram_user_id", userId)
     .maybeSingle();
   return data as TelegramUserRow | null;
@@ -169,7 +171,7 @@ async function registerIdentity(identity: TelegramIdentity) {
       registration_id: code,
       approved_by_telegram_user_id: owner ? identity.userId : null,
       approved_at: owner ? new Date().toISOString() : null,
-    }).select("telegram_user_id, interface_locale, role, registration_id, gender").single();
+    }).select("telegram_user_id, interface_locale, role, registration_id").single();
     if (!error && data) {
       await audit(identity.userId, "telegram_user", identity.userId, owner ? "owner_bootstrapped" : "registration_requested", { role, locale: identity.suggestedLocale });
       return data as TelegramUserRow;
@@ -199,7 +201,6 @@ type TelegramAdminRow = {
   username: string | null;
   role: TelegramRole;
   registration_id: string;
-  gender: TelegramAdminGender | null;
 };
 
 function operatorName(operator: Pick<TelegramAdminRow, "first_name" | "username">) {
@@ -213,7 +214,7 @@ function operatorName(operator: Pick<TelegramAdminRow, "first_name" | "username"
 
 async function listOperators(role: "admin" | "pending") {
   const { data, error } = await getSupabaseServiceClient().from("telegram_users")
-    .select("telegram_user_id, first_name, username, role, registration_id, gender")
+    .select("telegram_user_id, first_name, username, role, registration_id")
     .eq("role", role)
     .order("created_at", { ascending: true })
     .limit(40);
@@ -223,7 +224,7 @@ async function listOperators(role: "admin" | "pending") {
 
 async function findAdmin(adminId: string) {
   const { data, error } = await getSupabaseServiceClient().from("telegram_users")
-    .select("telegram_user_id, first_name, username, role, registration_id, gender")
+    .select("telegram_user_id, first_name, username, role, registration_id")
     .eq("telegram_user_id", adminId)
     .eq("role", "admin")
     .maybeSingle();
@@ -251,31 +252,6 @@ async function sendPendingPicker(chatId: string, locale: TelegramInterfaceLocale
   await reply(chatId, textFor(locale, "✅ اختر الشخص الذي تريد اعتماده كمشرف.", "✅ Choose the person to approve as an admin."), {
     inline_keyboard: pending.map((candidate) => [{ text: `✅ ${operatorName(candidate)}`.slice(0, 60), callback_data: `apr|${candidate.telegram_user_id}` }]),
   });
-}
-
-async function sendAdminGenderPicker(
-  chatId: string,
-  locale: TelegramInterfaceLocale,
-  adminId: string,
-  purpose: "approve" | "update",
-) {
-  await reply(chatId, textFor(locale,
-    "👤 اختر صيغة رسالة الإكمال لهذا المشرف. يمكن تغييرها لاحقاً من إدارة المشرفين.",
-    "👤 Choose this admin's completion-message form. You can change it later in Manage admins."), {
-    inline_keyboard: [[
-      { text: textFor(locale, "👨 ذكر", "👨 Male"), callback_data: `${purpose === "approve" ? "apg" : "agd"}|${adminId}|male` },
-      { text: textFor(locale, "👩 أنثى", "👩 Female"), callback_data: `${purpose === "approve" ? "apg" : "agd"}|${adminId}|female` },
-    ]],
-  });
-}
-
-async function sendCompletionCompliment(adminId: string, locale: TelegramInterfaceLocale, gender: TelegramAdminGender | null) {
-  // A notification failure must never turn a completed sale into a failed one.
-  try {
-    await reply(adminId, getCompletionCompliment(locale, gender));
-  } catch {
-    // Telegram delivery is best-effort; the completed operation remains final.
-  }
 }
 
 async function sendCardUploadPicker(chatId: string, locale: TelegramInterfaceLocale) {
@@ -440,16 +416,10 @@ async function sendAdminOverview(chatId: string, locale: TelegramInterfaceLocale
   const compensationLabel = compensation.mode === "salary"
     ? textFor(locale, "راتب — 0 DA لكل طلب", "Salary — 0 DA per order")
     : textFor(locale, `عمولة — ${compensation.commissionDzd} DA لكل طلب`, `Commission — ${compensation.commissionDzd} DA per order`);
-  const genderLabel = admin.gender === "male"
-    ? textFor(locale, "ذكر", "Male")
-    : admin.gender === "female"
-      ? textFor(locale, "أنثى", "Female")
-      : textFor(locale, "غير محددة", "Not selected");
   await reply(chatId, textFor(locale,
-    `👤 ${operatorName(admin)}\n👤 الصيغة: ${genderLabel}\n💼 ${compensationLabel}\nالطلبات المكتملة: ${summary.completedOrders}\nالعمولة: ${summary.commissionDzd} DA\nالتعديلات: ${summary.adjustmentsDzd} DA\nالمدفوع: ${summary.paidDzd} DA\nالرصيد: ${summary.remainingDzd} DA\nالدفع القادم: ${summary.nextPaymentDate}`,
-    `👤 ${operatorName(admin)}\n👤 Form: ${genderLabel}\n💼 ${compensationLabel}\nCompleted orders: ${summary.completedOrders}\nCommission earned: ${summary.commissionDzd} DA\nAdjustments: ${summary.adjustmentsDzd} DA\nPaid: ${summary.paidDzd} DA\nRemaining credit: ${summary.remainingDzd} DA\nNext payment: ${summary.nextPaymentDate}`), {
+    `👤 ${operatorName(admin)}\n💼 ${compensationLabel}\nالطلبات المكتملة: ${summary.completedOrders}\nالعمولة: ${summary.commissionDzd} DA\nالتعديلات: ${summary.adjustmentsDzd} DA\nالمدفوع: ${summary.paidDzd} DA\nالرصيد: ${summary.remainingDzd} DA\nالدفع القادم: ${summary.nextPaymentDate}`,
+    `👤 ${operatorName(admin)}\n💼 ${compensationLabel}\nCompleted orders: ${summary.completedOrders}\nCommission earned: ${summary.commissionDzd} DA\nAdjustments: ${summary.adjustmentsDzd} DA\nPaid: ${summary.paidDzd} DA\nRemaining credit: ${summary.remainingDzd} DA\nNext payment: ${summary.nextPaymentDate}`), {
     inline_keyboard: [
-      [{ text: textFor(locale, "👤 صيغة الرسائل", "👤 Message form"), callback_data: `adm|${adminId}|gender` }],
       [{ text: textFor(locale, "💼 الراتب أو العمولة", "💼 Salary or commission"), callback_data: `adm|${adminId}|compensation` }],
       [{ text: textFor(locale, "➕➖ إضافة راتب أو تعديل", "➕➖ Add salary or adjustment"), callback_data: `adm|${adminId}|adjust` }],
       [{ text: textFor(locale, "💸 تسجيل دفعة", "💸 Record payment"), callback_data: `adm|${adminId}|pay` }],
@@ -621,11 +591,11 @@ export async function handleTelegramOperationsCallback(input: {
     const [, orderId, itemIndex, plan, cardType] = selected;
     try {
       const operation = await claimSnapchatCard(identity.userId, plan, cardType);
-      await reply(String(input.chatId), textFor(locale, "✅ تم حجز البطاقة. رابط التفعيل في الرسالة التالية.", "✅ Card reserved. The activation link is in the next message."), { inline_keyboard: [[
+      await reply(String(input.chatId), textFor(locale, `✅ تم اختيار بطاقة ${cardLabel(cardType, locale)}. رابط التفعيل في الرسالة التالية.`, `✅ ${cardLabel(cardType, locale)} card has been chosen. The activation link is in the next message.`), { inline_keyboard: [[
         { text: textFor(locale, "✅ إكمال طلب الموقع", "✅ Complete website order"), callback_data: `wp|${operation.operationId}|${orderId}|${itemIndex}|complete` },
         { text: textFor(locale, "❌ إلغاء", "❌ Cancel"), callback_data: `wp|${operation.operationId}|${orderId}|${itemIndex}|cancel` },
       ]] });
-      await reply(String(input.chatId), `https://apps.apple.com/redeem?code=${encodeURIComponent(operation.code)}`);
+      await replyPlain(String(input.chatId), `https://apps.apple.com/redeem?code=${encodeURIComponent(operation.code)}`);
     } catch { await reply(String(input.chatId), textFor(locale, "لا يوجد كود متاح لهذا النوع حالياً.", "No code is currently available for this card type.")); }
     return;
   }
@@ -642,7 +612,6 @@ export async function handleTelegramOperationsCallback(input: {
         await audit(identity.userId, "order", orderId, "website_snapchat_order_completed_with_card", { itemIndex, operationId });
         await reply(String(input.chatId), textFor(locale, "✅ اكتمل طلب الموقع. رابط الضمان في الرسالة التالية.", "✅ Website order completed. The warranty link is in the next message."));
         await reply(String(input.chatId), absoluteUrl(`/warranty/${token}`));
-        await sendCompletionCompliment(identity.userId, locale, user.gender);
       }
     } catch { await reply(String(input.chatId), textFor(locale, "تعذر إكمال عملية طلب الموقع. تحقق من حالة الطلب والبطاقة.", "The website order could not be completed. Check the order and card status.")); }
     return;
@@ -667,44 +636,16 @@ export async function handleTelegramOperationsCallback(input: {
       .eq("role", "pending")
       .maybeSingle();
     if (error || !candidate) { await reply(String(input.chatId), textFor(locale, "هذا الطلب غير متاح أو تمت معالجته. ⚠️", "This request is unavailable or already handled. ⚠️")); return; }
-    await sendAdminGenderPicker(String(input.chatId), locale, candidateId, "approve");
-    return;
-  }
-  if (selected[0] === "apg") {
-    if (!ownerOnly(user)) { await reply(String(input.chatId), textFor(locale, "غير مصرح لك بهذه العملية.", "Not authorised.")); return; }
-    const [, candidateId, gender] = selected;
-    const { data: candidate, error } = await getSupabaseServiceClient().from("telegram_users")
-      .select("telegram_user_id, first_name, username, role, registration_id, gender")
-      .eq("telegram_user_id", candidateId)
-      .eq("role", "pending")
-      .maybeSingle();
-    if (error || !candidate) { await reply(String(input.chatId), textFor(locale, "هذا الطلب غير متاح أو تمت معالجته. ⚠️", "This request is unavailable or already handled. ⚠️")); return; }
     const { error: updateError } = await getSupabaseServiceClient().from("telegram_users").update({
       role: "admin",
-      gender,
       approved_by_telegram_user_id: identity.userId,
       approved_at: new Date().toISOString(),
     }).eq("telegram_user_id", candidateId).eq("role", "pending");
     if (updateError) { await reply(String(input.chatId), textFor(locale, "تعذرت الموافقة حالياً. ⚠️", "Approval could not be saved. ⚠️")); return; }
     await saveAdminCompensation({ adminId: candidateId, updatedByTelegramUserId: identity.userId, mode: "salary", commissionDzd: 0 });
-    await audit(identity.userId, "telegram_user", candidateId, "admin_approved", { role: "admin", gender });
+    await audit(identity.userId, "telegram_user", candidateId, "admin_approved", { role: "admin" });
     await reply(String(input.chatId), textFor(locale, `✅ تمت الموافقة على ${operatorName(candidate as TelegramAdminRow)}. اختر الآن راتباً أو عمولة.`, `✅ ${operatorName(candidate as TelegramAdminRow)} is now an admin. Choose salary or commission now.`));
     await sendCompensationPicker(String(input.chatId), locale, candidateId);
-    return;
-  }
-  if (selected[0] === "agd") {
-    if (!ownerOnly(user)) { await reply(String(input.chatId), textFor(locale, "غير مصرح لك بهذه العملية.", "Not authorised.")); return; }
-    const [, adminId, gender] = selected;
-    try {
-      const admin = await findAdmin(adminId);
-      const { error } = await getSupabaseServiceClient().from("telegram_users").update({ gender }).eq("telegram_user_id", adminId).eq("role", "admin");
-      if (error) throw error;
-      await audit(identity.userId, "telegram_user", adminId, "admin_gender_updated", { gender });
-      await reply(String(input.chatId), textFor(locale, `✅ تم حفظ صيغة الرسائل لـ ${operatorName(admin)}.`, `✅ Completion-message form saved for ${operatorName(admin)}.`));
-      await sendAdminOverview(String(input.chatId), locale, adminId);
-    } catch {
-      await reply(String(input.chatId), textFor(locale, "تعذر حفظ صيغة الرسائل لهذا المشرف. ⚠️", "The message form could not be saved for this admin. ⚠️"));
-    }
     return;
   }
   if (selected[0] === "adm") {
@@ -712,7 +653,6 @@ export async function handleTelegramOperationsCallback(input: {
     const adminId = selected[1];
     try {
       if (selected[2] === "open") await sendAdminOverview(String(input.chatId), locale, adminId);
-      if (selected[2] === "gender") await sendAdminGenderPicker(String(input.chatId), locale, adminId, "update");
       if (selected[2] === "compensation") await sendCompensationPicker(String(input.chatId), locale, adminId);
       if (selected[2] === "adjust") {
         const admin = await findAdmin(adminId);
@@ -819,12 +759,12 @@ export async function handleTelegramOperationsCallback(input: {
     try {
       const operation = await claimSnapchatCard(identity.userId, plan, cardType);
       const activationLink = `https://apps.apple.com/redeem?code=${encodeURIComponent(operation.code)}`;
-      await reply(String(input.chatId), textFor(locale, "✅ تم إنشاء العملية. رابط التفعيل في الرسالة التالية.", "✅ Operation created. Your activation link is in the next message."), { inline_keyboard: [[
+      await reply(String(input.chatId), textFor(locale, `✅ تم اختيار بطاقة ${cardLabel(cardType, locale)}. رابط التفعيل في الرسالة التالية.`, `✅ ${cardLabel(cardType, locale)} card has been chosen. The activation link is in the next message.`), { inline_keyboard: [[
         { text: textFor(locale, "✅ إكمال", "✅ Complete"), callback_data: `op|${operation.operationId}|complete` },
         { text: textFor(locale, "❌ إلغاء", "❌ Cancel"), callback_data: `op|${operation.operationId}|cancel` },
         { text: textFor(locale, "✏️ لقب", "✏️ Nickname"), callback_data: `nn|${operation.operationId}` },
       ]] });
-      await reply(String(input.chatId), activationLink);
+      await replyPlain(String(input.chatId), activationLink);
     } catch {
       await reply(String(input.chatId), textFor(locale, "لا يوجد كود متاح لهذا النوع حالياً.", "No code is currently available for this card type."));
     }
@@ -836,7 +776,6 @@ export async function handleTelegramOperationsCallback(input: {
       if (outcome === "complete") {
         const sale = await completeSnapchatSale({ operationId, adminTelegramUserId: identity.userId });
         await reply(String(input.chatId), textFor(locale, `تم إكمال البيع. أرسل رابط الضمان الخاص للعميل:\n${absoluteUrl(`/w/${sale.token}`)}`, `Sale completed. Send this private warranty link to the customer:\n${absoluteUrl(`/w/${sale.token}`)}`));
-        await sendCompletionCompliment(identity.userId, locale, user.gender);
       } else {
         await finishSnapchatOperation(operationId, identity.userId, "cancelled");
         await reply(String(input.chatId), textFor(locale, "تم إلغاء العملية وإرجاع البطاقة للمخزون.", "Operation cancelled and the card is available again."));
@@ -943,7 +882,7 @@ export async function handleTelegramOperationsMessage(input: {
       return;
     }
     const { data: candidate } = await getSupabaseServiceClient().from("telegram_users")
-      .select("telegram_user_id, role")
+      .select("telegram_user_id, first_name, username, role, registration_id")
       .eq("registration_id", registration)
       .maybeSingle();
     if (!candidate || candidate.role !== "pending") {
@@ -951,7 +890,19 @@ export async function handleTelegramOperationsMessage(input: {
       return;
     }
     const candidateId = String(candidate.telegram_user_id);
-    await sendAdminGenderPicker(chatId, locale, candidateId, "approve");
+    const { error: updateError } = await getSupabaseServiceClient().from("telegram_users").update({
+      role: "admin",
+      approved_by_telegram_user_id: identity.userId,
+      approved_at: new Date().toISOString(),
+    }).eq("telegram_user_id", candidateId).eq("role", "pending");
+    if (updateError) {
+      await reply(chatId, textFor(locale, "تعذرت الموافقة حالياً. ⚠️", "Approval could not be saved. ⚠️"));
+      return;
+    }
+    await saveAdminCompensation({ adminId: candidateId, updatedByTelegramUserId: identity.userId, mode: "salary", commissionDzd: 0 });
+    await audit(identity.userId, "telegram_user", candidateId, "admin_approved", { role: "admin" });
+    await reply(chatId, textFor(locale, `✅ تمت الموافقة على ${operatorName(candidate as TelegramAdminRow)}. اختر الآن راتباً أو عمولة.`, `✅ ${operatorName(candidate as TelegramAdminRow)} is now an admin. Choose salary or commission now.`));
+    await sendCompensationPicker(chatId, locale, candidateId);
     return;
   }
 

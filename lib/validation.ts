@@ -58,13 +58,11 @@ export const telegramCallbackDataSchema = z.union([
   z.tuple([z.literal("wp"), z.string().uuid(), z.string().regex(/^[A-Za-z0-9_-]{1,160}$/), z.string().regex(/^(?:0|[1-9][0-9]?)$/), z.enum(["complete", "cancel"])]),
   z.tuple([z.literal("ex"), snapchatPlanSchema]),
   z.tuple([z.literal("ex"), snapchatPlanSchema, z.literal("confirm")]),
-  z.tuple([z.literal("adm"), telegramCallbackUserIdSchema, z.enum(["open", "adjust", "pay", "compensation", "gender"])]),
+  z.tuple([z.literal("adm"), telegramCallbackUserIdSchema, z.enum(["open", "adjust", "pay", "compensation"])]),
   z.tuple([z.literal("cmp"), telegramCallbackUserIdSchema, z.enum(["salary", "commission", "custom"]), z.enum(["0", "50", "100", "150", "200", "300", "500"])]),
   z.tuple([z.literal("adj"), telegramCallbackUserIdSchema, z.enum(["p10", "p50", "p100", "m10", "m50", "m100"])]),
   z.tuple([z.literal("pay"), telegramCallbackUserIdSchema, z.enum(["50", "100", "500", "full"])]),
   z.tuple([z.literal("apr"), telegramCallbackUserIdSchema]),
-  z.tuple([z.literal("apg"), telegramCallbackUserIdSchema, z.enum(["male", "female"])]),
-  z.tuple([z.literal("agd"), telegramCallbackUserIdSchema, z.enum(["male", "female"])]),
 ]);
 export const advertisingUsdSchema = z.object({ date: z.string().date(), sourceId: z.string().trim().regex(/^[a-z][a-z0-9_-]{1,39}$/), amountUsd: z.string().trim().regex(/^\d+(?:\.\d{1,2})?$/), campaign: z.string().trim().max(160), note: z.string().trim().max(500) });
 export const manualOrderInputSchema = z.object({

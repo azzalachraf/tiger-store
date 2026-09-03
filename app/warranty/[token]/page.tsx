@@ -32,12 +32,12 @@ export default async function WarrantyPage({ params }: WarrantyPageProps) {
   const copy = isArabic ? {
     eyebrow: "شهادة الضمان", title: "شهادة الضمان", intro: "رابط خاص لإصدار شهادة ضمان اشتراكك الرقمي.",
     ready: "تم إنشاء شهادة الضمان", readyText: "احتفظ بها للرجوع إليها عند الحاجة إلى الدعم.", recipient: "صاحب الشهادة", product: "المنتج", plan: "الخطة", order: "رمز الطلب", certificate: "رمز الشهادة", coverage: "مدة التغطية", ends: "تنتهي التغطية", days: "يوم",
-    terms: "شروط الضمان", replacement: "عند وجود مشكلة مشمولة سببها Tiger Store، نحاول الاستبدال أولاً.", refund: "إذا تعذر الاستبدال، يُحتسب استرجاع الجزء غير المستخدم من مدة الضمان بشكل نسبي.", excluded: "المشاكل الناتجة عن العميل غير مشمولة.", download: "تحميل الشهادة PDF", support: "تحتاج مساعدة؟ تواصل معنا",
+    terms: "شروط الضمان", replacement: "عند وجود مشكلة مشمولة سببها Tiger Store، نحاول الاستبدال أولاً.", refund: "إذا تعذر الاستبدال، يُحتسب استرجاع الجزء غير المستخدم من مدة الضمان بشكل نسبي.", excluded: "المشاكل الناتجة عن العميل غير مشمولة.", download: "تحميل الشهادة PDF", follow: "تابع Tiger Store على Telegram", support: "تحتاج مساعدة؟ تواصل معنا",
     complete: "أكمل بيانات الشهادة", instruction: "اكتب الاسم الذي تريد أن يظهر في شهادة الضمان، ثم أكّد استلام المنتج.", name: "الاسم في الشهادة", accept: "أؤكد أن المنتج تم تسليمه وأفهم شروط الضمان أعلاه.", issue: "إصدار شهادتي",
   } : {
     eyebrow: "WARRANTY CERTIFICATE", title: "Warranty certificate", intro: "A private link to issue your digital subscription warranty certificate.",
     ready: "Your warranty certificate is ready", readyText: "Keep it for reference if you ever need support.", recipient: "Certificate holder", product: "Product", plan: "Plan", order: "Order code", certificate: "Certificate code", coverage: "Coverage", ends: "Coverage ends", days: "days",
-    terms: "Warranty terms", replacement: "For a covered failure caused by Tiger Store, we attempt replacement first.", refund: "If replacement is impossible, the unused covered period is refunded proportionally.", excluded: "Customer-caused problems are not covered.", download: "Download PDF certificate", support: "Need help? Contact us",
+    terms: "Warranty terms", replacement: "For a covered failure caused by Tiger Store, we attempt replacement first.", refund: "If replacement is impossible, the unused covered period is refunded proportionally.", excluded: "Customer-caused problems are not covered.", download: "Download PDF certificate", follow: "Follow Tiger Store on Telegram", support: "Need help? Contact us",
     complete: "Complete your certificate", instruction: "Enter the name that should appear on your certificate, then confirm that you received the product.", name: "Name on the certificate", accept: "I confirm that the product was delivered and I understand the warranty terms above.", issue: "Issue my certificate",
   };
   const coverageEnd = new Intl.DateTimeFormat(isArabic ? "ar-DZ" : "en-GB", { dateStyle: "long" }).format(warrantyEndDate(payload));
@@ -74,6 +74,7 @@ export default async function WarrantyPage({ params }: WarrantyPageProps) {
               <ul className="mt-2 list-inside list-disc space-y-1"><li>{copy.replacement}</li><li>{copy.refund}</li><li>{copy.excluded}</li></ul>
             </div>
             <a href={`/warranty/${token}/certificate.pdf`} className="mt-6 flex min-h-12 items-center justify-center gap-2 rounded-xl bg-[#FF7300] px-5 font-black text-[#17120F] transition-colors hover:bg-[#E76800]"><Download className="h-5 w-5" />{copy.download}</a>
+            <a href="https://t.me/Tigerstoredz" target="_blank" rel="noreferrer" className="mt-3 flex min-h-12 items-center justify-center rounded-xl border border-[var(--border-color)] px-5 text-center font-black text-[var(--text)]">{copy.follow}</a>
             <Link href="/contact" className="mt-3 flex min-h-11 items-center justify-center text-sm font-bold text-[var(--muted-text)] underline underline-offset-4">{copy.support}</Link>
           </div>
         ) : (
