@@ -8,13 +8,12 @@ import { advertisingUsdSchema, productSchema, telegramCallbackDataSchema } from 
 import { cardLabel, cardsForPlan, snapchatCardTypes, type SnapchatCardType, type SnapchatPlanMonths } from "@/lib/snapchat-cards";
 import { claimSnapchatCard, clearAvailableRedeemCards, clearTelegramRedeemCardUploadSession, finishSnapchatOperation, getPrivateRedeemCards, getTelegramRedeemCardUploadSession, restoreManuallyUsedRedeemCard, returnReservedRedeemCardToStock, startTelegramRedeemCardUploadSession, syncRedeemInventory, uploadRedeemCardsFromTelegram } from "@/lib/snapchat-operations";
 import { parseTelegramRedeemCardLines } from "@/lib/telegram-card-upload";
-import { completeSnapchatSale } from "@/lib/telegram-warranty";
+import { completeSnapchatSale, createExternalSnapchatSale } from "@/lib/telegram-warranty";
 import { absoluteUrl } from "@/lib/seo";
 import { getAdminCycleStatistics, getAdminFinanceSummary, getFinanceSettings } from "@/lib/finance";
 import { formatOwnerAnalytics, getOwnerAnalytics, rangeFor, type AnalyticsRange } from "@/lib/owner-analytics";
-import { deleteProduct, getOrderById, getOrders, getProductById, getProductBySlug, saveProduct } from "@/lib/admin-store";
+import { deleteProduct, getOrderById, getOrders, getProductById, saveProduct } from "@/lib/admin-store";
 import { issueOrderWarrantyLink } from "@/lib/order-warranty";
-import { createDirectWarrantyLink } from "@/lib/warranty";
 import { clearCustomCommissionInput, getAdminCompensation, saveAdminCompensation, startCustomCommissionInput, takeCustomCommissionInput } from "@/lib/admin-compensation";
 
 type TelegramIdentity = {
@@ -380,19 +379,6 @@ async function sendExternalOrderPlans(chatId: string, locale: TelegramInterfaceL
   });
 }
 
-async function createExternalWarrantyLink(plan: SnapchatPlanMonths) {
-  const product = await getProductBySlug("snapchat-plus");
-  const offer = product?.priceOptions?.find((option) => new RegExp(`(^|\\D)${plan}(\\D|$)`).test(`${option.id} ${option.label} ${option.duration}`));
-  if (!product || !offer) throw new Error("Snapchat plan unavailable.");
-  return createDirectWarrantyLink({
-    slug: product.slug,
-    optionId: offer.id,
-    coveredDays: plan * 30,
-    amountPaid: offer.price,
-    paymentMethod: "External",
-  });
-}
-
 async function sendExternalOrderConfirmation(chatId: string, locale: TelegramInterfaceLocale, plan: SnapchatPlanMonths) {
   await reply(chatId, textFor(locale,
     `✅ هل تم تسليم اشتراك Snapchat Plus لمدة ${planLabel(plan, locale)} من مصدر آخر؟\nبعد التأكيد، ستحصل على رابط الضمان للعميل.`,
@@ -620,10 +606,9 @@ export async function handleTelegramOperationsCallback(input: {
     if (!canOperate(user)) { await reply(String(input.chatId), textFor(locale, "غير مصرح لك بهذه العملية.", "Not authorised.")); return; }
     if (selected.length === 2) { await sendExternalOrderConfirmation(String(input.chatId), locale, selected[1]); return; }
     try {
-      const token = await createExternalWarrantyLink(selected[1]);
-      await audit(identity.userId, "order", `external-snapchat-${selected[1]}`, "external_completed_order_warranty_link_created", { plan: String(selected[1]) });
-      await reply(String(input.chatId), textFor(locale, "✅ رابط البيع الخارجي جاهز. بعد أن يكمل العميل نموذج الضمان، يُحفظ الطلب كطلب مُسلَّم. الرابط في الرسالة التالية.", "✅ The external-sale link is ready. Once the customer completes the warranty form, the delivered order is saved. The link is in the next message."));
-      await reply(String(input.chatId), absoluteUrl(`/warranty/${token}`));
+      const sale = await createExternalSnapchatSale({ planMonths: selected[1], adminTelegramUserId: identity.userId });
+      await reply(String(input.chatId), textFor(locale, "✅ تم حفظ الطلب الخارجي كطلب مُسلَّم. رابط الضمان في الرسالة التالية.", "✅ The external sale is saved as a delivered order. The warranty link is in the next message."));
+      await replyPlain(String(input.chatId), absoluteUrl(`/w/${sale.token}`));
     } catch { await reply(String(input.chatId), textFor(locale, "تعذر إنشاء رابط الضمان لهذه الخطة.", "A warranty link could not be created for this plan.")); }
     return;
   }

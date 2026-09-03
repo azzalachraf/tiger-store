@@ -19,7 +19,8 @@
     "test:telegram-card-upload": "tsx scripts/test-telegram-card-upload.ts",
     "test:telegram-owner-controls": "tsx scripts/test-telegram-owner-controls.ts",
     "test:warranty-payment-method": "tsx scripts/test-warranty-payment-method.ts",
-    "test:tiger-new-sheet": "tsx scripts/test-tiger-new-sheet.ts"
+    "test:tiger-new-sheet": "tsx scripts/test-tiger-new-sheet.ts",
+    "test:external-orders": "tsx scripts/test-external-orders.ts"
   },
   "dependencies": {
     "@radix-ui/react-slot": "^1.1.2",

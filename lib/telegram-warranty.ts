@@ -32,6 +32,154 @@ export function createTelegramWarrantyToken() { return randomBytes(24).toString(
 function offerForPlan(options: ProductPriceOption[] | undefined, plan: SnapchatPlanMonths) { return options?.find((option) => new RegExp(`(^|\\D)${plan}(\\D|$)`).test(`${option.label} ${option.duration}`)); }
 function expiry(start: Date, months: SnapchatPlanMonths, cardType: SnapchatCardType) { const end = new Date(start); if (cardType === "inr_100" || cardType === "inr_199") end.setUTCDate(end.getUTCDate() + 7); end.setUTCMonth(end.getUTCMonth() + months); return end; }
 
+function externalExpiry(start: Date, months: SnapchatPlanMonths) {
+  const end = new Date(start);
+  end.setUTCMonth(end.getUTCMonth() + months);
+  return end;
+}
+
+export async function createExternalSnapchatSale(input: { planMonths: SnapchatPlanMonths; adminTelegramUserId: string }) {
+  const product = await getProductBySlug("snapchat-plus");
+  if (!product) throw new Error("The Snapchat product is unavailable.");
+  const settings = await getFinanceSettings();
+  const configuredPlan = settings.plans[input.planMonths];
+  const commissionDzd = await getAdminCommissionDzd(input.adminTelegramUserId);
+  const catalogOffer = offerForPlan(product.priceOptions, input.planMonths);
+  const offer = catalogOffer ?? {
+    id: `snapchat-${input.planMonths}-months`,
+    label: `${input.planMonths} month${input.planMonths === 1 ? "" : "s"}`,
+    labelAr: `${input.planMonths} ${input.planMonths === 1 ? "شهر" : "أشهر"}`,
+    duration: `${input.planMonths} month${input.planMonths === 1 ? "" : "s"}`,
+    durationAr: `${input.planMonths} ${input.planMonths === 1 ? "شهر" : "أشهر"}`,
+  };
+  if (!Number.isInteger(configuredPlan.priceDzd) || configuredPlan.priceDzd < 1 || !Number.isInteger(commissionDzd) || commissionDzd < 0) {
+    throw new Error("The finance plan is unavailable.");
+  }
+
+  const token = createTelegramWarrantyToken();
+  const now = new Date();
+  const endsAt = externalExpiry(now, input.planMonths);
+  const orderId = `TS-${crypto.randomUUID().replace(/-/g, "").slice(0, 10).toUpperCase()}`;
+  const certificateCode = `TW-${randomBytes(6).toString("hex").toUpperCase()}`;
+  const item: CartItem = {
+    id: `${product.id}:${offer.id}`,
+    productId: product.id,
+    slug: product.slug,
+    name: product.name,
+    nameAr: product.nameAr,
+    image: product.image,
+    option: offer.label,
+    optionId: offer.id,
+    optionAr: offer.labelAr,
+    duration: offer.duration,
+    durationAr: offer.durationAr,
+    price: configuredPlan.priceDzd,
+    quantity: 1,
+  };
+  const coveredDays = Math.max(1, Math.ceil((endsAt.getTime() - now.getTime()) / 86_400_000));
+  const client = getSupabaseServiceClient();
+  const rpcInput = {
+    p_admin_telegram_user_id: input.adminTelegramUserId,
+    p_order_id: orderId,
+    p_product_item: item,
+    p_plan_months: input.planMonths,
+    p_total: configuredPlan.priceDzd,
+    p_commission: commissionDzd,
+    p_certificate_code: certificateCode,
+    p_token_hash: tokenHashes(token)[0],
+    p_token_hint: token.slice(-6),
+    p_covered_days: coveredDays,
+    p_ends_at: endsAt.toISOString(),
+  };
+  const { error } = await client.rpc("create_external_snapchat_sale", rpcInput);
+  if (error && !["PGRST202", "42883"].includes(error.code ?? "")) {
+    throw new Error("The external sale could not be created.");
+  }
+  if (error) {
+    // Compatibility for deployments during the migration rollout. Every write
+    // uses the same source-of-truth tables; cleanup prevents half-created sales.
+    const fallbackCardType: Record<SnapchatPlanMonths, SnapchatCardType> = {
+      1: "try_24", 2: "inr_100", 3: "try_115", 6: "try_229", 12: "inr_199",
+    };
+    let orderCreated = false;
+    try {
+      const { error: orderError } = await client.from("orders").insert({
+        id: orderId,
+        customerName: "Customer details incomplete",
+        phone: "incomplete",
+        email: "",
+        products: [item],
+        paymentMethod: "Telegram",
+        total: configuredPlan.priceDzd,
+        notes: "External Snapchat sale. Customer warranty details incomplete.",
+        status: "delivered",
+        createdAt: now.toISOString(),
+        adminNotes: "Created as a completed external order from Telegram.",
+      });
+      if (orderError) throw orderError;
+      orderCreated = true;
+      const { error: commissionError } = await client.from("commissions").insert({
+        order_id: orderId,
+        recipient_telegram_user_id: input.adminTelegramUserId,
+        amount_dzd: commissionDzd,
+        status: "pending",
+        note: "External Snapchat order credit.",
+        created_by_telegram_user_id: input.adminTelegramUserId,
+      });
+      if (commissionError) throw commissionError;
+      const { error: financeError } = await client.from("finance_sales").insert({
+        order_id: orderId,
+        operation_id: null,
+        admin_telegram_user_id: input.adminTelegramUserId,
+        plan_months: input.planMonths,
+        card_type: fallbackCardType[input.planMonths],
+        revenue_dzd: configuredPlan.priceDzd,
+        commission_dzd: commissionDzd,
+        card_cost_usd_cents: 0,
+        card_cost_dzd: 0,
+        gross_profit_dzd: configuredPlan.priceDzd - commissionDzd,
+        completed_at: now.toISOString(),
+      });
+      if (financeError) throw financeError;
+      const { error: certificateError } = await client.from("warranty_certificates").insert({
+        operation_id: null,
+        order_id: orderId,
+        product_id: product.id,
+        option_id: offer.id,
+        certificate_code: certificateCode,
+        recipient_name: "",
+        covered_days: coveredDays,
+        starts_at: now.toISOString(),
+        ends_at: endsAt.toISOString(),
+        status: "active",
+        issued_by_telegram_user_id: input.adminTelegramUserId,
+        public_token_hash: tokenHashes(token)[0],
+        public_token_hint: token.slice(-6),
+        balance_warning_required: false,
+      });
+      if (certificateError) throw certificateError;
+      await client.from("operation_events").insert({
+        actor_telegram_user_id: input.adminTelegramUserId,
+        entity_type: "order",
+        entity_id: orderId,
+        action: "external_snapchat_sale_created",
+        metadata: { plan_months: input.planMonths },
+      });
+    } catch {
+      if (orderCreated) {
+        await client.from("operation_events").delete().eq("entity_type", "order").eq("entity_id", orderId);
+        await client.from("order_sheet_exports").delete().eq("order_id", orderId);
+        await client.from("warranty_certificates").delete().eq("order_id", orderId);
+        await client.from("finance_sales").delete().eq("order_id", orderId);
+        await client.from("commissions").delete().eq("order_id", orderId);
+        await client.from("orders").delete().eq("id", orderId);
+      }
+      throw new Error("The external sale could not be created.");
+    }
+  }
+  return { orderId, token };
+}
+
 export async function completeSnapchatSale(input: { operationId: string; adminTelegramUserId: string }) {
   const { data: operation } = await getSupabaseServiceClient().from("snapchat_operations").select("plan_months, card_type, admin_telegram_user_id, status").eq("id", input.operationId).eq("admin_telegram_user_id", input.adminTelegramUserId).eq("status", "active").maybeSingle();
   if (!operation) throw new Error("This operation is unavailable.");
