@@ -67,17 +67,17 @@ function menuKeyboard(locale: TelegramInterfaceLocale, role: TelegramRole): Repl
   const labels = locale === "ar"
     ? {
         snapchat: "🛒 بيع Snapchat", stats: "📊 إحصاءاتي", owner: "👑 لوحة المالك", profit: "💰 صافي الربح",
-        cards: "⬆️ رفع البطاقات", websiteOrders: "📋 طلبات الموقع", externalOrder: "📝 طلب خارجي", cardStock: "📦 مخزون البطاقات",
+        cards: "⬆️ رفع البطاقات", websiteOrders: "📋 طلبات الموقع", externalOrder: "📝 طلب خارجي", reduction: "🏷️ تخفيض", cardStock: "📦 مخزون البطاقات",
         approval: "👥 إدارة المشرفين", arabic: "🌐 العربية", english: "🌐 English",
       }
     : {
         snapchat: "🛒 Snapchat sale", stats: "📊 My stats", owner: "👑 Owner controls", profit: "💰 Net profit",
-        cards: "⬆️ Upload cards", websiteOrders: "📋 Website orders", externalOrder: "📝 External order", cardStock: "📦 Card stock",
+        cards: "⬆️ Upload cards", websiteOrders: "📋 Website orders", externalOrder: "📝 External order", reduction: "🏷️ Reduction", cardStock: "📦 Card stock",
         approval: "👥 Manage admins", arabic: "🌐 العربية", english: "🌐 English",
       };
   const rows = [[labels.snapchat, labels.stats]];
   if (role === "owner") rows.push([labels.owner, labels.profit], [labels.cards], [labels.approval]);
-  if (role === "owner" || role === "admin") rows.push([labels.websiteOrders, labels.externalOrder], [labels.cardStock]);
+  if (role === "owner" || role === "admin") rows.push([labels.websiteOrders, labels.externalOrder], [labels.reduction, labels.cardStock]);
   rows.push([labels.arabic, labels.english]);
   return { keyboard: rows.map((row) => row.map((text) => ({ text }))), resize_keyboard: true, is_persistent: true };
 }
@@ -94,6 +94,7 @@ function routeMenuButton(value: string | undefined) {
     "👥 اعتماد مشرف": "/approve_help", "👥 Approve admin": "/approve_help",
     "📋 طلبات الموقع": "/website_orders", "📋 Website orders": "/website_orders",
     "📝 طلب خارجي": "/external_order", "📝 External order": "/external_order",
+    "🏷️ تخفيض": "/reduction", "🏷️ Reduction": "/reduction",
     "📦 مخزون البطاقات": "/card_stock", "📦 Card stock": "/card_stock",
     "🌐 العربية": "/ar", "🌐 English": "/en",
   };
@@ -379,6 +380,22 @@ async function sendExternalOrderPlans(chatId: string, locale: TelegramInterfaceL
   });
 }
 
+async function sendReductionPlans(chatId: string, locale: TelegramInterfaceLocale) {
+  const plans: SnapchatPlanMonths[] = [1, 2, 3, 6, 12];
+  await reply(chatId, textFor(locale, "🏷️ اختر عرض Snapchat Plus.", "🏷️ Choose the Snapchat Plus offer."), {
+    inline_keyboard: plans.map((plan) => [{ text: planLabel(plan, locale), callback_data: `rd|${plan}` }]),
+  });
+}
+
+async function sendReductionQuantities(chatId: string, locale: TelegramInterfaceLocale, plan: SnapchatPlanMonths) {
+  await reply(chatId, textFor(locale, `🏷️ ${planLabel(plan, locale)} — اختر الكمية.`, `🏷️ ${planLabel(plan, locale)} — choose the quantity.`), {
+    inline_keyboard: [
+      [1, 2, 3].map((quantity) => ({ text: String(quantity), callback_data: `rq|${plan}|${quantity}` })),
+      [4, 5, 6].map((quantity) => ({ text: String(quantity), callback_data: `rq|${plan}|${quantity}` })),
+    ],
+  });
+}
+
 async function sendExternalOrderConfirmation(chatId: string, locale: TelegramInterfaceLocale, plan: SnapchatPlanMonths) {
   await reply(chatId, textFor(locale,
     `✅ هل تم تسليم اشتراك Snapchat Plus لمدة ${planLabel(plan, locale)} من مصدر آخر؟\nبعد التأكيد، ستحصل على رابط الضمان للعميل.`,
@@ -460,7 +477,7 @@ export async function handleTelegramOperationsCallback(input: {
   if (user.role !== "admin" && user.role !== "owner") { await reply(String(input.chatId), textFor(locale, "غير مصرح لك بهذه العملية.", "Not authorised.")); return; }
   const parts = input.data.split("|");
   const parsed = telegramCallbackDataSchema.safeParse(parts.map((part, index) => {
-    const numericPlan = (parts[0] === "sc" && index === 1) || (parts[0] === "wc" && index === 3) || (parts[0] === "ex" && index === 1);
+    const numericPlan = (parts[0] === "sc" && index === 1) || (parts[0] === "wc" && index === 3) || (parts[0] === "ex" && index === 1) || (parts[0] === "rd" && index === 1) || (parts[0] === "rq" && (index === 1 || index === 2));
     return numericPlan && /^\d+$/.test(part) ? Number(part) : part;
   }));
   if (!parsed.success) { await reply(String(input.chatId), textFor(locale, "انتهت صلاحية هذا الاختيار.", "This selection has expired.")); return; }
@@ -610,6 +627,19 @@ export async function handleTelegramOperationsCallback(input: {
       await reply(String(input.chatId), textFor(locale, "✅ تم حفظ الطلب الخارجي كطلب مُسلَّم. رابط الضمان في الرسالة التالية.", "✅ The external sale is saved as a delivered order. The warranty link is in the next message."));
       await replyPlain(String(input.chatId), absoluteUrl(`/w/${sale.token}`));
     } catch { await reply(String(input.chatId), textFor(locale, "تعذر إنشاء رابط الضمان لهذه الخطة.", "A warranty link could not be created for this plan.")); }
+    return;
+  }
+  if (selected[0] === "rd") {
+    if (!canOperate(user)) { await reply(String(input.chatId), textFor(locale, "غير مصرح لك بهذه العملية.", "Not authorised.")); return; }
+    await sendReductionQuantities(String(input.chatId), locale, selected[1]);
+    return;
+  }
+  if (selected[0] === "rq") {
+    if (!canOperate(user)) { await reply(String(input.chatId), textFor(locale, "غير مصرح لك بهذه العملية.", "Not authorised.")); return; }
+    await reply(String(input.chatId), textFor(locale,
+      `💰 اكتب المبلغ الإجمالي الذي دفعه العميل بالـ DA ثم أرسل الرد.\n#reduction:${selected[1]}:${selected[2]}`,
+      `💰 Reply with the total amount the customer paid in DA.\n#reduction:${selected[1]}:${selected[2]}`),
+    { force_reply: true, input_field_placeholder: textFor(locale, "مثال: 5000", "Example: 5000") });
     return;
   }
   if (selected[0] === "apr") {
@@ -807,6 +837,26 @@ export async function handleTelegramOperationsMessage(input: {
       return;
     }
   }
+  const reductionReply = input.replyToText?.match(/#reduction:(1|2|3|6|12):([1-6])/i);
+  if (reductionReply && canOperate(user)) {
+    const totalDzd = /^\d{1,8}$/.test(rawText) ? Number(rawText) : Number.NaN;
+    if (!Number.isSafeInteger(totalDzd) || totalDzd < 1 || totalDzd > 10_000_000) {
+      await reply(chatId, textFor(locale, "💰 أرسل المبلغ الإجمالي بالـ DA فقط، مثال: 5000", "💰 Send only the total DA amount, for example: 5000"));
+      return;
+    }
+    try {
+      const planMonths = Number(reductionReply[1]) as SnapchatPlanMonths;
+      const quantity = Number(reductionReply[2]);
+      const sale = await createExternalSnapchatSale({ planMonths, adminTelegramUserId: identity.userId, quantity, totalDzd });
+      await reply(chatId, textFor(locale,
+        `✅ تم حفظ بيع مخفض: ${planLabel(planMonths, locale)} × ${quantity} بمجموع ${totalDzd} DA. رابط الضمان في الرسالة التالية.`,
+        `✅ Discounted sale saved: ${planLabel(planMonths, locale)} × ${quantity} for ${totalDzd} DA total. The warranty link is in the next message.`));
+      await replyPlain(chatId, absoluteUrl(`/w/${sale.token}`));
+    } catch {
+      await reply(chatId, textFor(locale, "تعذر حفظ البيع المخفض.", "The discounted sale could not be saved."));
+    }
+    return;
+  }
   if (ownerOnly(user) && rawText && !rawText.startsWith("/") && routedText === rawText) {
     const pendingCommissionAdminId = await takeCustomCommissionInput(identity.userId);
     if (pendingCommissionAdminId) {
@@ -918,7 +968,7 @@ export async function handleTelegramOperationsMessage(input: {
     return;
   }
 
-  if (action === "/website_orders" || action === "/external_order" || action === "/card_stock") {
+  if (action === "/website_orders" || action === "/external_order" || action === "/reduction" || action === "/card_stock") {
     if (!canOperate(user)) {
       await reply(chatId, textFor(locale, "غير مصرح لك بهذه العملية.", "Not authorised."));
       return;
@@ -926,6 +976,7 @@ export async function handleTelegramOperationsMessage(input: {
     try {
       if (action === "/website_orders") await sendPendingWebsiteOrderPicker(chatId, locale);
       else if (action === "/external_order") await sendExternalOrderPlans(chatId, locale);
+      else if (action === "/reduction") await sendReductionPlans(chatId, locale);
       else await sendCardStock(chatId, locale, ownerOnly(user));
     } catch {
       await reply(chatId, textFor(locale, "تعذر تحميل هذه العملية حالياً.", "This operation could not be loaded right now."));

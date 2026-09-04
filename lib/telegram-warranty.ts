@@ -38,7 +38,7 @@ function externalExpiry(start: Date, months: SnapchatPlanMonths) {
   return end;
 }
 
-export async function createExternalSnapchatSale(input: { planMonths: SnapchatPlanMonths; adminTelegramUserId: string }) {
+export async function createExternalSnapchatSale(input: { planMonths: SnapchatPlanMonths; adminTelegramUserId: string; quantity?: number; totalDzd?: number }) {
   const product = await getProductBySlug("snapchat-plus");
   if (!product) throw new Error("The Snapchat product is unavailable.");
   const settings = await getFinanceSettings();
@@ -56,6 +56,18 @@ export async function createExternalSnapchatSale(input: { planMonths: SnapchatPl
     throw new Error("The finance plan is unavailable.");
   }
 
+  const quantity = input.quantity ?? 1;
+  const totalDzd = input.totalDzd ?? configuredPlan.priceDzd;
+  if (!Number.isInteger(quantity) || quantity < 1 || quantity > 6 || !Number.isInteger(totalDzd) || totalDzd < 1 || totalDzd > 10_000_000) {
+    throw new Error("The sale amount or quantity is invalid.");
+  }
+  const totalCommissionDzd = commissionDzd * quantity;
+  const externalCardType: Record<SnapchatPlanMonths, SnapchatCardType> = {
+    1: "try_24", 2: "inr_100", 3: "try_115", 6: "try_229", 12: "inr_199",
+  };
+  const costCardType = externalCardType[input.planMonths];
+  const totalCardCostUsdCents = settings.cardCostsUsdCents[costCardType] * quantity;
+  const totalCardCostDzd = cardCostDzd(settings, costCardType) * quantity;
   const token = createTelegramWarrantyToken();
   const now = new Date();
   const endsAt = externalExpiry(now, input.planMonths);
@@ -73,8 +85,8 @@ export async function createExternalSnapchatSale(input: { planMonths: SnapchatPl
     optionAr: offer.labelAr,
     duration: offer.duration,
     durationAr: offer.durationAr,
-    price: configuredPlan.priceDzd,
-    quantity: 1,
+    price: Math.max(1, Math.floor(totalDzd / quantity)),
+    quantity,
   };
   const coveredDays = Math.max(1, Math.ceil((endsAt.getTime() - now.getTime()) / 86_400_000));
   const client = getSupabaseServiceClient();
@@ -83,24 +95,25 @@ export async function createExternalSnapchatSale(input: { planMonths: SnapchatPl
     p_order_id: orderId,
     p_product_item: item,
     p_plan_months: input.planMonths,
-    p_total: configuredPlan.priceDzd,
-    p_commission: commissionDzd,
+    p_total: totalDzd,
+    p_commission: totalCommissionDzd,
+    p_card_type: costCardType,
+    p_card_cost_usd_cents: totalCardCostUsdCents,
+    p_card_cost_dzd: totalCardCostDzd,
     p_certificate_code: certificateCode,
     p_token_hash: tokenHashes(token)[0],
     p_token_hint: token.slice(-6),
     p_covered_days: coveredDays,
     p_ends_at: endsAt.toISOString(),
   };
-  const { error } = await client.rpc("create_external_snapchat_sale", rpcInput);
+  const discounted = quantity !== 1 || totalDzd !== configuredPlan.priceDzd;
+  const { error } = await client.rpc("create_external_snapchat_sale_v2", { ...rpcInput, p_quantity: quantity });
   if (error && !["PGRST202", "42883"].includes(error.code ?? "")) {
     throw new Error("The external sale could not be created.");
   }
   if (error) {
     // Compatibility for deployments during the migration rollout. Every write
     // uses the same source-of-truth tables; cleanup prevents half-created sales.
-    const fallbackCardType: Record<SnapchatPlanMonths, SnapchatCardType> = {
-      1: "try_24", 2: "inr_100", 3: "try_115", 6: "try_229", 12: "inr_199",
-    };
     let orderCreated = false;
     try {
       const { error: orderError } = await client.from("orders").insert({
@@ -110,8 +123,8 @@ export async function createExternalSnapchatSale(input: { planMonths: SnapchatPl
         email: "",
         products: [item],
         paymentMethod: "Telegram",
-        total: configuredPlan.priceDzd,
-        notes: "External Snapchat sale. Customer warranty details incomplete.",
+        total: totalDzd,
+        notes: `${discounted ? "Discounted external" : "External"} Snapchat sale (quantity: ${quantity}). Customer warranty details incomplete.`,
         status: "delivered",
         createdAt: now.toISOString(),
         adminNotes: "Created as a completed external order from Telegram.",
@@ -121,9 +134,9 @@ export async function createExternalSnapchatSale(input: { planMonths: SnapchatPl
       const { error: commissionError } = await client.from("commissions").insert({
         order_id: orderId,
         recipient_telegram_user_id: input.adminTelegramUserId,
-        amount_dzd: commissionDzd,
+        amount_dzd: totalCommissionDzd,
         status: "pending",
-        note: "External Snapchat order credit.",
+        note: `External Snapchat order credit for ${quantity} subscription(s).`,
         created_by_telegram_user_id: input.adminTelegramUserId,
       });
       if (commissionError) throw commissionError;
@@ -132,12 +145,12 @@ export async function createExternalSnapchatSale(input: { planMonths: SnapchatPl
         operation_id: null,
         admin_telegram_user_id: input.adminTelegramUserId,
         plan_months: input.planMonths,
-        card_type: fallbackCardType[input.planMonths],
-        revenue_dzd: configuredPlan.priceDzd,
-        commission_dzd: commissionDzd,
-        card_cost_usd_cents: 0,
-        card_cost_dzd: 0,
-        gross_profit_dzd: configuredPlan.priceDzd - commissionDzd,
+        card_type: costCardType,
+        revenue_dzd: totalDzd,
+        commission_dzd: totalCommissionDzd,
+        card_cost_usd_cents: totalCardCostUsdCents,
+        card_cost_dzd: totalCardCostDzd,
+        gross_profit_dzd: totalDzd - totalCommissionDzd - totalCardCostDzd,
         completed_at: now.toISOString(),
       });
       if (financeError) throw financeError;
