@@ -38,7 +38,7 @@ function externalExpiry(start: Date, months: SnapchatPlanMonths) {
   return end;
 }
 
-export async function createExternalSnapchatSale(input: { planMonths: SnapchatPlanMonths; adminTelegramUserId: string; quantity?: number; totalDzd?: number }) {
+export async function createExternalSnapchatSale(input: { planMonths: SnapchatPlanMonths; adminTelegramUserId: string }) {
   const product = await getProductBySlug("snapchat-plus");
   if (!product) throw new Error("The Snapchat product is unavailable.");
   const settings = await getFinanceSettings();
@@ -56,18 +56,6 @@ export async function createExternalSnapchatSale(input: { planMonths: SnapchatPl
     throw new Error("The finance plan is unavailable.");
   }
 
-  const quantity = input.quantity ?? 1;
-  const totalDzd = input.totalDzd ?? configuredPlan.priceDzd;
-  if (!Number.isInteger(quantity) || quantity < 1 || quantity > 6 || !Number.isInteger(totalDzd) || totalDzd < 1 || totalDzd > 10_000_000) {
-    throw new Error("The sale amount or quantity is invalid.");
-  }
-  const totalCommissionDzd = commissionDzd * quantity;
-  const externalCardType: Record<SnapchatPlanMonths, SnapchatCardType> = {
-    1: "try_24", 2: "inr_100", 3: "try_115", 6: "try_229", 12: "inr_199",
-  };
-  const costCardType = externalCardType[input.planMonths];
-  const totalCardCostUsdCents = settings.cardCostsUsdCents[costCardType] * quantity;
-  const totalCardCostDzd = cardCostDzd(settings, costCardType) * quantity;
   const token = createTelegramWarrantyToken();
   const now = new Date();
   const endsAt = externalExpiry(now, input.planMonths);
@@ -85,8 +73,8 @@ export async function createExternalSnapchatSale(input: { planMonths: SnapchatPl
     optionAr: offer.labelAr,
     duration: offer.duration,
     durationAr: offer.durationAr,
-    price: Math.max(1, Math.floor(totalDzd / quantity)),
-    quantity,
+    price: configuredPlan.priceDzd,
+    quantity: 1,
   };
   const coveredDays = Math.max(1, Math.ceil((endsAt.getTime() - now.getTime()) / 86_400_000));
   const client = getSupabaseServiceClient();
@@ -95,19 +83,15 @@ export async function createExternalSnapchatSale(input: { planMonths: SnapchatPl
     p_order_id: orderId,
     p_product_item: item,
     p_plan_months: input.planMonths,
-    p_total: totalDzd,
-    p_commission: totalCommissionDzd,
-    p_card_type: costCardType,
-    p_card_cost_usd_cents: totalCardCostUsdCents,
-    p_card_cost_dzd: totalCardCostDzd,
+    p_total: configuredPlan.priceDzd,
+    p_commission: commissionDzd,
     p_certificate_code: certificateCode,
     p_token_hash: tokenHashes(token)[0],
     p_token_hint: token.slice(-6),
     p_covered_days: coveredDays,
     p_ends_at: endsAt.toISOString(),
   };
-  const discounted = quantity !== 1 || totalDzd !== configuredPlan.priceDzd;
-  const { error } = await client.rpc("create_external_snapchat_sale_v2", { ...rpcInput, p_quantity: quantity });
+  const { error } = await client.rpc("create_external_snapchat_sale", rpcInput);
   if (error && !["PGRST202", "42883"].includes(error.code ?? "")) {
     throw new Error("The external sale could not be created.");
   }
@@ -123,8 +107,8 @@ export async function createExternalSnapchatSale(input: { planMonths: SnapchatPl
         email: "",
         products: [item],
         paymentMethod: "Telegram",
-        total: totalDzd,
-        notes: `${discounted ? "Discounted external" : "External"} Snapchat sale (quantity: ${quantity}). Customer warranty details incomplete.`,
+        total: configuredPlan.priceDzd,
+        notes: "External Snapchat sale. Customer warranty details incomplete.",
         status: "delivered",
         createdAt: now.toISOString(),
         adminNotes: "Created as a completed external order from Telegram.",
@@ -134,9 +118,9 @@ export async function createExternalSnapchatSale(input: { planMonths: SnapchatPl
       const { error: commissionError } = await client.from("commissions").insert({
         order_id: orderId,
         recipient_telegram_user_id: input.adminTelegramUserId,
-        amount_dzd: totalCommissionDzd,
+        amount_dzd: commissionDzd,
         status: "pending",
-        note: `External Snapchat order credit for ${quantity} subscription(s).`,
+        note: "External Snapchat order credit.",
         created_by_telegram_user_id: input.adminTelegramUserId,
       });
       if (commissionError) throw commissionError;
@@ -145,12 +129,12 @@ export async function createExternalSnapchatSale(input: { planMonths: SnapchatPl
         operation_id: null,
         admin_telegram_user_id: input.adminTelegramUserId,
         plan_months: input.planMonths,
-        card_type: costCardType,
-        revenue_dzd: totalDzd,
-        commission_dzd: totalCommissionDzd,
-        card_cost_usd_cents: totalCardCostUsdCents,
-        card_cost_dzd: totalCardCostDzd,
-        gross_profit_dzd: totalDzd - totalCommissionDzd - totalCardCostDzd,
+        card_type: ({ 1: "try_24", 2: "inr_100", 3: "try_115", 6: "try_229", 12: "inr_199" } as const)[input.planMonths],
+        revenue_dzd: configuredPlan.priceDzd,
+        commission_dzd: commissionDzd,
+        card_cost_usd_cents: 0,
+        card_cost_dzd: 0,
+        gross_profit_dzd: configuredPlan.priceDzd - commissionDzd,
         completed_at: now.toISOString(),
       });
       if (financeError) throw financeError;
@@ -193,7 +177,7 @@ export async function createExternalSnapchatSale(input: { planMonths: SnapchatPl
   return { orderId, token };
 }
 
-export async function completeSnapchatSale(input: { operationId: string; adminTelegramUserId: string }) {
+export async function completeSnapchatSale(input: { operationId: string; adminTelegramUserId: string; totalDzd?: number }) {
   const { data: operation } = await getSupabaseServiceClient().from("snapchat_operations").select("plan_months, card_type, admin_telegram_user_id, status").eq("id", input.operationId).eq("admin_telegram_user_id", input.adminTelegramUserId).eq("status", "active").maybeSingle();
   if (!operation) throw new Error("This operation is unavailable.");
   const planMonths = Number(operation.plan_months) as SnapchatPlanMonths;
@@ -206,11 +190,13 @@ export async function completeSnapchatSale(input: { operationId: string; adminTe
   const catalogOffer = offerForPlan(product.priceOptions, planMonths);
   const offer = catalogOffer ?? { id: `snapchat-${planMonths}-months`, label: `${planMonths} month${planMonths === 1 ? "" : "s"}`, labelAr: `${planMonths} ${planMonths === 1 ? "شهر" : "أشهر"}`, duration: `${planMonths} month${planMonths === 1 ? "" : "s"}`, durationAr: `${planMonths} ${planMonths === 1 ? "شهر" : "أشهر"}` };
   if (!Number.isInteger(configuredPlan.priceDzd) || configuredPlan.priceDzd < 1 || !Number.isInteger(commissionDzd) || commissionDzd < 0) throw new Error("The finance plan is unavailable.");
+  const totalDzd = input.totalDzd ?? configuredPlan.priceDzd;
+  if (!Number.isInteger(totalDzd) || totalDzd < 1 || totalDzd > 10_000_000) throw new Error("The sale total is invalid.");
   const token = createTelegramWarrantyToken(); const now = new Date(); const endsAt = expiry(now, planMonths, cardType);
-  const item: CartItem = { id: `${product.id}:${offer.id}`, productId: product.id, slug: product.slug, name: product.name, nameAr: product.nameAr, image: product.image, option: offer.label, optionId: offer.id, optionAr: offer.labelAr, duration: offer.duration, durationAr: offer.durationAr, price: configuredPlan.priceDzd, quantity: 1 };
+  const item: CartItem = { id: `${product.id}:${offer.id}`, productId: product.id, slug: product.slug, name: product.name, nameAr: product.nameAr, image: product.image, option: offer.label, optionId: offer.id, optionAr: offer.labelAr, duration: offer.duration, durationAr: offer.durationAr, price: totalDzd, quantity: 1 };
   const orderId = `TS-${crypto.randomUUID().replace(/-/g, "").slice(0, 10).toUpperCase()}`;
   const certificateCode = `TW-${randomBytes(6).toString("hex").toUpperCase()}`;
-  const { error } = await getSupabaseServiceClient().rpc("complete_snapchat_operation_sale", { p_operation_id: input.operationId, p_admin_telegram_user_id: input.adminTelegramUserId, p_order_id: orderId, p_product_item: item, p_total: configuredPlan.priceDzd, p_commission: commissionDzd, p_card_cost_usd_cents: settings.cardCostsUsdCents[cardType], p_card_cost_dzd: cardCostDzd(settings, cardType), p_certificate_code: certificateCode, p_token_hash: tokenHashes(token)[0], p_token_hint: token.slice(-6), p_covered_days: Math.max(1, Math.ceil((endsAt.getTime() - now.getTime()) / 86_400_000)), p_ends_at: endsAt.toISOString(), p_balance_warning_required: cardType === "inr_100" || cardType === "inr_199" });
+  const { error } = await getSupabaseServiceClient().rpc("complete_snapchat_operation_sale", { p_operation_id: input.operationId, p_admin_telegram_user_id: input.adminTelegramUserId, p_order_id: orderId, p_product_item: item, p_total: totalDzd, p_commission: commissionDzd, p_card_cost_usd_cents: settings.cardCostsUsdCents[cardType], p_card_cost_dzd: cardCostDzd(settings, cardType), p_certificate_code: certificateCode, p_token_hash: tokenHashes(token)[0], p_token_hint: token.slice(-6), p_covered_days: Math.max(1, Math.ceil((endsAt.getTime() - now.getTime()) / 86_400_000)), p_ends_at: endsAt.toISOString(), p_balance_warning_required: cardType === "inr_100" || cardType === "inr_199" });
   if (error) throw new Error("The sale could not be completed.");
   return { orderId, token };
 }

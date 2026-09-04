@@ -387,11 +387,17 @@ async function sendReductionPlans(chatId: string, locale: TelegramInterfaceLocal
   });
 }
 
-async function sendReductionQuantities(chatId: string, locale: TelegramInterfaceLocale, plan: SnapchatPlanMonths) {
-  await reply(chatId, textFor(locale, `🏷️ ${planLabel(plan, locale)} — اختر الكمية.`, `🏷️ ${planLabel(plan, locale)} — choose the quantity.`), {
+async function sendReductionCardPicker(chatId: string, locale: TelegramInterfaceLocale, plan: SnapchatPlanMonths) {
+  await reply(chatId, textFor(locale, `🏷️ ${planLabel(plan, locale)} — اختر نوع البطاقة.`, `🏷️ ${planLabel(plan, locale)} — choose the card type.`), {
+    inline_keyboard: cardsForPlan(plan).map((cardType) => [{ text: cardLabel(cardType, locale), callback_data: `rc|${plan}|${cardType}` }]),
+  });
+}
+
+async function sendReductionQuantities(chatId: string, locale: TelegramInterfaceLocale, plan: SnapchatPlanMonths, cardType: SnapchatCardType) {
+  await reply(chatId, textFor(locale, `🏷️ ${planLabel(plan, locale)} — ${cardLabel(cardType, locale)} — اختر الكمية.`, `🏷️ ${planLabel(plan, locale)} — ${cardLabel(cardType, locale)} — choose the quantity.`), {
     inline_keyboard: [
-      [1, 2, 3].map((quantity) => ({ text: String(quantity), callback_data: `rq|${plan}|${quantity}` })),
-      [4, 5, 6].map((quantity) => ({ text: String(quantity), callback_data: `rq|${plan}|${quantity}` })),
+      [1, 2, 3].map((quantity) => ({ text: String(quantity), callback_data: `rq|${plan}|${cardType}|${quantity}` })),
+      [4, 5, 6].map((quantity) => ({ text: String(quantity), callback_data: `rq|${plan}|${cardType}|${quantity}` })),
     ],
   });
 }
@@ -477,7 +483,7 @@ export async function handleTelegramOperationsCallback(input: {
   if (user.role !== "admin" && user.role !== "owner") { await reply(String(input.chatId), textFor(locale, "غير مصرح لك بهذه العملية.", "Not authorised.")); return; }
   const parts = input.data.split("|");
   const parsed = telegramCallbackDataSchema.safeParse(parts.map((part, index) => {
-    const numericPlan = (parts[0] === "sc" && index === 1) || (parts[0] === "wc" && index === 3) || (parts[0] === "ex" && index === 1) || (parts[0] === "rd" && index === 1) || (parts[0] === "rq" && (index === 1 || index === 2));
+    const numericPlan = (parts[0] === "sc" && index === 1) || (parts[0] === "wc" && index === 3) || (parts[0] === "ex" && index === 1) || (parts[0] === "rd" && index === 1) || (parts[0] === "rc" && index === 1) || (parts[0] === "rq" && (index === 1 || index === 3));
     return numericPlan && /^\d+$/.test(part) ? Number(part) : part;
   }));
   if (!parsed.success) { await reply(String(input.chatId), textFor(locale, "انتهت صلاحية هذا الاختيار.", "This selection has expired.")); return; }
@@ -631,15 +637,37 @@ export async function handleTelegramOperationsCallback(input: {
   }
   if (selected[0] === "rd") {
     if (!canOperate(user)) { await reply(String(input.chatId), textFor(locale, "غير مصرح لك بهذه العملية.", "Not authorised.")); return; }
-    await sendReductionQuantities(String(input.chatId), locale, selected[1]);
+    await sendReductionCardPicker(String(input.chatId), locale, selected[1]);
+    return;
+  }
+  if (selected[0] === "rc") {
+    if (!canOperate(user)) { await reply(String(input.chatId), textFor(locale, "غير مصرح لك بهذه العملية.", "Not authorised.")); return; }
+    await sendReductionQuantities(String(input.chatId), locale, selected[1], selected[2]);
     return;
   }
   if (selected[0] === "rq") {
     if (!canOperate(user)) { await reply(String(input.chatId), textFor(locale, "غير مصرح لك بهذه العملية.", "Not authorised.")); return; }
     await reply(String(input.chatId), textFor(locale,
-      `💰 اكتب المبلغ الإجمالي الذي دفعه العميل بالـ DA ثم أرسل الرد.\n#reduction:${selected[1]}:${selected[2]}`,
-      `💰 Reply with the total amount the customer paid in DA.\n#reduction:${selected[1]}:${selected[2]}`),
+      `💰 اكتب المبلغ الإجمالي الذي دفعه العميل بالـ DA ثم أرسل الرد.\n#reduction:${selected[1]}:${selected[2]}:${selected[3]}`,
+      `💰 Reply with the total amount the customer paid in DA.\n#reduction:${selected[1]}:${selected[2]}:${selected[3]}`),
     { force_reply: true, input_field_placeholder: textFor(locale, "مثال: 5000", "Example: 5000") });
+    return;
+  }
+  if (selected[0] === "ds") {
+    if (!canOperate(user)) { await reply(String(input.chatId), textFor(locale, "غير مصرح لك بهذه العملية.", "Not authorised.")); return; }
+    const [, operationId, saleTotal, outcome] = selected;
+    try {
+      if (outcome === "cancel") {
+        await finishSnapchatOperation(operationId, identity.userId, "cancelled");
+        await reply(String(input.chatId), textFor(locale, "❌ أُلغيت العملية وأُعيدت البطاقة للمخزون.", "❌ Operation cancelled and the card was returned to stock."));
+      } else {
+        const sale = await completeSnapchatSale({ operationId, adminTelegramUserId: identity.userId, totalDzd: Number(saleTotal) });
+        await reply(String(input.chatId), textFor(locale, "✅ اكتمل البيع المخفض. رابط الضمان في الرسالة التالية.", "✅ Discounted sale completed. The warranty link is in the next message."));
+        await replyPlain(String(input.chatId), absoluteUrl(`/w/${sale.token}`));
+      }
+    } catch {
+      await reply(String(input.chatId), textFor(locale, "هذه العملية غير متاحة لك أو تمت معالجتها.", "This operation is unavailable to you or was already handled."));
+    }
     return;
   }
   if (selected[0] === "apr") {
@@ -837,23 +865,39 @@ export async function handleTelegramOperationsMessage(input: {
       return;
     }
   }
-  const reductionReply = input.replyToText?.match(/#reduction:(1|2|3|6|12):([1-6])/i);
+  const reductionReply = input.replyToText?.match(/#reduction:(1|2|3|6|12):(try_24|try_48|inr_100|try_115|try_229|inr_199|inr_298):([1-6])/i);
   if (reductionReply && canOperate(user)) {
     const totalDzd = /^\d{1,8}$/.test(rawText) ? Number(rawText) : Number.NaN;
-    if (!Number.isSafeInteger(totalDzd) || totalDzd < 1 || totalDzd > 10_000_000) {
+    const quantity = Number(reductionReply[3]);
+    if (!Number.isSafeInteger(totalDzd) || totalDzd < quantity || totalDzd > 10_000_000) {
       await reply(chatId, textFor(locale, "💰 أرسل المبلغ الإجمالي بالـ DA فقط، مثال: 5000", "💰 Send only the total DA amount, for example: 5000"));
       return;
     }
+    const claimed: Awaited<ReturnType<typeof claimSnapchatCard>>[] = [];
     try {
       const planMonths = Number(reductionReply[1]) as SnapchatPlanMonths;
-      const quantity = Number(reductionReply[2]);
-      const sale = await createExternalSnapchatSale({ planMonths, adminTelegramUserId: identity.userId, quantity, totalDzd });
+      const cardType = reductionReply[2] as SnapchatCardType;
+      for (let index = 0; index < quantity; index += 1) claimed.push(await claimSnapchatCard(identity.userId, planMonths, cardType));
+      const baseAmount = Math.floor(totalDzd / quantity);
+      const remainder = totalDzd % quantity;
       await reply(chatId, textFor(locale,
-        `✅ تم حفظ بيع مخفض: ${planLabel(planMonths, locale)} × ${quantity} بمجموع ${totalDzd} DA. رابط الضمان في الرسالة التالية.`,
-        `✅ Discounted sale saved: ${planLabel(planMonths, locale)} × ${quantity} for ${totalDzd} DA total. The warranty link is in the next message.`));
-      await replyPlain(chatId, absoluteUrl(`/w/${sale.token}`));
+        `✅ تم حجز ${quantity} بطاقة لبيع مخفض بقيمة ${totalDzd} DA. روابط التفعيل في الرسائل التالية.`,
+        `✅ ${quantity} card(s) reserved for a ${totalDzd} DA discounted sale. Activation links follow.`));
+      for (const [index, operation] of claimed.entries()) {
+        const allocatedAmount = baseAmount + (index < remainder ? 1 : 0);
+        await reply(chatId, textFor(locale,
+          `✅ تم اختيار بطاقة ${cardLabel(cardType, locale)} (${index + 1}/${quantity}). رابط التفعيل في الرسالة التالية.`,
+          `✅ ${cardLabel(cardType, locale)} card chosen (${index + 1}/${quantity}). The activation link is in the next message.`), { inline_keyboard: [[
+          { text: textFor(locale, "✅ إكمال", "✅ Complete"), callback_data: `ds|${operation.operationId}|${allocatedAmount}|complete` },
+          { text: textFor(locale, "❌ إلغاء", "❌ Cancel"), callback_data: `ds|${operation.operationId}|${allocatedAmount}|cancel` },
+        ]] });
+        await replyPlain(chatId, `https://apps.apple.com/redeem?code=${encodeURIComponent(operation.code)}`);
+      }
     } catch {
-      await reply(chatId, textFor(locale, "تعذر حفظ البيع المخفض.", "The discounted sale could not be saved."));
+      for (const operation of claimed) {
+        try { await finishSnapchatOperation(operation.operationId, identity.userId, "cancelled"); } catch { /* Preserve the original error response. */ }
+      }
+      await reply(chatId, textFor(locale, "لا توجد بطاقات كافية لهذا البيع. أُعيدت أي بطاقة محجوزة إلى المخزون.", "There are not enough cards for this sale. Any reserved cards were returned to stock."));
     }
     return;
   }
