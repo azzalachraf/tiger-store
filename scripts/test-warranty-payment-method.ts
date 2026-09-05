@@ -6,4 +6,7 @@ assert.equal(telegramWarrantyFormSchema.safeParse(base).success, false, "Payment
 assert.equal(telegramWarrantyFormSchema.safeParse({ ...base, paymentMethod: "Flexy" }).success, true, "A supported payment method must be accepted.");
 assert.equal(telegramWarrantyFormSchema.safeParse({ ...base, paymentMethod: "Cash" }).success, false, "Unsupported methods must be rejected.");
 assert.equal(telegramWarrantyFormSchema.safeParse({ ...base, email: "", paymentMethod: "Flexy" }).success, false, "Email must be required.");
+for (const field of ["name", "username", "platform", "phone", "email", "paymentMethod"] as const) {
+  assert.equal(telegramWarrantyFormSchema.safeParse({ ...base, paymentMethod: "Flexy", [field]: "" }).success, false, `${field} must be required.`);
+}
 console.log("Warranty payment method validation passed.");
