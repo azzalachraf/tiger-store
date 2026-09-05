@@ -38,11 +38,22 @@ function externalExpiry(start: Date, months: SnapchatPlanMonths) {
   return end;
 }
 
+const externalCardTypeByPlan: Record<SnapchatPlanMonths, SnapchatCardType> = {
+  1: "try_24",
+  2: "inr_100",
+  3: "try_115",
+  6: "try_229",
+  12: "inr_199",
+};
+
 export async function createExternalSnapchatSale(input: { planMonths: SnapchatPlanMonths; adminTelegramUserId: string }) {
   const product = await getProductBySlug("snapchat-plus");
   if (!product) throw new Error("The Snapchat product is unavailable.");
   const settings = await getFinanceSettings();
   const configuredPlan = settings.plans[input.planMonths];
+  const cardType = externalCardTypeByPlan[input.planMonths];
+  const cardCostUsdCents = settings.cardCostsUsdCents[cardType];
+  const externalCardCostDzd = cardCostDzd(settings, cardType);
   const commissionDzd = await getAdminCommissionDzd(input.adminTelegramUserId);
   const catalogOffer = offerForPlan(product.priceOptions, input.planMonths);
   const offer = catalogOffer ?? {
@@ -85,13 +96,16 @@ export async function createExternalSnapchatSale(input: { planMonths: SnapchatPl
     p_plan_months: input.planMonths,
     p_total: configuredPlan.priceDzd,
     p_commission: commissionDzd,
+    p_card_type: cardType,
+    p_card_cost_usd_cents: cardCostUsdCents,
+    p_card_cost_dzd: externalCardCostDzd,
     p_certificate_code: certificateCode,
     p_token_hash: tokenHashes(token)[0],
     p_token_hint: token.slice(-6),
     p_covered_days: coveredDays,
     p_ends_at: endsAt.toISOString(),
   };
-  const { error } = await client.rpc("create_external_snapchat_sale", rpcInput);
+  const { error } = await client.rpc("create_external_snapchat_sale_v2", rpcInput);
   if (error && !["PGRST202", "42883"].includes(error.code ?? "")) {
     throw new Error("The external sale could not be created.");
   }
@@ -129,12 +143,12 @@ export async function createExternalSnapchatSale(input: { planMonths: SnapchatPl
         operation_id: null,
         admin_telegram_user_id: input.adminTelegramUserId,
         plan_months: input.planMonths,
-        card_type: ({ 1: "try_24", 2: "inr_100", 3: "try_115", 6: "try_229", 12: "inr_199" } as const)[input.planMonths],
+        card_type: cardType,
         revenue_dzd: configuredPlan.priceDzd,
         commission_dzd: commissionDzd,
-        card_cost_usd_cents: 0,
-        card_cost_dzd: 0,
-        gross_profit_dzd: configuredPlan.priceDzd - commissionDzd,
+        card_cost_usd_cents: cardCostUsdCents,
+        card_cost_dzd: externalCardCostDzd,
+        gross_profit_dzd: configuredPlan.priceDzd - commissionDzd - externalCardCostDzd,
         completed_at: now.toISOString(),
       });
       if (financeError) throw financeError;
