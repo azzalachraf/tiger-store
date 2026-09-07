@@ -16,6 +16,7 @@ export const homeCopy = {
     available: "متوفر",
     unavailable: "غير متوفر حالياً",
     choosePlan: "اختر مدتك",
+    viewOffers: "عرض العروض",
     viewDetails: "تفاصيل الاشتراك",
     snapDescription: "على حسابك الحالي، دون طلب كلمة المرور.",
     checkCompatibility: "راجع توافق جهازك وشروط الخطة قبل الطلب.",
@@ -31,7 +32,7 @@ export const homeCopy = {
     menu: "القائمة",
     skip: "انتقل إلى المحتوى",
     catalogEyebrow: "اختر ما يناسبك",
-    catalogTitle: "كل اشتراك. تفاصيل واضحة.",
+    catalogTitle: "الاشتراكات",
     catalogIntro: "قارن السعر والمدة، ثم افتح المنتج لاختيار خطتك.",
     search: "ابحث عن اشتراك",
     searchPlaceholder: "Snapchat، CapCut، Gemini…",
@@ -43,7 +44,7 @@ export const homeCopy = {
     plans: "عرض الخطط",
     catalogLink: "افتح المتجر الكامل",
     stepsEyebrow: "من الاختيار إلى التفعيل",
-    stepsTitle: "ثلاث خطوات، وتعرف ما التالي.",
+    stepsTitle: "كيف أطلب؟",
     stepsIntro: "راجع التفاصيل أولاً. معلومات التحويل تظهر عند إتمام الطلب.",
     steps: [
       [
@@ -62,7 +63,7 @@ export const homeCopy = {
     activation:
       "يستغرق التفعيل عادةً من 15 دقيقة إلى 12 ساعة بعد التحقق من الدفع.",
     faqEyebrow: "قبل أن تطلب",
-    faqTitle: "اطلب وأنت فاهم كل شيء.",
+    faqTitle: "أسئلة شائعة",
     faqIntro: "هذه أهم التفاصيل حول الدفع والتفعيل والتغطية.",
     warrantyPolicy: "اقرأ سياسة الضمان والاسترجاع",
     allFaq: "كل الأسئلة الشائعة",
@@ -118,6 +119,7 @@ export const homeCopy = {
     available: "Disponible",
     unavailable: "Indisponible",
     choosePlan: "Choisir ma durée",
+    viewOffers: "Voir les offres",
     viewDetails: "Voir les détails",
     snapDescription:
       "Sur votre compte actuel, sans demander votre mot de passe.",
@@ -135,7 +137,7 @@ export const homeCopy = {
     menu: "Menu",
     skip: "Aller au contenu",
     catalogEyebrow: "À vous de choisir",
-    catalogTitle: "Chaque abonnement, en clair.",
+    catalogTitle: "Abonnements",
     catalogIntro:
       "Comparez les prix et les durées, puis choisissez votre formule.",
     search: "Rechercher un abonnement",
@@ -148,7 +150,7 @@ export const homeCopy = {
     plans: "Voir les formules",
     catalogLink: "Ouvrir toute la boutique",
     stepsEyebrow: "Du choix à l’activation",
-    stepsTitle: "Trois étapes. Rien de compliqué.",
+    stepsTitle: "Comment commander",
     stepsIntro:
       "Consultez d’abord les détails. Les coordonnées de transfert s’affichent à la commande.",
     steps: [
@@ -168,7 +170,7 @@ export const homeCopy = {
     activation:
       "L’activation prend généralement de 15 minutes à 12 heures après vérification du paiement.",
     faqEyebrow: "Avant de commander",
-    faqTitle: "Les réponses pour bien choisir.",
+    faqTitle: "Questions fréquentes",
     faqIntro: "L’essentiel sur le paiement, l’activation et la garantie.",
     warrantyPolicy: "Garantie et remboursements",
     allFaq: "Toutes les questions fréquentes",
@@ -224,6 +226,7 @@ export const homeCopy = {
     available: "Available",
     unavailable: "Unavailable",
     choosePlan: "Choose my plan",
+    viewOffers: "View offers",
     viewDetails: "View details",
     snapDescription:
       "On your existing account, without asking for your password.",
@@ -241,7 +244,7 @@ export const homeCopy = {
     menu: "Menu",
     skip: "Skip to content",
     catalogEyebrow: "Find your fit",
-    catalogTitle: "Every subscription. Clearly explained.",
+    catalogTitle: "Subscriptions",
     catalogIntro:
       "Compare prices and durations, then open a product to choose your plan.",
     search: "Search subscriptions",
@@ -254,7 +257,7 @@ export const homeCopy = {
     plans: "View plans",
     catalogLink: "Open the full shop",
     stepsEyebrow: "From choosing to activating",
-    stepsTitle: "Three steps. Know what’s next.",
+    stepsTitle: "How to order",
     stepsIntro:
       "Check the details first. Transfer instructions appear at checkout.",
     steps: [
@@ -274,7 +277,7 @@ export const homeCopy = {
     activation:
       "Activation usually takes 15 minutes to 12 hours after payment verification.",
     faqEyebrow: "Before you order",
-    faqTitle: "A clear answer before you choose.",
+    faqTitle: "Common questions",
     faqIntro: "The essentials on payment, activation and warranty coverage.",
     warrantyPolicy: "Warranty and refund policy",
     allFaq: "All frequently asked questions",

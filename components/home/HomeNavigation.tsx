@@ -1,11 +1,10 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { Menu, X, Moon, Sun, ShoppingBag } from "lucide-react";
+import { Menu, X, Moon, Sun } from "lucide-react";
 import { useLocale } from "@/lib/useLocale";
 import { useTheme } from "@/lib/useTheme";
-import { readCart } from "@/lib/cart";
 import type { Locale } from "@/lib/types";
 import { homeCopy } from "./copy";
 import styles from "./home.module.css";
@@ -15,18 +14,6 @@ export function HomeNavigation() {
   const { theme, setTheme } = useTheme();
   const c = homeCopy[locale];
   const [open, setOpen] = useState(false);
-  const [count, setCount] = useState(0);
-  useEffect(() => {
-    const update = () =>
-      setCount(readCart().reduce((sum, item) => sum + item.quantity, 0));
-    update();
-    window.addEventListener("tiger-store-cart-updated", update);
-    window.addEventListener("storage", update);
-    return () => {
-      window.removeEventListener("tiger-store-cart-updated", update);
-      window.removeEventListener("storage", update);
-    };
-  }, []);
   const links = [
     ["#subscriptions", c.shop],
     ["#how-it-works", c.how],
@@ -76,10 +63,6 @@ export function HomeNavigation() {
           >
             {theme === "dark" ? <Sun size={19} /> : <Moon size={19} />}
           </button>
-          <Link href="/cart" aria-label={c.cart} className={styles.cart}>
-            {count > 0 && <span>{count}</span>}
-            <ShoppingBag size={20} aria-hidden="true" />
-          </Link>
           <button
             type="button"
             className={styles.menuToggle}

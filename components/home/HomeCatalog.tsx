@@ -44,7 +44,6 @@ export function HomeCatalog({
         <div>
           <p className={styles.eyebrow}>{c.catalogEyebrow}</p>
           <h2 id="catalog-title">{c.catalogTitle}</h2>
-          <p>{c.catalogIntro}</p>
         </div>
         <form action="/shop" className={styles.search} role="search">
           <label className={styles.srOnly} htmlFor="home-search">

@@ -3,14 +3,11 @@ import Link from "next/link";
 import { cookies } from "next/headers";
 import {
   ArrowUpRight,
-  ArrowDown,
-  Check,
   CreditCard,
   FileCheck2,
   Instagram,
   MessageCircle,
   Plus,
-  ShieldCheck,
 } from "lucide-react";
 import { getProducts, getSettings } from "@/lib/admin-store";
 import { createPageMetadata } from "@/lib/seo";
@@ -51,7 +48,11 @@ export default async function Home() {
     homeLocale(),
   ]);
   const c = homeCopy[locale];
-  const cards = products.map((product) => homeProduct(product, locale));
+  const annualDuration = locale === "ar" ? "12 شهراً" : locale === "fr" ? "12 mois" : "12 months";
+  const cards = products.map((product) => {
+    const card = homeProduct(product, locale);
+    return product.slug === "snapchat-plus" ? { ...card, price: "2,300 DA", duration: annualDuration } : card;
+  });
   const featured = cards.find((product) => product.slug === "snapchat-plus");
   const instagram =
     settings.instagramUrl || "https://www.instagram.com/tigerr_store_dz/";
@@ -66,36 +67,8 @@ export default async function Home() {
       <main id="home-main">
         <section
           className={`${styles.container} ${styles.hero}`}
-          aria-labelledby="home-title"
+          aria-labelledby="featured-title"
         >
-          <div className={styles.heroCopy}>
-            <p className={styles.eyebrow}>
-              <span className={styles.brandDot} />
-              {c.eyebrow}
-            </p>
-            <h1 id="home-title">
-              {c.headline}
-              <br />
-              <span>{c.headlineAccent}</span>
-            </h1>
-            <p className={styles.intro}>{c.intro}</p>
-            <div className={styles.heroActions}>
-              <a href="#subscriptions" className={styles.primary}>
-                {c.browse}
-                <ArrowDown size={18} aria-hidden="true" />
-              </a>
-              <a href="#how-it-works" className={styles.quietLink}>
-                {c.how}
-                <ArrowUpRight size={17} aria-hidden="true" />
-              </a>
-            </div>
-            <p className={styles.heroNote}>
-              <Check size={16} aria-hidden="true" />
-              {c.guest}
-              <span aria-hidden="true">·</span>
-              {c.pricesDa}
-            </p>
-          </div>
           {featured && (
             <article
               className={styles.featured}
@@ -128,24 +101,17 @@ export default async function Home() {
                   />
                 </Link>
                 <div className={styles.featuredInfo}>
-                  <h2 id="featured-title" dir="auto">
-                    {featured.name}
-                  </h2>
-                  <p>{c.snapDescription}</p>
-                  <p className={styles.featuredDuration}>{featured.duration}</p>
+                  <h1 id="featured-title" dir="ltr">Snapchat+</h1>
+                  <p className={styles.featuredDuration}>{annualDuration}</p>
                   <strong className={styles.featuredPrice} dir="ltr">
-                    {featured.price}
+                    2,300 DA
                   </strong>
                   <Link href={featured.href} prefetch={false} className={styles.featuredCta}>
-                    {featured.available ? c.choosePlan : c.viewDetails}
+                    {c.viewOffers}
                     <ArrowUpRight size={17} aria-hidden="true" />
                   </Link>
                 </div>
               </div>
-              <p className={styles.featuredFoot}>
-                <ShieldCheck size={16} aria-hidden="true" />
-                {c.checkCompatibility}
-              </p>
             </article>
           )}
         </section>
@@ -182,17 +148,15 @@ export default async function Home() {
               <p className={styles.eyebrow}>{c.stepsEyebrow}</p>
               <h2 id="steps-title">{c.stepsTitle}</h2>
             </div>
-            <p>{c.stepsIntro}</p>
           </div>
           <ol className={styles.steps}>
-            {c.steps.map(([title, body], index) => (
+            {c.steps.map(([title], index) => (
               <li key={title}>
                 <span className={styles.stepNumber} aria-hidden="true">
                   0{index + 1}
                 </span>
                 <div>
                   <h3>{title}</h3>
-                  <p>{body}</p>
                 </div>
               </li>
             ))}
@@ -210,7 +174,6 @@ export default async function Home() {
             <div className={styles.faqHeading}>
               <p className={styles.eyebrow}>{c.faqEyebrow}</p>
               <h2 id="questions-title">{c.faqTitle}</h2>
-              <p>{c.faqIntro}</p>
               <Link href="/refund-policy" className={styles.quietLink}>
                 {c.warrantyPolicy}
                 <ArrowUpRight size={17} aria-hidden="true" />
@@ -219,7 +182,6 @@ export default async function Home() {
             <div className={styles.contactCard}>
               <Instagram size={24} aria-hidden="true" />
               <h3>{c.contactTitle}</h3>
-              <p>{c.contactBody}</p>
               <a
                 href={instagram}
                 target="_blank"
@@ -263,7 +225,6 @@ export default async function Home() {
           <div>
             <p className={styles.eyebrow}>TIGER STORE</p>
             <h2 id="final-title">{c.finalTitle}</h2>
-            <p>{c.finalBody}</p>
           </div>
           <a href="#subscriptions" className={styles.primary}>
             {c.browse}

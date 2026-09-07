@@ -2,9 +2,8 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { Globe2, Menu, Moon, Search, ShoppingCart, Sun, X } from "lucide-react";
-import { useEffect, useState } from "react";
-import { readCart } from "@/lib/cart";
+import { Globe2, Menu, Moon, Search, Sun, X } from "lucide-react";
+import { useState } from "react";
 import { t } from "@/lib/i18n";
 import { useLocale } from "@/lib/useLocale";
 import { useTheme } from "@/lib/useTheme";
@@ -14,18 +13,10 @@ const links = [["/shop", "shop"], ["/categories", "categories"], ["/payment-meth
 export function Header() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [languageOpen, setLanguageOpen] = useState(false);
-  const [cartCount, setCartCount] = useState(0);
   const { locale, setLocale } = useLocale();
   const { theme, setTheme } = useTheme();
   const ThemeIcon = theme === "dark" ? Moon : Sun;
 
-  useEffect(() => {
-    const update = () => setCartCount(readCart().reduce((total, item) => total + item.quantity, 0));
-    update();
-    window.addEventListener("tiger-store-cart-updated", update);
-    window.addEventListener("storage", update);
-    return () => { window.removeEventListener("tiger-store-cart-updated", update); window.removeEventListener("storage", update); };
-  }, []);
 
   return <header className="sticky top-0 z-50 border-b border-[var(--border-color)] bg-[var(--surface)]/95 text-[var(--text)] backdrop-blur">
     <div className="mx-auto flex min-h-16 max-w-[1180px] items-center gap-2 px-4 sm:px-6 lg:min-h-[72px] lg:px-8">
@@ -35,7 +26,6 @@ export function Header() {
       <div className="ms-auto flex items-center gap-1">
         <div className="relative"><button type="button" onClick={() => setLanguageOpen((value) => !value)} className="inline-flex h-11 w-11 items-center justify-center rounded-full border border-[var(--border-color)]" aria-label={t(locale, "language")} aria-expanded={languageOpen}><Globe2 className="h-4 w-4" /></button>{languageOpen && <LanguageMenu locale={locale} setLocale={setLocale} close={() => setLanguageOpen(false)} />}</div>
         <button type="button" onClick={() => setTheme(theme === "dark" ? "light" : "dark")} className="inline-flex h-11 w-11 items-center justify-center rounded-full border border-[var(--border-color)]" aria-label={theme === "dark" ? "Switch to light theme" : "Switch to dark theme"}><ThemeIcon className="h-4 w-4" /></button>
-        <Link href="/cart" className="relative inline-flex h-11 w-11 items-center justify-center rounded-full border border-[var(--border-color)]" aria-label={t(locale, "cart")}><ShoppingCart className="h-5 w-5" />{cartCount > 0 && <span className="absolute -end-1 -top-1 inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-[#FF7300] px-1 text-[10px] font-black text-[#17120F]">{cartCount}</span>}</Link>
         <button type="button" onClick={() => setMenuOpen((value) => !value)} className="inline-flex h-11 w-11 items-center justify-center rounded-full border border-[var(--border-color)] lg:hidden" aria-label={t(locale, "menu")} aria-expanded={menuOpen}>{menuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}</button>
       </div>
     </div>
