@@ -14,7 +14,7 @@ import { Header } from "@/components/Header";
 import { HomeCatalog } from "@/components/home/HomeCatalog";
 import { homeCopy } from "@/components/home/copy";
 import { homeProduct } from "@/components/home/products";
-import styles from "@/components/home/home.module.css";
+import styles from "@/components/home/landing.module.css";
 
 export const dynamic = "force-dynamic";
 
@@ -65,8 +65,8 @@ export default async function Home() {
       <Header />
       <main id="home-main">
         <section className={`${styles.container} ${styles.minimalHero}`} aria-labelledby="hero-title">
-          <p className={styles.eyebrow}>TIGER STORE</p>
-          <h1 id="hero-title">{locale === "ar" ? "اشتراكاتك في مكان واحد." : locale === "fr" ? "Vos abonnements, au même endroit." : "Your subscriptions, in one place."}</h1>
+          <p className={styles.eyebrow}>TIGER STORE · DIGITAL SUBSCRIPTIONS</p>
+          <h1 id="hero-title">{locale === "ar" ? <>اشتراكات تحبّها.<br /><span>من مكان تثق به.</span></> : locale === "fr" ? <>Vos abonnements préférés.<br /><span>Votre boutique de confiance.</span></> : <>Subscriptions you love.<br /><span>A store you can trust.</span></>}</h1>
           <a href="#subscriptions" className={styles.quietLink}>{c.browse}<ArrowUpRight size={18} aria-hidden="true" /></a>
         </section>
         <section className={`${styles.container} ${styles.featuredSection}`} aria-labelledby="featured-title">
@@ -97,13 +97,14 @@ export default async function Home() {
                     alt={featured.name}
                     fill
                     priority
-                    sizes="(min-width: 768px) 330px, 250px"
+                    sizes="(min-width: 768px) 340px, 240px"
                     className={styles.artwork}
                   />
                 </Link>
                 <div className={styles.featuredInfo}>
                   <h2 id="featured-title" dir="ltr">Snapchat+</h2>
                   <div className={styles.featuredOffer}><p className={styles.featuredDuration}>{annualDuration}</p><strong className={styles.featuredPrice} dir="ltr">2,300 DA</strong></div>
+                  <p className={styles.featuredDescription}>{c.snapDescription}</p>
                   <Link href={featured.href} prefetch={false} className={styles.featuredCta}>
                     {c.viewOffers}
                     <ArrowUpRight size={17} aria-hidden="true" />

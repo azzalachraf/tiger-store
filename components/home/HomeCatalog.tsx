@@ -7,7 +7,7 @@ import type { Locale } from "@/lib/types";
 import { productCategories } from "@/lib/product-localization";
 import type { HomeProduct } from "./products";
 import { homeCopy } from "./copy";
-import styles from "./home.module.css";
+import styles from "./landing.module.css";
 
 export function HomeCatalog({
   products,
