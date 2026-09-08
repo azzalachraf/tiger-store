@@ -98,7 +98,6 @@ export function HomeCatalog({
               />
             </Link>
             <div className={styles.productInfo}>
-              <p className={styles.category}>{product.category}</p>
               <h3>
                 <Link href={product.href} prefetch={false} dir="auto">
                   {product.name}
@@ -108,17 +107,7 @@ export function HomeCatalog({
               <p className={styles.price} dir="ltr">
                 {product.price}
               </p>
-              <span
-                className={
-                  product.available ? styles.available : styles.unavailable
-                }
-              >
-                {product.available ? c.available : c.unavailable}
-              </span>
-              <Link href={product.href} prefetch={false} className={styles.productCta}>
-                {product.available ? c.plans : c.viewDetails}
-                <ArrowUpRight size={16} aria-hidden="true" />
-              </Link>
+              {!product.available && <span className={styles.unavailable}>{c.unavailable}</span>}
             </div>
           </article>
         ))}

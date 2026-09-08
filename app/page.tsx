@@ -64,6 +64,11 @@ export default async function Home() {
     >
       <Header />
       <main id="home-main">
+        <section className={`${styles.container} ${styles.minimalHero}`} aria-labelledby="hero-title">
+          <p className={styles.eyebrow}>TIGER STORE</p>
+          <h1 id="hero-title">{locale === "ar" ? "اشتراكاتك في مكان واحد." : locale === "fr" ? "Vos abonnements, au même endroit." : "Your subscriptions, in one place."}</h1>
+          <a href="#subscriptions" className={styles.quietLink}>{c.browse}<ArrowUpRight size={18} aria-hidden="true" /></a>
+        </section>
         <section className={`${styles.container} ${styles.featuredSection}`} aria-labelledby="featured-title">
           {featured && (
             <article
@@ -71,7 +76,7 @@ export default async function Home() {
               aria-labelledby="featured-title"
             >
               <div className={styles.featuredTop}>
-                <span>{c.spotlight}</span>
+                <span>{locale === "ar" ? "الأكثر مبيعاً" : locale === "fr" ? "Le plus vendu" : "Bestseller"}</span>
                 <span
                   className={
                     featured.available ? styles.available : styles.unavailable
@@ -92,12 +97,12 @@ export default async function Home() {
                     alt={featured.name}
                     fill
                     priority
-                    sizes="(min-width: 1000px) 200px, (min-width: 600px) 170px, 116px"
+                    sizes="(min-width: 768px) 330px, 250px"
                     className={styles.artwork}
                   />
                 </Link>
                 <div className={styles.featuredInfo}>
-                  <h1 id="featured-title" dir="ltr">Snapchat+</h1>
+                  <h2 id="featured-title" dir="ltr">Snapchat+</h2>
                   <div className={styles.featuredOffer}><p className={styles.featuredDuration}>{annualDuration}</p><strong className={styles.featuredPrice} dir="ltr">2,300 DA</strong></div>
                   <Link href={featured.href} prefetch={false} className={styles.featuredCta}>
                     {c.viewOffers}
@@ -108,7 +113,7 @@ export default async function Home() {
             </article>
           )}
         </section>
-        <HomeCatalog products={cards} locale={locale} />
+        <HomeCatalog products={cards.filter((product) => product.slug !== "snapchat-plus")} locale={locale} />
         <section
           id="how-it-works"
           className={`${styles.container} ${styles.section}`}
@@ -174,7 +179,7 @@ export default async function Home() {
             </div>
           </div>
           <div className={styles.questions}>
-            {c.questions.map(([question, answer]) => (
+            {c.questions.slice(0, 3).map(([question, answer]) => (
               <details key={question}>
                 <summary>
                   {question}
@@ -195,12 +200,12 @@ export default async function Home() {
         >
           <div>
             <p className={styles.eyebrow}>TIGER STORE</p>
-            <h2 id="final-title">{c.finalTitle}</h2>
+            <h2 id="final-title">{locale === "ar" ? "اكتشف اشتراكك التالي." : locale === "fr" ? "Découvrez votre prochain abonnement." : "Find your next subscription."}</h2>
           </div>
-          <a href="#subscriptions" className={styles.primary}>
+          <Link href="/shop" className={styles.primary}>
             {c.browse}
             <ArrowUpRight size={18} aria-hidden="true" />
-          </a>
+          </Link>
         </section>
       </main>
       <footer className={`${styles.container} ${styles.footer}`}>
