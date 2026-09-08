@@ -66,7 +66,7 @@ export default async function Home() {
       <main id="home-main">
         <section className={`${styles.container} ${styles.minimalHero}`} aria-labelledby="hero-title">
           <p className={styles.eyebrow}>TIGER STORE · DIGITAL SUBSCRIPTIONS</p>
-          <h1 id="hero-title">{locale === "ar" ? <>اشتراكات تحبّها،<br /><span>وخدمة تقدر تثق فيها.</span></> : locale === "fr" ? <>Vos abonnements préférés.<br /><span>Votre boutique de confiance.</span></> : <>Subscriptions you love.<br /><span>A store you can trust.</span></>}</h1>
+          <h1 id="hero-title">{locale === "ar" ? <>اشتراكات تحبّها،<br /><span>وخدمة تقدر توثق فيها.</span></> : locale === "fr" ? <>Vos abonnements préférés.<br /><span>Votre boutique de confiance.</span></> : <>Subscriptions you love.<br /><span>A store you can trust.</span></>}</h1>
           <a href="#subscriptions" className={styles.quietLink}>{c.browse}<ArrowUpRight size={18} aria-hidden="true" /></a>
         </section>
         <section className={`${styles.container} ${styles.featuredSection}`} aria-labelledby="featured-title">
