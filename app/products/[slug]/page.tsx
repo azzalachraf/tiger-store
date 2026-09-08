@@ -118,8 +118,8 @@ export default async function ProductDetailPage({ params }: PageProps) {
   return (
     <>
       <Header />
-      <main className="store-shell min-h-screen px-3 py-6 sm:px-5 sm:py-10 lg:px-8">
-        <div className="mx-auto max-w-[1440px]">
+      <main className="store-shell min-h-screen min-w-0 overflow-x-clip px-3 py-4 sm:px-5 sm:py-10 lg:px-8">
+        <div className="mx-auto min-w-0 max-w-[1440px]">
           <ProductDetails product={product} />
           <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: productJsonLd }} />
           <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: breadcrumbJsonLd }} />
