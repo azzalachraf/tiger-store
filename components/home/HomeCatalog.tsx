@@ -108,6 +108,10 @@ export function HomeCatalog({
                 {product.price}
               </p>
               {!product.available && <span className={styles.unavailable}>{c.unavailable}</span>}
+              <Link href={product.href} prefetch={false} className={styles.cardCta}>
+                {locale === "ar" ? "اطلب الآن" : locale === "fr" ? "Commander" : "Shop now"}
+                <ArrowUpRight size={14} aria-hidden="true" />
+              </Link>
             </div>
           </article>
         ))}
