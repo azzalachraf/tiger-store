@@ -11,7 +11,6 @@ import {
 import { getProducts, getSettings } from "@/lib/admin-store";
 import { createPageMetadata } from "@/lib/seo";
 import { Header } from "@/components/Header";
-import { Hero } from "@/components/Hero";
 import { HomeCatalog } from "@/components/home/HomeCatalog";
 import { homeCopy } from "@/components/home/copy";
 import { homeProduct } from "@/components/home/products";
@@ -65,7 +64,6 @@ export default async function Home() {
     >
       <Header />
       <main id="home-main">
-        <Hero />
         <section className={`${styles.container} ${styles.featuredSection}`} aria-labelledby="featured-title">
           {featured && (
             <article

@@ -171,8 +171,8 @@
   justify-content: center;
 }
 .featuredSection {
-  width: min(100% - 40px, 650px);
-  padding-block: 8px 42px;
+  width: min(100% - 40px, 720px);
+  padding-block: 42px 50px;
 }
 .eyebrow {
   display: flex;
@@ -276,12 +276,14 @@
   color: var(--green);
 }
 .featured {
-  background: transparent;
+  background:
+    radial-gradient(circle at 50% 22%, rgba(255, 115, 0, .16), transparent 42%),
+    var(--surface);
   color: var(--text);
-  border: 0;
-  border-radius: 28px;
-  padding: 20px;
-  box-shadow: none;
+  border: 1px solid var(--border-color);
+  border-radius: 32px;
+  padding: 24px 28px 32px;
+  box-shadow: 0 24px 70px rgba(35, 22, 12, .11);
   position: relative;
   overflow: hidden;
   animation: featuredEnter .65s ease-out both;
@@ -353,16 +355,18 @@
 .featuredBody {
   position: relative;
   display: grid;
-  grid-template-columns: 0.9fr 1fr;
+  grid-template-columns: 1fr;
   align-items: center;
-  gap: 20px;
-  margin: 18px 0;
+  justify-items: center;
+  gap: 10px;
+  margin: 14px 0 0;
 }
 .featuredImage {
   position: relative;
   display: block;
-  height: 246px;
-  transform: rotate(-4deg);
+  width: min(100%, 330px);
+  height: 330px;
+  transform: rotate(-2deg);
   transition: transform 0.25s;
 }
 .featuredImage:hover {
@@ -376,7 +380,9 @@
   font-size: 34px;
   font-weight: 850;
   line-height: 1.35;
+  text-align: center;
 }
+.featuredInfo { display: grid; justify-items: center; text-align: center; }
 .featuredInfo > p {
   color: var(--muted-text);
   font-size: 12px;
@@ -388,7 +394,7 @@
   font-size: 18px;
   font-weight: 900;
 }
-.featuredOffer { display: flex; align-items: baseline; gap: 18px; margin-top: 12px; }
+.featuredOffer { display: flex; align-items: baseline; justify-content: center; gap: 18px; margin-top: 10px; }
 .featuredPrice {
   display: block;
   text-align: start;
@@ -405,7 +411,11 @@
   font-size: 13px;
   font-weight: 800;
   margin-top: 10px;
-  border-bottom: 1px solid #a76231;
+  border: 1px solid #ff7300;
+  border-radius: 999px;
+  background: #ff7300;
+  color: #17120f;
+  padding-inline: 22px;
 }
 .featuredFoot {
   display: flex;
@@ -964,12 +974,13 @@
     font-size: 10px;
   }
   .featuredBody {
-    grid-template-columns: 116px 1fr;
-    gap: 17px;
+    grid-template-columns: 1fr;
+    gap: 8px;
     margin: 10px 0;
   }
   .featuredImage {
-    height: 150px;
+    width: min(100%, 250px);
+    height: 250px;
   }
   .featuredInfo h1 {
     font-size: 22px;
@@ -1176,7 +1187,7 @@
     font-size: 32px;
   }
   .featuredBody {
-    grid-template-columns: 94px 1fr;
+    grid-template-columns: 1fr;
     gap: 12px;
   }
   .featuredInfo h1 {
