@@ -106,6 +106,7 @@ export const warrantyClaimSchema = z.object({
 });
 export const directWarrantyClaimSchema = warrantyClaimSchema.extend({
   phone: z.string().trim().min(6).max(60),
+  email: z.string().trim().email().max(180),
 });
 export const telegramWarrantyFormSchema = z.object({
   name: z.string().trim().min(2).max(160),
@@ -113,6 +114,7 @@ export const telegramWarrantyFormSchema = z.object({
   platform: z.enum(["Instagram", "Snapchat", "Facebook"]),
   phone: z.string().trim().min(6).max(40),
   paymentMethod: paymentMethodSchema,
+  email: z.string().trim().email().max(180),
 });
 export const financeSettingsSchema = z.object({
   usdDzdRate: z.coerce.number().int().min(1).max(100000),

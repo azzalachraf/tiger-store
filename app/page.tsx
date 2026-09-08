@@ -3,7 +3,6 @@ import Link from "next/link";
 import { cookies } from "next/headers";
 import {
   ArrowUpRight,
-  BadgeCheck,
   FileCheck2,
   Instagram,
   MessageCircle,
@@ -12,6 +11,7 @@ import {
 import { getProducts, getSettings } from "@/lib/admin-store";
 import { createPageMetadata } from "@/lib/seo";
 import { Header } from "@/components/Header";
+import { Hero } from "@/components/Hero";
 import { HomeCatalog } from "@/components/home/HomeCatalog";
 import { homeCopy } from "@/components/home/copy";
 import { homeProduct } from "@/components/home/products";
@@ -65,20 +65,7 @@ export default async function Home() {
     >
       <Header />
       <main id="home-main">
-        <section
-          className={`${styles.container} ${styles.hero}`}
-          aria-labelledby="hero-title"
-        >
-          <div className={styles.heroCopy}>
-            <p className={styles.eyebrow}><span className={styles.brandDot} />{c.eyebrow}</p>
-            <h1 id="hero-title">{c.headline} <span>{c.headlineAccent}</span></h1>
-            <div className={styles.heroActions}>
-              <a href="#subscriptions" className={styles.primary}>{c.browse}<ArrowUpRight size={18} aria-hidden="true" /></a>
-              <a href="#how-it-works" className={styles.secondary}>{c.how}</a>
-            </div>
-            <p className={styles.heroNote}><BadgeCheck size={17} aria-hidden="true" />{c.guest} · {c.pricesDa}</p>
-          </div>
-        </section>
+        <Hero />
         <section className={`${styles.container} ${styles.featuredSection}`} aria-labelledby="featured-title">
           {featured && (
             <article
@@ -113,10 +100,7 @@ export default async function Home() {
                 </Link>
                 <div className={styles.featuredInfo}>
                   <h1 id="featured-title" dir="ltr">Snapchat+</h1>
-                  <p className={styles.featuredDuration}>{annualDuration}</p>
-                  <strong className={styles.featuredPrice} dir="ltr">
-                    2,300 DA
-                  </strong>
+                  <div className={styles.featuredOffer}><p className={styles.featuredDuration}>{annualDuration}</p><strong className={styles.featuredPrice} dir="ltr">2,300 DA</strong></div>
                   <Link href={featured.href} prefetch={false} className={styles.featuredCta}>
                     {c.viewOffers}
                     <ArrowUpRight size={17} aria-hidden="true" />

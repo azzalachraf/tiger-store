@@ -3,6 +3,7 @@ import { products } from "../data/products";
 import { homeProduct } from "../components/home/products";
 import { homeCopy } from "../components/home/copy";
 import type { Locale, Product } from "../lib/types";
+import { findCatalogProducts } from "../lib/catalog-search";
 
 const snapchat = products.find((product) => product.slug === "snapchat-plus")!;
 const original = JSON.stringify(products);
@@ -22,6 +23,8 @@ for (const locale of locales) {
 assert.equal(homeProduct(snapchat, "fr").duration, "1 mois – 12 mois");
 assert.equal(homeProduct(snapchat, "ar").duration, "شهر واحد – 12 شهراً");
 assert.equal(homeProduct(snapchat, "en").duration, "1 month – 12 months");
+assert.equal(findCatalogProducts(products, "gimini")[0]?.slug, "gemini-pro");
+assert.equal(findCatalogProducts(products, "snab")[0]?.slug, "snapchat-plus");
 
 const unavailableOffers: Product = {
   ...snapchat,

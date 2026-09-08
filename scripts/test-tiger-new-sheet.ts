@@ -10,7 +10,7 @@ for (const [months, gross] of Object.entries(flexyGrossByMonths)) {
 assert.equal(600 - 135 - 0, 465, "Salary-admin sales must not subtract a commission.");
 assert.equal(600 - 135 - 100, 365, "Commission-admin sales keep their saved commission.");
 
-const requiredWarrantyFields = { name: "Client name", username: "client_name", platform: "Snapchat", phone: "+213555000000", paymentMethod: "Flexy" };
+const requiredWarrantyFields = { name: "Client name", username: "client_name", platform: "Snapchat", phone: "+213555000000", email: "client@example.com", paymentMethod: "Flexy" };
 assert.equal(telegramWarrantyFormSchema.parse(requiredWarrantyFields).phone, "+213555000000");
 assert.throws(() => telegramWarrantyFormSchema.parse({ ...requiredWarrantyFields, username: "" }));
 assert.throws(() => telegramWarrantyFormSchema.parse({ ...requiredWarrantyFields, platform: "" }));

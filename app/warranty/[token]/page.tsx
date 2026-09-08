@@ -33,12 +33,12 @@ export default async function WarrantyPage({ params }: WarrantyPageProps) {
     eyebrow: "شهادة الضمان", title: "شهادة الضمان", intro: "رابط خاص لإصدار شهادة ضمان اشتراكك الرقمي.",
     ready: "تم إنشاء شهادة الضمان", readyText: "احتفظ بها للرجوع إليها عند الحاجة إلى الدعم.", recipient: "صاحب الشهادة", product: "المنتج", plan: "الخطة", order: "رمز الطلب", certificate: "رمز الشهادة", coverage: "مدة التغطية", ends: "تنتهي التغطية", days: "يوم",
     terms: "شروط الضمان", replacement: "عند وجود مشكلة مشمولة سببها Tiger Store، نحاول الاستبدال أولاً.", refund: "إذا تعذر الاستبدال، يُحتسب استرجاع الجزء غير المستخدم من مدة الضمان بشكل نسبي.", excluded: "المشاكل الناتجة عن العميل غير مشمولة.", download: "تحميل الشهادة PDF", follow: "تابع Tiger Store على Telegram", support: "تحتاج مساعدة؟ تواصل معنا",
-    complete: "أكمل بيانات الشهادة", instruction: "اكتب الاسم الذي تريد أن يظهر في شهادة الضمان، ثم أكّد استلام المنتج.", name: "الاسم في الشهادة", accept: "أؤكد أن المنتج تم تسليمه وأفهم شروط الضمان أعلاه.", issue: "إصدار شهادتي",
+    complete: "أكمل بيانات الشهادة", instruction: "أدخل معلوماتك الصحيحة ثم أكّد استلام المنتج.", name: "الاسم", familyName: "اللقب", phone: "رقم الهاتف", email: "البريد الإلكتروني", accept: "أؤكد أن المنتج تم تسليمه وأفهم شروط الضمان أعلاه.", issue: "إصدار شهادتي",
   } : {
     eyebrow: "WARRANTY CERTIFICATE", title: "Warranty certificate", intro: "A private link to issue your digital subscription warranty certificate.",
     ready: "Your warranty certificate is ready", readyText: "Keep it for reference if you ever need support.", recipient: "Certificate holder", product: "Product", plan: "Plan", order: "Order code", certificate: "Certificate code", coverage: "Coverage", ends: "Coverage ends", days: "days",
     terms: "Warranty terms", replacement: "For a covered failure caused by Tiger Store, we attempt replacement first.", refund: "If replacement is impossible, the unused covered period is refunded proportionally.", excluded: "Customer-caused problems are not covered.", download: "Download PDF certificate", follow: "Follow Tiger Store on Telegram", support: "Need help? Contact us",
-    complete: "Complete your certificate", instruction: "Enter the name that should appear on your certificate, then confirm that you received the product.", name: "Name on the certificate", accept: "I confirm that the product was delivered and I understand the warranty terms above.", issue: "Issue my certificate",
+    complete: "Complete your certificate", instruction: "Enter your correct details, then confirm that you received the product.", name: "First name", familyName: "Family name", phone: "Phone number", email: "Email", accept: "I confirm that the product was delivered and I understand the warranty terms above.", issue: "Issue my certificate",
   };
   const coverageEnd = new Intl.DateTimeFormat(isArabic ? "ar-DZ" : "en-GB", { dateStyle: "long" }).format(warrantyEndDate(payload));
   const certificateCode = warrantyCertificateCode(payload);
@@ -46,7 +46,8 @@ export default async function WarrantyPage({ params }: WarrantyPageProps) {
   const planName = isArabic ? item.optionAr || item.option : item.option;
   const orderCode = payload.source === "direct" ? directWarrantyOrderId(payload) : order?.id;
   if (!orderCode) notFound();
-  const initialRecipientName = order?.customerName ?? "";
+  const initialRecipientName = order?.customerName?.split(/\s+/)[0] ?? "";
+  const initialFamilyName = order?.customerName?.split(/\s+/).slice(1).join(" ") ?? "";
 
   return (
     <main className="store-shell min-h-screen px-4 py-8 sm:px-6 sm:py-12" dir={isArabic ? "rtl" : "ltr"}>
@@ -83,11 +84,11 @@ export default async function WarrantyPage({ params }: WarrantyPageProps) {
             <p className="text-lg font-black text-[var(--text)]">{copy.complete}</p>
             <p className="mt-2 text-sm leading-7 text-[var(--muted-text)]">{copy.instruction}</p>
             <label className="mt-6 grid gap-2 text-sm font-bold text-[var(--text)]">{copy.name}
-              <input name="recipientName" defaultValue={initialRecipientName} required minLength={2} maxLength={160} className="min-h-12 rounded-xl border border-[var(--border-color)] bg-[var(--page)] px-4 text-base text-[var(--text)]" />
+              <input name="firstName" defaultValue={initialRecipientName} required minLength={2} maxLength={80} autoComplete="given-name" className="min-h-12 rounded-xl border border-[var(--border-color)] bg-[var(--page)] px-4 text-base text-[var(--text)]" />
             </label>
-            {payload.source === "direct" ? <label className="mt-5 grid gap-2 text-sm font-bold text-[var(--text)]">{isArabic ? "رقم الهاتف" : "Phone number"}
-              <input name="phone" type="tel" required placeholder="0550 123 456" className="min-h-12 rounded-xl border border-[var(--border-color)] bg-[var(--page)] px-4 text-base text-[var(--text)]" dir="ltr" />
-            </label> : null}
+            <label className="mt-5 grid gap-2 text-sm font-bold text-[var(--text)]">{copy.familyName}<input name="familyName" defaultValue={initialFamilyName} required minLength={2} maxLength={80} autoComplete="family-name" className="min-h-12 rounded-xl border border-[var(--border-color)] bg-[var(--page)] px-4 text-base text-[var(--text)]" /></label>
+            <label className="mt-5 grid gap-2 text-sm font-bold text-[var(--text)]">{copy.phone}<input name="phone" type="tel" required minLength={9} maxLength={20} defaultValue={order?.phone ?? ""} placeholder="0550 123 456" autoComplete="tel" inputMode="tel" className="min-h-12 rounded-xl border border-[var(--border-color)] bg-[var(--page)] px-4 text-base text-[var(--text)]" dir="ltr" /></label>
+            <label className="mt-5 grid gap-2 text-sm font-bold text-[var(--text)]">{copy.email}<input name="email" type="email" required maxLength={180} defaultValue={order?.email ?? ""} autoComplete="email" className="min-h-12 rounded-xl border border-[var(--border-color)] bg-[var(--page)] px-4 text-base text-[var(--text)]" dir="ltr" /></label>
             <label className="mt-5 flex items-start gap-3 rounded-xl border border-[var(--border-color)] bg-[var(--page)] p-4 text-sm font-bold leading-6 text-[var(--text)]"><input name="accepted" value="yes" type="checkbox" required className="mt-1 h-4 w-4 accent-[#FF7300]" />{copy.accept}</label>
             <button type="submit" className="mt-6 min-h-12 w-full rounded-xl bg-[#FF7300] px-5 font-black text-[#17120F] transition-colors hover:bg-[#E76800]">{copy.issue}</button>
           </form>
