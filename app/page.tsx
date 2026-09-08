@@ -3,7 +3,7 @@ import Link from "next/link";
 import { cookies } from "next/headers";
 import {
   ArrowUpRight,
-  CreditCard,
+  BadgeCheck,
   FileCheck2,
   Instagram,
   MessageCircle,
@@ -11,7 +11,7 @@ import {
 } from "lucide-react";
 import { getProducts, getSettings } from "@/lib/admin-store";
 import { createPageMetadata } from "@/lib/seo";
-import { HomeNavigation } from "@/components/home/HomeNavigation";
+import { Header } from "@/components/Header";
 import { HomeCatalog } from "@/components/home/HomeCatalog";
 import { homeCopy } from "@/components/home/copy";
 import { homeProduct } from "@/components/home/products";
@@ -51,7 +51,7 @@ export default async function Home() {
   const annualDuration = locale === "ar" ? "12 شهراً" : locale === "fr" ? "12 mois" : "12 months";
   const cards = products.map((product) => {
     const card = homeProduct(product, locale);
-    return product.slug === "snapchat-plus" ? { ...card, price: "2,300 DA", duration: annualDuration } : card;
+    return card;
   });
   const featured = cards.find((product) => product.slug === "snapchat-plus");
   const instagram =
@@ -63,12 +63,23 @@ export default async function Home() {
       dir={locale === "ar" ? "rtl" : "ltr"}
       lang={locale}
     >
-      <HomeNavigation />
+      <Header />
       <main id="home-main">
         <section
           className={`${styles.container} ${styles.hero}`}
-          aria-labelledby="featured-title"
+          aria-labelledby="hero-title"
         >
+          <div className={styles.heroCopy}>
+            <p className={styles.eyebrow}><span className={styles.brandDot} />{c.eyebrow}</p>
+            <h1 id="hero-title">{c.headline} <span>{c.headlineAccent}</span></h1>
+            <div className={styles.heroActions}>
+              <a href="#subscriptions" className={styles.primary}>{c.browse}<ArrowUpRight size={18} aria-hidden="true" /></a>
+              <a href="#how-it-works" className={styles.secondary}>{c.how}</a>
+            </div>
+            <p className={styles.heroNote}><BadgeCheck size={17} aria-hidden="true" />{c.guest} · {c.pricesDa}</p>
+          </div>
+        </section>
+        <section className={`${styles.container} ${styles.featuredSection}`} aria-labelledby="featured-title">
           {featured && (
             <article
               className={styles.featured}
@@ -115,28 +126,6 @@ export default async function Home() {
             </article>
           )}
         </section>
-        <div className={`${styles.container} ${styles.paymentBar}`}>
-          <span>
-            <CreditCard size={18} aria-hidden="true" />
-            {c.payWith}
-          </span>
-          <div className={styles.paymentLogos}>
-            {[
-              ["BaridiMob", "/logos/payments/baridimob.png"],
-              ["Binance", "/logos/payments/binance.svg"],
-              ["RedotPay", "/logos/payments/redotpay.svg"],
-            ].map(([name, src]) => (
-              <span key={name}>
-                <Image src={src} alt="" width={24} height={24} />
-                {name}
-              </span>
-            ))}
-          </div>
-          <Link href="/payment-methods" className={styles.quietLink}>
-            {c.paymentDetails}
-            <ArrowUpRight size={16} aria-hidden="true" />
-          </Link>
-        </div>
         <HomeCatalog products={cards} locale={locale} />
         <section
           id="how-it-works"

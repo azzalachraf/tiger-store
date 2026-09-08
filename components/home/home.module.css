@@ -158,12 +158,21 @@
   display: none;
 }
 .hero {
-  display: grid;
-  grid-template-columns: minmax(0, 560px);
+  padding-block: 64px 34px;
+  text-align: center;
+}
+.heroCopy {
+  max-width: 760px;
+  margin-inline: auto;
+}
+.heroCopy .eyebrow,
+.heroCopy .heroActions,
+.heroCopy .heroNote {
   justify-content: center;
-  align-items: center;
-  gap: 54px;
-  padding-block: 58px 38px;
+}
+.featuredSection {
+  width: min(100% - 40px, 650px);
+  padding-block: 8px 42px;
 }
 .eyebrow {
   display: flex;
@@ -275,7 +284,21 @@
   box-shadow: 0 22px 40px -26px #1b181560;
   position: relative;
   overflow: hidden;
+  animation: featuredEnter .65s ease-out both;
 }
+.featured::after {
+  content: "";
+  position: absolute;
+  inset: -60% auto auto -20%;
+  width: 45%;
+  height: 220%;
+  transform: rotate(24deg);
+  background: linear-gradient(90deg, transparent, #ffffff1a, transparent);
+  animation: featuredShine 5s ease-in-out infinite;
+  pointer-events: none;
+}
+@keyframes featuredEnter { from { opacity: 0; transform: translateY(20px) scale(.98); } to { opacity: 1; transform: none; } }
+@keyframes featuredShine { 0%, 65% { transform: translateX(-200%) rotate(24deg); } 100% { transform: translateX(420%) rotate(24deg); } }
 .featured::before {
   content: "";
   position: absolute;

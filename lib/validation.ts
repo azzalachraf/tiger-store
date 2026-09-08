@@ -40,6 +40,9 @@ const telegramCallbackUserIdSchema = z.string().regex(/^[1-9][0-9]{0,18}$/);
 export const telegramCallbackDataSchema = z.union([
   z.tuple([z.literal("sc"), snapchatPlanSchema]),
   z.tuple([z.literal("sc"), snapchatPlanSchema, snapchatCardTypeSchema]),
+  z.tuple([z.literal("tr"), snapchatPlanSchema]),
+  z.tuple([z.literal("tr"), snapchatPlanSchema, snapchatCardTypeSchema]),
+  z.tuple([z.literal("td"), snapchatPlanSchema, z.enum(["complete", "cancel"])]),
   z.tuple([z.literal("op"), z.string().uuid(), z.enum(["complete", "cancel"])]),
   z.tuple([z.literal("an"), z.enum(["today", "yesterday", "7d", "30d"])]),
   z.tuple([z.literal("up"), snapchatCardTypeSchema]),
@@ -110,7 +113,6 @@ export const telegramWarrantyFormSchema = z.object({
   platform: z.enum(["Instagram", "Snapchat", "Facebook"]),
   phone: z.string().trim().min(6).max(40),
   paymentMethod: paymentMethodSchema,
-  email: z.string().trim().email().max(180),
 });
 export const financeSettingsSchema = z.object({
   usdDzdRate: z.coerce.number().int().min(1).max(100000),

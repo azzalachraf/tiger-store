@@ -10,7 +10,8 @@ const faq = (name: string) => [
 ];
 
 function product(input: Omit<Product, "currency" | "details" | "faqs"> & { details?: Partial<NonNullable<Product["details"]>> }): Product {
-  const warranty = input.id === "gemini-pro" ? noWarranty : fullWarranty;
+  const warrantyProducts = new Set(["canva-pro", "snapchat-plus", "autodesk", "capcut-pro", "claude-pro", "chatgpt-plus"]);
+  const warranty = warrantyProducts.has(input.id) ? fullWarranty : noWarranty;
   const priceOptions = input.priceOptions?.map((item) => ({
     ...item,
     // Option IDs are submitted by the browser and resolved again on the server.

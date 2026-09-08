@@ -19,7 +19,7 @@ function enrichCatalogProduct(product: Product): Product {
     id: option.id || catalogProduct?.priceOptions?.[index]?.id || `${product.id}:option-${index + 1}`,
   }));
   return catalogProduct
-    ? { ...catalogProduct, ...product, duration: product.duration || catalogProduct.duration, durationAr: product.durationAr || catalogProduct.durationAr, priceOptions: stableOptions, details: product.details ?? catalogProduct.details, faqs: product.faqs ?? catalogProduct.faqs }
+    ? { ...catalogProduct, ...product, duration: product.duration || catalogProduct.duration, durationAr: product.durationAr || catalogProduct.durationAr, priceOptions: stableOptions, details: catalogProduct.details ? { ...catalogProduct.details, ...product.details, warrantyAr: catalogProduct.details.warrantyAr, warrantyEn: catalogProduct.details.warrantyEn } : product.details, faqs: product.faqs ?? catalogProduct.faqs }
     : { ...product, priceOptions: stableOptions };
 }
 
@@ -76,8 +76,8 @@ const defaultSettings: SiteSettings = {
   facebookUrl: "https://www.facebook.com/people/Tiger-Store/61589903873726/",
   domainText: "tiger-storedz.com",
   baridiMobRip: "00799999004414930471",
-  ccpDetails: "Payment details will be confirmed after order submission.",
-  redotPayDetails: "Payment details will be confirmed after order submission.",
+  ccpDetails: "Binance ID: 1238309429",
+  redotPayDetails: "RedotPay ID: 1108714040",
   promoHeadings: [
     "كل ما تحتاجه من اشتراكات رقمية في مكان واحد",
     "أفضل الأسعار في السوق بطرق دفع مختلفة",

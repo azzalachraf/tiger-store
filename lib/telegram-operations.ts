@@ -68,16 +68,17 @@ function menuKeyboard(locale: TelegramInterfaceLocale, role: TelegramRole): Repl
     ? {
         snapchat: "🛒 بيع Snapchat", stats: "📊 إحصاءاتي", owner: "👑 لوحة المالك", profit: "💰 صافي الربح",
         cards: "⬆️ رفع البطاقات", websiteOrders: "📋 طلبات الموقع", externalOrder: "📝 طلب خارجي", reduction: "🏷️ تخفيض", cardStock: "📦 مخزون البطاقات",
-        approval: "👥 إدارة المشرفين", arabic: "🌐 العربية", english: "🌐 English",
+        approval: "👥 إدارة المشرفين", trial: "🎓 تجربة مجانية", arabic: "🌐 العربية", english: "🌐 English",
       }
     : {
         snapchat: "🛒 Snapchat sale", stats: "📊 My stats", owner: "👑 Owner controls", profit: "💰 Net profit",
         cards: "⬆️ Upload cards", websiteOrders: "📋 Website orders", externalOrder: "📝 External order", reduction: "🏷️ Reduction", cardStock: "📦 Card stock",
-        approval: "👥 Manage admins", arabic: "🌐 العربية", english: "🌐 English",
+        approval: "👥 Manage admins", trial: "🎓 Free trial", arabic: "🌐 العربية", english: "🌐 English",
       };
   const rows = [[labels.snapchat, labels.stats]];
   if (role === "owner") rows.push([labels.owner, labels.profit], [labels.cards], [labels.approval]);
   if (role === "owner" || role === "admin") rows.push([labels.websiteOrders, labels.externalOrder], [labels.reduction, labels.cardStock]);
+  if (role === "owner" || role === "admin") rows.push([labels.trial]);
   rows.push([labels.arabic, labels.english]);
   return { keyboard: rows.map((row) => row.map((text) => ({ text }))), resize_keyboard: true, is_persistent: true };
 }
@@ -96,6 +97,7 @@ function routeMenuButton(value: string | undefined) {
     "📝 طلب خارجي": "/external_order", "📝 External order": "/external_order",
     "🏷️ تخفيض": "/reduction", "🏷️ Reduction": "/reduction",
     "📦 مخزون البطاقات": "/card_stock", "📦 Card stock": "/card_stock",
+    "🎓 تجربة مجانية": "/trial", "🎓 Free trial": "/trial",
     "🌐 العربية": "/ar", "🌐 English": "/en",
   };
   return commands[text] ?? text;
@@ -192,6 +194,13 @@ async function sendSnapchatPlans(chatId: string, locale: TelegramInterfaceLocale
   const plans: SnapchatPlanMonths[] = [1, 2, 3, 6, 12];
   await reply(chatId, textFor(locale, "اختر مدة Snapchat Plus.", "Choose the Snapchat Plus plan."), {
     inline_keyboard: plans.map((plan) => [{ text: planLabel(plan, locale), callback_data: `sc|${plan}` }]),
+  });
+}
+
+async function sendTrialPlans(chatId: string, locale: TelegramInterfaceLocale) {
+  const plans: SnapchatPlanMonths[] = [1, 2, 3, 6, 12];
+  await reply(chatId, textFor(locale, "🎓 هذه تجربة آمنة: لن يتغير المخزون ولن يُحفظ أي طلب. اختر الخطة.", "🎓 Safe training mode: no stock or order will be changed. Choose a plan."), {
+    inline_keyboard: plans.map((plan) => [{ text: planLabel(plan, locale), callback_data: `tr|${plan}` }]),
   });
 }
 
@@ -483,7 +492,7 @@ export async function handleTelegramOperationsCallback(input: {
   if (user.role !== "admin" && user.role !== "owner") { await reply(String(input.chatId), textFor(locale, "غير مصرح لك بهذه العملية.", "Not authorised.")); return; }
   const parts = input.data.split("|");
   const parsed = telegramCallbackDataSchema.safeParse(parts.map((part, index) => {
-    const numericPlan = (parts[0] === "sc" && index === 1) || (parts[0] === "wc" && index === 3) || (parts[0] === "ex" && index === 1) || (parts[0] === "rd" && index === 1) || (parts[0] === "rc" && index === 1) || (parts[0] === "rq" && (index === 1 || index === 3));
+    const numericPlan = ((parts[0] === "sc" || parts[0] === "tr" || parts[0] === "td") && index === 1) || (parts[0] === "wc" && index === 3) || (parts[0] === "ex" && index === 1) || (parts[0] === "rd" && index === 1) || (parts[0] === "rc" && index === 1) || (parts[0] === "rq" && (index === 1 || index === 3));
     return numericPlan && /^\d+$/.test(part) ? Number(part) : part;
   }));
   if (!parsed.success) { await reply(String(input.chatId), textFor(locale, "انتهت صلاحية هذا الاختيار.", "This selection has expired.")); return; }
@@ -797,6 +806,28 @@ export async function handleTelegramOperationsCallback(input: {
     await reply(String(input.chatId), textFor(locale, "اختر نوع البطاقة.", "Choose the card type."), { inline_keyboard: cardsForPlan(plan).map((cardType) => [{ text: cardLabel(cardType, locale), callback_data: `sc|${plan}|${cardType}` }]) });
     return;
   }
+  if (selected[0] === "tr" && selected.length === 2) {
+    const plan = selected[1];
+    await reply(String(input.chatId), textFor(locale, "اختر نوع البطاقة التجريبية.", "Choose the trial card type."), { inline_keyboard: cardsForPlan(plan).map((cardType) => [{ text: cardLabel(cardType, locale), callback_data: `tr|${plan}|${cardType}` }]) });
+    return;
+  }
+  if (selected[0] === "tr" && selected.length === 3) {
+    const [, plan, cardType] = selected;
+    await reply(String(input.chatId), textFor(locale, `🎓 تم اختيار بطاقة ${cardLabel(cardType, locale)} تجريبية ومستعملة مسبقاً.`, `🎓 A previously used demo ${cardLabel(cardType, locale)} card was selected.`), { inline_keyboard: [[
+      { text: textFor(locale, "✅ إكمال التجربة", "✅ Complete trial"), callback_data: `td|${plan}|complete` },
+      { text: textFor(locale, "❌ إلغاء", "❌ Cancel"), callback_data: `td|${plan}|cancel` },
+    ]] });
+    await replyPlain(String(input.chatId), "https://apps.apple.com/redeem?code=TIGER-STORE-DEMO-USED");
+    return;
+  }
+  if (selected[0] === "td") {
+    if (selected[2] === "cancel") await reply(String(input.chatId), textFor(locale, "❌ أُلغيت التجربة. لم يتم تغيير أي بيانات.", "❌ Trial cancelled. No data was changed."));
+    else {
+      await reply(String(input.chatId), textFor(locale, "✅ اكتملت التجربة. رابط نموذج الضمان التجريبي في الرسالة التالية.", "✅ Trial completed. The demo warranty form is in the next message."));
+      await replyPlain(String(input.chatId), absoluteUrl(`/demo/warranty?plan=${selected[1]}`));
+    }
+    return;
+  }
   if (selected[0] === "sc" && selected.length === 3) {
     const [, plan, cardType] = selected;
     try {
@@ -1009,6 +1040,12 @@ export async function handleTelegramOperationsMessage(input: {
       return;
     }
     await sendSnapchatPlans(chatId, locale);
+    return;
+  }
+
+  if (action === "/trial") {
+    if (!canOperate(user)) { await reply(chatId, textFor(locale, "غير مصرح لك بهذه العملية.", "Not authorised.")); return; }
+    await sendTrialPlans(chatId, locale);
     return;
   }
 
