@@ -18,7 +18,7 @@ export const homeCopy = {
     choosePlan: "اختر مدتك",
     viewOffers: "عرض العروض",
     viewDetails: "تفاصيل الاشتراك",
-    snapDescription: "على حسابك الحالي، دون طلب كلمة المرور.",
+    snapDescription: "ضمان طيلة مدة الاشتراك.",
     checkCompatibility: "راجع توافق جهازك وشروط الخطة قبل الطلب.",
     payWith: "طرق الدفع",
     paymentDetails: "تفاصيل الدفع",
@@ -121,8 +121,7 @@ export const homeCopy = {
     choosePlan: "Choisir ma durée",
     viewOffers: "Voir les offres",
     viewDetails: "Voir les détails",
-    snapDescription:
-      "Sur votre compte actuel, sans demander votre mot de passe.",
+    snapDescription: "Garantie pendant toute la durée de l’abonnement.",
     checkCompatibility:
       "Vérifiez la compatibilité et les conditions de la formule.",
     payWith: "Moyens de paiement",
@@ -228,8 +227,7 @@ export const homeCopy = {
     choosePlan: "Choose my plan",
     viewOffers: "View offers",
     viewDetails: "View details",
-    snapDescription:
-      "On your existing account, without asking for your password.",
+    snapDescription: "Warranty for the full subscription period.",
     checkCompatibility:
       "Check device compatibility and plan conditions before ordering.",
     payWith: "Payment methods",
