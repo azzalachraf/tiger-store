@@ -575,9 +575,6 @@ export function CheckoutView({
               {formatPriceDZD(total, locale)}
             </span>
           </div>
-          <Button asChild variant="ghost" className="mt-4 w-full">
-            <Link href="/shop">{copy.back}</Link>
-          </Button>
         </aside>
       </div>
     </main>
