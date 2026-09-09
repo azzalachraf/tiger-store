@@ -127,7 +127,7 @@ export default async function ProductDetailPage({ params }: PageProps) {
                   <LocalizedText ar="اكتشف منتجات أخرى" fr="Découvrez d’autres produits" en="Discover more products" />
                 </h2>
               </div>
-              <div className="grid grid-cols-2 gap-3 sm:gap-4 md:grid-cols-3 xl:grid-cols-4">
+              <div className="grid grid-cols-2 gap-x-3 gap-y-[22px] sm:gap-x-5 sm:gap-y-[26px] md:grid-cols-3 xl:grid-cols-4">
                 {relatedProducts.map((item) => (
                   <ProductCard key={item.id} product={item} />
                 ))}

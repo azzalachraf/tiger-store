@@ -41,6 +41,8 @@
 .filters button[aria-pressed=true]{background:var(--text,#181512);border-color:var(--text,#181512);color:var(--surface,#fff)}
 .productGrid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:26px 20px}
 .productCard{min-width:0;position:relative}
+.catalogCardScope{--accent:#b84700;--muted:var(--muted-text,#68605a)}
+:global(html.dark) .catalogCardScope{--accent:#ffa463;--muted:#b8b1a9}
 .productImage{display:block;position:relative;aspect-ratio:1/1.13;overflow:hidden;background:var(--surface,#fff);border:1px solid var(--border-color,#ded7cf);border-radius:20px;transition:border-color .2s,transform .2s}
 .productImage img{padding:14px;transition:transform .25s}
 .productImage:hover{border-color:var(--accent);transform:translateY(-3px)}
