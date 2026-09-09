@@ -47,7 +47,7 @@ export default async function Home() {
     homeLocale(),
   ]);
   const c = homeCopy[locale];
-  const annualDuration = locale === "ar" ? "12 شهراً" : locale === "fr" ? "12 mois" : "12 months";
+  const annualDuration = locale === "ar" ? "عام كامل + شهر باطل" : locale === "fr" ? "12 mois + 1 mois offert" : "12 months + 1 month free";
   const cards = products.map((product) => {
     const card = homeProduct(product, locale);
     return card;
