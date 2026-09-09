@@ -132,6 +132,17 @@ export const orderHeaders = [
   "Customer notes",
   "Admin notes",
 ];
+export function revenueSeries(orders: AdminOrder[]) {
+  const totals = new Map<string, number>();
+  for (const order of orders)
+    if (order.status === "paid" || order.status === "delivered") {
+      const day = localDay(order.createdAt);
+      if (day) totals.set(day, (totals.get(day) ?? 0) + order.total);
+    }
+  return [...totals]
+    .sort(([a], [b]) => a.localeCompare(b))
+    .map(([date, revenue]) => ({ date, revenue }));
+}
 export function orderCells(order: AdminOrder): Cell[] {
   const day = localDay(order.createdAt);
   return [

@@ -1,60 +1,414 @@
 "use client";
+import { useMemo, useState, useTransition } from "react";
+import { useRouter } from "next/navigation";
+import {
+  tigerNewSheetHeaders,
+  type TigerNewSheetData,
+  type TigerNewSheetRow,
+} from "@/lib/tiger-new-sheet-types";
+import { ExportControls, Pagination, StatusBadge } from "./TableControls";
+import { localDay } from "./data-tools";
 
-import { useMemo, useState } from "react";
-import { Check, Copy, Search } from "lucide-react";
-import { tigerNewSheetHeaders, type TigerNewSheetData, type TigerNewSheetRow } from "@/lib/tiger-new-sheet-types";
-
-type Filter = "all" | "completed" | "pending" | "cancelled" | "missing" | "uncopied" | "copied";
-
-function cleanCell(value: string) { return value.replace(/[\t\r\n]+/g, " ").trim(); }
-function rowCells(row: TigerNewSheetRow) { return [row.client, row.subscription, row.duration, row.costPrice, row.amountPaid, row.spend, row.cost, row.netProfit, row.paymentMethod, row.admin].map(cleanCell); }
-
-export function TigerNewSheetCopy({ initialData }: { initialData: TigerNewSheetData }) {
-  const [rows, setRows] = useState(initialData.rows);
-  const [filter, setFilter] = useState<Filter>("all");
-  const [query, setQuery] = useState("");
-  const [state, setState] = useState<"idle" | "copying" | "copied" | "error">("idle");
-  const filteredRows = useMemo(() => rows.filter((row) => {
-    const matchesFilter = filter === "all" || filter === row.orderStatus || (filter === "missing" && row.missingDetails) || (filter === "copied" && row.copied) || (filter === "uncopied" && !row.copied);
-    const term = query.trim().toLocaleLowerCase();
-    return matchesFilter && (!term || `${row.client} ${row.subscription} ${row.orderId} ${row.admin}`.toLocaleLowerCase().includes(term));
-  }), [filter, query, rows]);
-  const uncopiedRows = filteredRows.filter((row) => !row.copied);
-
-  async function copyRows() {
-    if (!uncopiedRows.length || state === "copying") return;
-    setState("copying");
-    try {
-      await navigator.clipboard.writeText(uncopiedRows.map((row) => rowCells(row).join("\t")).join("\n"));
-      const response = await fetch("/api/admin/tiger-new-sheet/copy", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ orderIds: uncopiedRows.map((row) => row.orderId) }) });
-      if (!response.ok) throw new Error("Copy state failed");
-      const result: unknown = await response.json();
-      const copiedIds = result && typeof result === "object" && "copiedOrderIds" in result && Array.isArray(result.copiedOrderIds) ? new Set(result.copiedOrderIds.filter((value): value is string => typeof value === "string")) : new Set<string>();
-      setRows((current) => current.map((row) => copiedIds.has(row.orderId) ? { ...row, copied: true } : row));
-      setState("copied"); window.setTimeout(() => setState("idle"), 2200);
-    } catch { setState("error"); }
-  }
-
-  const filters: { value: Filter; label: string; count: number }[] = [
-    { value: "all", label: "All", count: rows.length },
-    { value: "completed", label: "Completed", count: rows.filter((row) => row.orderStatus === "completed").length },
-    { value: "pending", label: "Pending", count: rows.filter((row) => row.orderStatus === "pending").length },
-    { value: "cancelled", label: "Cancelled / refunded", count: rows.filter((row) => row.orderStatus === "cancelled").length },
-    { value: "missing", label: "Missing details", count: rows.filter((row) => row.missingDetails).length },
-    { value: "uncopied", label: "Not copied", count: rows.filter((row) => !row.copied).length },
-    { value: "copied", label: "Copied", count: rows.filter((row) => row.copied).length },
+export function tigerSheetCells(r: TigerNewSheetRow) {
+  return [
+    r.client,
+    r.subscription,
+    r.duration,
+    r.costPrice,
+    r.amountPaid,
+    "",
+    "",
+    r.netProfit,
+    r.paymentMethod,
+    r.admin,
   ];
-
-  return <section className="rounded-md border border-tiger-ember/25 bg-white/[0.045] p-4 shadow-[0_18px_55px_rgba(0,0,0,0.2)] sm:p-5">
-    <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between"><div><h2 className="text-lg font-black text-white">Tiger New Sheet</h2><p className="mt-1 max-w-3xl text-sm font-semibold leading-6 text-white/55">Copied rows stay visible. The button copies only uncopied rows in the current filter. Spend and Cost remain empty.</p></div><button type="button" disabled={!uncopiedRows.length || state === "copying"} onClick={copyRows} className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-tiger-ember px-4 text-sm font-black text-black disabled:cursor-not-allowed disabled:opacity-50">{state === "copied" ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}{state === "copying" ? "Copying…" : state === "copied" ? "Copied" : `Copy uncopied rows (${uncopiedRows.length})`}</button></div>
-    <div className="mt-4 grid gap-3 sm:grid-cols-3"><Stat label="Total orders" value={rows.length}/><Stat label="Completed" value={filters[1].count}/><Stat label="Pending" value={filters[2].count}/></div>
-    <div className="mt-5 flex flex-wrap gap-2">{filters.map((item) => <button key={item.value} type="button" onClick={() => setFilter(item.value)} className={`min-h-10 rounded-full border px-3 text-xs font-black ${filter === item.value ? "border-tiger-ember bg-tiger-ember text-black" : "border-white/15 text-white/70 hover:border-white/30"}`}>{item.label} · {item.count}</button>)}</div>
-    <label className="mt-4 flex min-h-11 items-center gap-2 rounded-xl border border-white/15 px-3 text-white/60"><Search className="h-4 w-4"/><span className="sr-only">Search orders</span><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search client, product, order or admin" className="w-full bg-transparent text-sm font-semibold text-white outline-none placeholder:text-white/35"/></label>
-    <RowsTable rows={filteredRows}/>
-    {!filteredRows.length ? <p className="mt-4 text-sm font-semibold text-white/55">No orders match this filter.</p> : null}
-    {state === "error" ? <p className="mt-4 text-sm font-bold text-red-300">The rows were copied to your clipboard, but their saved copy status failed. Try again before pasting.</p> : null}
-  </section>;
 }
-
-function Stat({ label, value }: { label: string; value: number }) { return <div className="rounded-xl border border-white/10 bg-black/20 px-4 py-3"><p className="text-xs font-bold text-white/50">{label}</p><p className="mt-1 text-2xl font-black text-white">{value}</p></div>; }
-function RowsTable({ rows }: { rows: TigerNewSheetRow[] }) { return <div className="mt-4 overflow-x-auto rounded-xl border border-white/10"><table className="min-w-max text-left text-xs"><thead className="bg-black/35 text-white/65"><tr><th className="px-3 py-3 font-black">Status</th><th className="px-3 py-3 font-black">Copy</th>{tigerNewSheetHeaders.map((header) => <th key={header} className="whitespace-nowrap px-3 py-3 font-black">{header}</th>)}</tr></thead><tbody>{rows.map((row) => <tr key={row.orderId} className="border-t border-white/8 text-white/80"><td className="whitespace-nowrap px-3 py-3 font-bold capitalize">{row.orderStatus}</td><td className="whitespace-nowrap px-3 py-3"><span className={`rounded-full px-2 py-1 font-black ${row.copied ? "bg-emerald-500/15 text-emerald-300" : "bg-amber-500/15 text-amber-200"}`}>{row.copied ? "Copied" : "New"}</span></td>{rowCells(row).map((value, index) => <td key={`${row.orderId}-${tigerNewSheetHeaders[index]}`} className="whitespace-nowrap px-3 py-3">{value || <span className="text-white/25">—</span>}</td>)}</tr>)}</tbody></table></div>; }
+function tsv(rows: TigerNewSheetRow[]) {
+  return rows
+    .map((r) =>
+      tigerSheetCells(r)
+        .map((v) => {
+          const text = v.replace(/[\t\r\n]+/g, " ").trim();
+          return /^[=+@-]/.test(text) ? "'" + text : text;
+        })
+        .join("\t"),
+    )
+    .join("\n");
+}
+export function TigerNewSheetCopy({
+  initialData,
+  dates = {},
+}: {
+  initialData: TigerNewSheetData;
+  dates?: Record<string, string>;
+}) {
+  const router = useRouter();
+  const [refreshing, startRefresh] = useTransition();
+  const [copiedIds, setCopiedIds] = useState<string[]>([]);
+  const rows = useMemo(
+    () =>
+      initialData.rows.map((r) =>
+        copiedIds.includes(r.orderId) ? { ...r, copied: true } : r,
+      ),
+    [initialData, copiedIds],
+  );
+  const [query, setQuery] = useState("");
+  const [status, setStatus] = useState("all");
+  const [copy, setCopy] = useState("all");
+  const [admin, setAdmin] = useState("all");
+  const [payment, setPayment] = useState("all");
+  const [start, setStart] = useState("");
+  const [end, setEnd] = useState("");
+  const [page, setPage] = useState(1);
+  const [size, setSize] = useState(25);
+  const [selected, setSelected] = useState<string[]>([]);
+  const [busy, setBusy] = useState(false);
+  const [message, setMessage] = useState("");
+  const [error, setError] = useState(false);
+  const filtered = rows.filter(
+    (r) =>
+      (r.client + " " + r.subscription + " " + r.orderId + " " + r.admin)
+        .toLowerCase()
+        .includes(query.toLowerCase().trim()) &&
+      (status === "all" ||
+        (status === "missing" ? r.missingDetails : r.orderStatus === status)) &&
+      (copy === "all" || (copy === "copied" ? r.copied : !r.copied)) &&
+      (admin === "all" || r.admin === admin) &&
+      (payment === "all" || r.paymentMethod === payment) &&
+      (!start || (dates[r.orderId] && localDay(dates[r.orderId]) >= start)) &&
+      (!end || (dates[r.orderId] && localDay(dates[r.orderId]) <= end)),
+  );
+  const current = Math.min(
+    page,
+    Math.max(1, Math.ceil(filtered.length / size)),
+  );
+  const shown = filtered.slice((current - 1) * size, current * size);
+  const chosen = filtered.filter((r) => selected.includes(r.orderId));
+  const target = chosen.length ? chosen : filtered;
+  const fresh = target.filter((r) => !r.copied).slice(0, 1000);
+  function reset() {
+    setPage(1);
+    setSelected([]);
+  }
+  async function copyRows(recopy = false) {
+    if (busy) return;
+    const batch = recopy ? target : fresh;
+    if (!batch.length) return;
+    setBusy(true);
+    setError(false);
+    let clipboardDone = false;
+    try {
+      await navigator.clipboard.writeText(tsv(batch));
+      clipboardDone = true;
+      if (!recopy) {
+        const response = await fetch("/api/admin/tiger-new-sheet/copy", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ orderIds: batch.map((r) => r.orderId) }),
+        });
+        if (!response.ok) throw new Error("Status failed");
+        const result: unknown = await response.json();
+        if (
+          !result ||
+          typeof result !== "object" ||
+          !("copiedOrderIds" in result) ||
+          !Array.isArray(result.copiedOrderIds)
+        )
+          throw new Error("Invalid response");
+        const ids = result.copiedOrderIds.filter(
+          (id): id is string =>
+            typeof id === "string" && batch.some((r) => r.orderId === id),
+        );
+        setCopiedIds((current) => [...new Set([...current, ...ids])]);
+        if (ids.length !== batch.length) throw new Error("Partial status");
+      }
+      setMessage(batch.length + " rows copied. Rows remain in the table.");
+    } catch {
+      setError(true);
+      setMessage(
+        clipboardDone
+          ? "Clipboard copied, but saved status could not be confirmed for every row. Refresh and review before another copy."
+          : "Clipboard access failed. Allow clipboard permission and try again; copy history is unchanged.",
+      );
+    } finally {
+      setBusy(false);
+    }
+  }
+  return (
+    <>
+      <div className="admin-metrics">
+        {[
+          ["All orders", rows.length],
+          [
+            "Completed",
+            rows.filter((r) => r.orderStatus === "completed").length,
+          ],
+          ["New to copy", rows.filter((r) => !r.copied).length],
+          ["Missing details", rows.filter((r) => r.missingDetails).length],
+        ].map(([l, v]) => (
+          <div className="admin-metric" key={l}>
+            <p className="admin-muted">{l}</p>
+            <strong>{v}</strong>
+          </div>
+        ))}
+      </div>
+      <div className="admin-toolbar">
+        <label className="admin-search">
+          Search sheet
+          <input
+            type="search"
+            value={query}
+            onChange={(e) => {
+              setQuery(e.target.value);
+              reset();
+            }}
+            placeholder="Client, product, order or admin"
+          />
+        </label>
+        <label>
+          Order status
+          <select
+            value={status}
+            onChange={(e) => {
+              setStatus(e.target.value);
+              reset();
+            }}
+          >
+            {[
+              ["all", "All orders"],
+              ["completed", "Completed"],
+              ["pending", "Pending"],
+              ["cancelled", "Cancelled / refunded"],
+              ["missing", "Missing details"],
+            ].map(([v, l]) => (
+              <option key={v} value={v}>
+                {l}
+              </option>
+            ))}
+          </select>
+        </label>
+        <label>
+          Copy status
+          <select
+            value={copy}
+            onChange={(e) => {
+              setCopy(e.target.value);
+              reset();
+            }}
+          >
+            <option value="all">All rows</option>
+            <option value="new">Not copied</option>
+            <option value="copied">Copied</option>
+          </select>
+        </label>
+      </div>
+      <details className="admin-panel mb-4">
+        <summary>More filters: admin, payment & dates</summary>
+        <div className="admin-toolbar mt-4 mb-0">
+          <label>
+            Admin
+            <select
+              value={admin}
+              onChange={(e) => {
+                setAdmin(e.target.value);
+                reset();
+              }}
+            >
+              <option value="all">All admins</option>
+              {[...new Set(rows.map((r) => r.admin))].map((v) => (
+                <option key={v}>{v}</option>
+              ))}
+            </select>
+          </label>
+          <label>
+            Payment method
+            <select
+              value={payment}
+              onChange={(e) => {
+                setPayment(e.target.value);
+                reset();
+              }}
+            >
+              <option value="all">All methods</option>
+              {[...new Set(rows.map((r) => r.paymentMethod))].map((v) => (
+                <option key={v}>{v}</option>
+              ))}
+            </select>
+          </label>
+          <label>
+            From
+            <input
+              type="date"
+              value={start}
+              max={end || undefined}
+              onChange={(e) => {
+                setStart(e.target.value);
+                reset();
+              }}
+            />
+          </label>
+          <label>
+            To
+            <input
+              type="date"
+              value={end}
+              min={start || undefined}
+              onChange={(e) => {
+                setEnd(e.target.value);
+                reset();
+              }}
+            />
+          </label>
+        </div>
+      </details>
+      <div className="admin-panel mb-4">
+        <div className="flex flex-wrap gap-2">
+          <button
+            className="admin-btn admin-btn-primary"
+            disabled={!fresh.length || busy}
+            onClick={() => copyRows()}
+          >
+            Copy new rows ({fresh.length})
+          </button>
+          <button
+            className="admin-btn"
+            disabled={!target.length || busy}
+            onClick={() => copyRows(true)}
+          >
+            Copy again (no status change)
+          </button>
+          <ExportControls
+            name="tiger-new-sheet"
+            headers={[...tigerNewSheetHeaders]}
+            rows={target.map(tigerSheetCells)}
+          />
+          <button
+            className="admin-btn"
+            disabled={refreshing || busy}
+            onClick={() => startRefresh(() => router.refresh())}
+          >
+            {refreshing ? "Refreshing…" : "Refresh orders"}
+          </button>
+        </div>
+        <p className="admin-muted mt-3">
+          {chosen.length
+            ? chosen.length + " selected"
+            : filtered.length + " filtered"}{" "}
+          · Copies include all filtered rows, not just this page. New-copy
+          batches are limited to 1,000. Spend and Cost stay empty. File exports
+          do not mark rows copied.
+        </p>
+        {message && (
+          <p
+            className="admin-feedback"
+            data-error={error}
+            role={error ? "alert" : "status"}
+          >
+            {message}
+          </p>
+        )}
+      </div>
+      <div className="flex flex-wrap gap-3 items-center mb-3">
+        <label className="flex gap-2 items-center">
+          <input
+            type="checkbox"
+            checked={
+              shown.length > 0 &&
+              shown.every((r) => selected.includes(r.orderId))
+            }
+            onChange={(e) =>
+              setSelected(
+                e.target.checked
+                  ? [...new Set([...selected, ...shown.map((r) => r.orderId)])]
+                  : selected.filter(
+                      (id) => !shown.some((r) => r.orderId === id),
+                    ),
+              )
+            }
+          />
+          Select this page
+        </label>
+        <button className="admin-btn" onClick={() => setSelected([])}>
+          Clear selection
+        </button>
+        <button
+          className="admin-btn"
+          onClick={() => {
+            setQuery("");
+            setStatus("all");
+            setCopy("all");
+            setAdmin("all");
+            setPayment("all");
+            setStart("");
+            setEnd("");
+            reset();
+          }}
+        >
+          Reset filters
+        </button>
+      </div>
+      <div className="admin-table-wrap">
+        <table className="admin-table min-w-max text-xs">
+          <thead>
+            <tr>
+              <th>Select</th>
+              <th>Order / status</th>
+              <th>Copy</th>
+              {tigerNewSheetHeaders.map((h) => (
+                <th key={h}>{h}</th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {shown.map((r) => (
+              <tr key={r.orderId}>
+                <td>
+                  <input
+                    type="checkbox"
+                    aria-label={"Select " + r.orderId}
+                    checked={selected.includes(r.orderId)}
+                    onChange={(e) =>
+                      setSelected(
+                        e.target.checked
+                          ? [...selected, r.orderId]
+                          : selected.filter((id) => id !== r.orderId),
+                      )
+                    }
+                  />
+                </td>
+                <td>
+                  <a href={"/admin/orders?q=" + encodeURIComponent(r.orderId)}>
+                    {r.orderId}
+                  </a>
+                  <p>
+                    <StatusBadge status={r.orderStatus} />
+                  </p>
+                  {r.missingDetails && (
+                    <p className="admin-muted">Details incomplete</p>
+                  )}
+                </td>
+                <td>{r.copied ? "Copied" : "New"}</td>
+                {tigerSheetCells(r).map((v, i) => (
+                  <td key={i}>{v || "—"}</td>
+                ))}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+      {!shown.length && (
+        <p className="admin-empty">No orders match these filters.</p>
+      )}
+      <Pagination
+        count={filtered.length}
+        page={current}
+        size={size}
+        onPage={setPage}
+        onSize={(n) => {
+          setSize(n);
+          setPage(1);
+        }}
+      />
+    </>
+  );
+}

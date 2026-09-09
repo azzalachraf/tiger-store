@@ -8,6 +8,11 @@ import { AdminNavigation } from "../components/admin/AdminNavigation";
 import { ActionForm } from "../components/admin/ActionForm";
 import { CustomersWorkspace } from "../components/admin/CustomersWorkspace";
 import { AccountsTable } from "../components/admin/AccountsTable";
+import { FinanceLedger } from "../components/admin/FinanceLedger";
+import { StockWorkspace } from "../components/admin/StockWorkspace";
+import { TeamWorkspace } from "../components/admin/TeamWorkspace";
+import { TigerNewSheetCopy } from "../components/admin/TigerNewSheetCopy";
+import { ReportRangeControls } from "../components/admin/ReportRangeControls";
 import type { AdminOrder, Product } from "../lib/types";
 import "../components/admin/admin.css";
 declare global {
@@ -83,6 +88,110 @@ const orders: AdminOrder[] = Array.from({ length: 31 }, (_, i) => ({
 }));
 const view = new URLSearchParams(location.search).get("view") ?? "overview";
 const views: Record<string, React.ReactNode> = {
+  finance: (
+    <>
+      <ReportRangeControls
+        value={{
+          range: "month",
+          start: "2026-09-01",
+          end: "2026-09-09",
+          invalid: false,
+        }}
+      />
+      <FinanceLedger
+        sales={orders.map((o, i) => ({
+          id: o.id,
+          adminId: i % 2 ? "admin-a" : "admin-b",
+          admin: i % 2 ? "Lalo" : "Sara",
+          plan: i % 2 ? 1 : 12,
+          date: o.createdAt,
+          revenue: 2300,
+          cost: 135,
+          credit: 100,
+        }))}
+        spend={[]}
+      />
+    </>
+  ),
+  stock: (
+    <StockWorkspace
+      cards={Array.from({ length: 31 }, (_, i) => ({
+        id: "card-" + i,
+        type: i % 2 ? "try_24" : "inr_199",
+        code: "SYNTHETIC-CARD-" + i,
+        status:
+          i % 3 === 0 ? "available" : i % 3 === 1 ? "consumed" : "reserved",
+        mutable: i % 3 === 0,
+        canRestore: i === 1,
+      }))}
+    />
+  ),
+  team: (
+    <TeamWorkspace
+      members={[
+        {
+          id: "999",
+          name: "Owner",
+          username: "owner",
+          role: "owner",
+          active: 0,
+        },
+        {
+          id: "12345",
+          name: "Lalo",
+          username: "lalo",
+          role: "admin",
+          active: 0,
+        },
+        {
+          id: "12346",
+          name: "Sara",
+          username: "sara",
+          role: "admin",
+          active: 2,
+        },
+        {
+          id: "12347",
+          name: "Former admin",
+          username: "former",
+          role: "pending",
+          active: 0,
+        },
+      ]}
+    />
+  ),
+  sheet: (
+    <TigerNewSheetCopy
+      initialData={{
+        rows: orders.map((o, i) => ({
+          orderId: o.id,
+          orderStatus: o.status === "delivered" ? "completed" : "pending",
+          missingDetails: i % 2 === 0,
+          copied: i === 0,
+          client: o.customerName,
+          subscription: "Snapchat Plus",
+          duration: "12 months",
+          costPrice: "135",
+          amountPaid: "2300",
+          spend: "",
+          cost: "",
+          netProfit: "2065",
+          paymentMethod: "Binance",
+          admin: i % 2 ? "Lalo" : "Sara",
+        })),
+        totals: {
+          all: 31,
+          completed: 11,
+          pending: 20,
+          cancelled: 0,
+          missingDetails: 16,
+          copied: 1,
+          uncopied: 30,
+        },
+      }}
+      dates={Object.fromEntries(orders.map((o) => [o.id, o.createdAt]))}
+    />
+  ),
   overview: <Overview orders={orders} availableProducts={24} />,
   orders: <OrdersWorkspace orders={orders} />,
   products: (

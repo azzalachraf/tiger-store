@@ -65,12 +65,12 @@ function toRow(
 
 type CertificateState = { order_id: string; customer_details_complete: boolean; form_submitted_at: string | null };
 
-export async function getTigerNewSheetData(): Promise<TigerNewSheetData> {
+export async function getTigerNewSheetData(ordersOverride?: Awaited<ReturnType<typeof getOrders>>): Promise<TigerNewSheetData> {
   const client = getSupabaseServiceClient();
   const [{ data: exports, error: exportsError }, { data: copyEvents, error: copyEventsError }, orders, finance] = await Promise.all([
     client.from("order_sheet_exports").select("order_id, copied_at, warranty_issued_at").order("warranty_issued_at", { ascending: true }),
     client.from("operation_events").select("entity_id, action").eq("entity_type", "order").in("action", ["tiger_new_sheet_copied", "tiger_new_sheet_incomplete_copied"]),
-    getOrders(),
+    ordersOverride ?? getOrders(),
     getFinanceReports(),
   ]);
   if (exportsError) throw new Error("Tiger New Sheet could not be loaded.");
@@ -115,7 +115,9 @@ export async function getTigerNewSheetRows(): Promise<TigerNewSheetRow[]> {
 export async function markTigerNewSheetRowsCopied(orderIds: string[]) {
   if (!orderIds.length) return [];
   const client = getSupabaseServiceClient();
-  const existingOrderIds = new Set((await getOrders()).map((order) => order.id));
+  const {data: existing, error: orderError} = await client.from("orders").select("id").in("id", [...new Set(orderIds)]);
+  if (orderError) throw new Error("Orders could not be verified.");
+  const existingOrderIds = new Set((existing ?? []).map((order) => String(order.id)));
   const eligibleOrderIds = [...new Set(orderIds)].filter((orderId) => existingOrderIds.has(orderId));
   if (!eligibleOrderIds.length) return [];
   const { data: existingEvents, error: existingError } = await client.from("operation_events").select("entity_id")

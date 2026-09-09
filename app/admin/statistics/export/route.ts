@@ -3,6 +3,8 @@ import { z } from "zod";
 import { getAnalytics } from "@/lib/analytics";
 import { requireAdmin } from "@/lib/admin-auth";
 import { readAdminOrders } from "@/app/admin/read-orders";
+import { reportRange } from "@/components/admin/reporting";
+import { filterOrders, revenueSeries } from "@/components/admin/data-tools";
 import {
   toCsv,
   orderHeaders,
@@ -22,13 +24,28 @@ export async function GET(request: Request) {
       { status: 400 },
     );
   const type = parsed.data;
+  const query = new URL(request.url).searchParams;
+  const range = reportRange({
+    range: query.get("range") ?? "all",
+    start: query.get("start") ?? undefined,
+    end: query.get("end") ?? undefined,
+  });
+  if (range.invalid)
+    return NextResponse.json({ error: "Invalid date range." }, { status: 400 });
+  const orders = filterOrders(
+    await readAdminOrders(),
+    "",
+    "all",
+    range.start,
+    range.end,
+  );
   let headers: string[] = [];
   let rows: Cell[][] = [];
   if (type === "orders") {
     headers = orderHeaders;
-    rows = (await readAdminOrders()).map(orderCells);
+    rows = orders.map(orderCells);
   } else {
-    const a = await getAnalytics(await readAdminOrders());
+    const a = await getAnalytics(orders);
     if (type === "customers") {
       headers = [
         "Name",
@@ -59,7 +76,7 @@ export async function GET(request: Request) {
     }
     if (type === "revenue") {
       headers = ["Date", "Revenue (DA)"];
-      rows = a.revenueByDay.map((r) => [r.date, r.revenue]);
+      rows = revenueSeries(orders).map((r) => [r.date, r.revenue]);
     }
     if (type === "accounts") {
       headers = [

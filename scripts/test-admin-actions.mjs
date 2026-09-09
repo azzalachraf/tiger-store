@@ -13,6 +13,8 @@ const state = {
   rows: [],
   ranges: [],
   error: null,
+  activeCount: 0,
+  predicates: [],
 };
 globalThis.__adminTest = state;
 const record = `const s=globalThis.__adminTest;const record=name=>async(...args)=>{s.calls.push({name,args});};`;
@@ -21,6 +23,7 @@ const mocks = {
   "next/cache": "export function revalidatePath(){}",
   "next/navigation": `export function redirect(url){throw new Error('REDIRECT:'+url);}`,
   "@/lib/admin-auth": `export async function requireAdmin(){if(!globalThis.__adminTest.authorized)throw new Error('DENIED');}export const requireAdminAction=requireAdmin;`,
+  "@/lib/env": `export const getServerEnv=()=>({TELEGRAM_OWNER_ID:"999"});`,
   "@/lib/categories": `export const getSiteCategories=()=>[];`,
   "@/lib/admin-store":
     record +
@@ -59,7 +62,7 @@ const mocks = {
   "@/lib/product-checkout-link":
     record +
     `export const createProductCheckoutLink=async input=>{s.calls.push({name:'checkout',args:[input]});return 'fixture-token';};`,
-  "@/lib/supabase": `const s=globalThis.__adminTest;export function getSupabaseServiceClient(){return {from(table){const q={select(){return q},order(){return q},range(a,b){s.ranges.push([a,b]);return Promise.resolve({data:s.rows.slice(a,b+1),error:s.error});},insert(v){s.calls.push({name:table,args:[v]});return q;},update(v){s.calls.push({name:table,args:[v]});return q;},eq(){return q;},in(){return q;},then(resolve,reject){return Promise.resolve({data:[],error:s.error}).then(resolve,reject);}};return q;}};}`,
+  "@/lib/supabase": `const s=globalThis.__adminTest;export function getSupabaseServiceClient(){return {from(table){const q={select(){return q},order(){return q},range(a,b){s.ranges.push([a,b]);return Promise.resolve({data:s.rows.slice(a,b+1),error:s.error});},insert(v){s.calls.push({name:table,args:[v]});return q;},update(v){s.calls.push({name:table,args:[v]});return q;},eq(k,v){s.predicates.push([k,v]);return q;},in(){return q;},then(resolve,reject){return Promise.resolve({data:table==="telegram_users"?[{telegram_user_id:"12345"}]:[],count:s.activeCount,error:s.error}).then(resolve,reject);}};return q;}};}`,
 };
 const groups = [
   "orders",
@@ -334,7 +337,30 @@ assert.deepEqual(state.ranges, [
 ]);
 state.error = { message: "private" };
 await assert.rejects(() => modules.readAdminOrders(), /could not be loaded/);
+await assert.rejects(
+  () =>
+    modules.group6.disableTelegramAdminAction(data({ telegramUserId: "999" })),
+  /owner/,
+);
+state.activeCount = 1;
+await assert.rejects(
+  () =>
+    modules.group6.disableTelegramAdminAction(
+      data({ telegramUserId: "12345" }),
+    ),
+  /active operations/,
+);
+state.activeCount = 0;
+state.error = null;
+await modules.group6.disableTelegramAdminAction(
+  data({ telegramUserId: "12345" }),
+);
+assert.equal(state.calls.at(-1).args[0].role, "pending");
+assert.equal(state.calls.at(-1).args[0].approved_at, null);
+assert.ok(
+  state.predicates.some(([key, value]) => key === "role" && value === "admin"),
+);
 console.log(
-  `PASS: ${denied} unauthorized action/read checks; all 22 privileged mutation handlers exercised with mock services, validation, payment overrun, product-field preservation, and 1,201-order pagination.`,
+  `PASS: ${denied} unauthorized action/read checks; all 23 privileged mutation handlers exercised with mock services, validation, payment overrun, product-field preservation, and 1,201-order pagination.`,
 );
 delete globalThis.__adminTest;

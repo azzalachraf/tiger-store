@@ -44,7 +44,7 @@ await build({
                   ? `import React from 'react';export default function Image(p){return React.createElement('img',p);}`
                   : a.path.endsWith("/receipt")
                     ? `export const loadPrivateReceipt=async()=>'/fixture.svg';`
-                    : `const run=name=>async data=>{if(window.failAction)throw new Error('private-error');window.calls.push({name,data:Object.fromEntries(data)});};${["saveOrderStatusAction", "deleteOrderAction", "createWarrantyLinkAction", "saveProductAction", "deleteProductAction", "saveAccountAction", "deleteAccountAction", "importAccountsAction"].map((n) => `export const ${n}=run('${n}');`).join("")}`,
+                    : `const run=name=>async data=>{if(window.failAction)throw new Error('private-error');window.calls.push({name,data:Object.fromEntries(data)});};${["saveOrderStatusAction", "deleteOrderAction", "createWarrantyLinkAction", "saveProductAction", "deleteProductAction", "saveAccountAction", "deleteAccountAction", "importAccountsAction", "addRedeemCardsAction", "markRedeemCardUsedAction", "removeRedeemCardAction", "restoreRedeemCardAction", "renameTelegramAdminAction", "disableTelegramAdminAction"].map((n) => `export const ${n}=run('${n}');`).join("")}`,
         }));
       },
     },
@@ -109,6 +109,10 @@ try {
           "editor",
           "customers",
           "accounts",
+          "finance",
+          "stock",
+          "team",
+          "sheet",
         ]) {
           await page.setViewportSize({ width, height: 900 });
           await page.goto(origin + "/?view=" + view);
@@ -219,9 +223,131 @@ try {
   await page.getByRole("button", { name: "Save test" }).click();
   await page.getByRole("button", { name: "Confirm", exact: true }).click();
   await page.waitForFunction(() => window.calls.length === 1);
+  await page.goto(origin + "/?view=team");
+  assert.equal(
+    await page
+      .getByRole("button", { name: "Disable access", exact: true })
+      .count(),
+    2,
+  );
+  assert.equal(
+    await page
+      .getByRole("button", { name: "Disable access", exact: true })
+      .last()
+      .isDisabled(),
+    true,
+  );
+  await page
+    .getByRole("button", { name: "Disable access", exact: true })
+    .first()
+    .click();
+  await page.getByRole("button", { name: "Cancel", exact: true }).click();
+  assert.equal(await page.evaluate(() => window.calls.length), 0);
+  await page
+    .getByRole("button", { name: "Disable access", exact: true })
+    .first()
+    .click();
+  await page.getByRole("button", { name: "Confirm", exact: true }).click();
+  await page.waitForFunction(() => window.calls.length === 1);
+  assert.equal(
+    await page.evaluate(() => window.calls[0].data.telegramUserId),
+    "12345",
+  );
+  await page.goto(origin + "/?view=stock");
+  await page.getByLabel("Status", { exact: true }).selectOption("reserved");
+  assert.equal(
+    await page.getByRole("button", { name: "Mark used", exact: true }).count(),
+    0,
+  );
+  assert.equal(
+    await page
+      .getByRole("button", { name: "Restore to stock", exact: true })
+      .count(),
+    0,
+  );
+  await page.getByLabel("Status", { exact: true }).selectOption("consumed");
+  assert.equal(
+    await page
+      .getByRole("button", { name: "Restore to stock", exact: true })
+      .count(),
+    1,
+  );
+  await page.getByLabel("Status", { exact: true }).selectOption("available");
+  await page
+    .getByRole("searchbox", { name: "Find card" })
+    .fill("SYNTHETIC-CARD-30");
+  assert.equal(
+    await page.getByRole("button", { name: "Mark used", exact: true }).count(),
+    1,
+  );
+  await page.getByRole("button", { name: "Mark used", exact: true }).click();
+  await page.getByRole("button", { name: "Confirm", exact: true }).click();
+  await page.waitForFunction(() => window.calls.length === 1);
+  assert.equal(
+    await page.evaluate(() => window.calls[0].data.cardId),
+    "card-30",
+  );
+  await page.goto(origin + "/?view=finance");
+  await page.getByLabel("Sales by admin").selectOption("admin-a");
+  assert.ok(!(await page.locator("tbody").innerText()).includes("Sara"));
+  let copyRequests = 0;
+  await page.route("**/api/admin/tiger-new-sheet/copy", async (route) => {
+    copyRequests++;
+    const body = route.request().postDataJSON();
+    await route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({ copiedOrderIds: body.orderIds }),
+    });
+  });
+  await page.goto(origin + "/?view=sheet");
+  await page.evaluate(() =>
+    Object.defineProperty(navigator, "clipboard", {
+      value: {
+        writeText: async (value) => {
+          window.clipboardFixture = value;
+        },
+      },
+      configurable: true,
+    }),
+  );
+  await page.getByRole("searchbox", { name: "Search sheet" }).fill("TEST-30");
+  await page
+    .getByRole("button", { name: "Copy new rows (1)", exact: true })
+    .click();
+  await page.waitForFunction(() =>
+    document.body.textContent.includes("1 rows copied."),
+  );
+  assert.equal(copyRequests, 1);
+  assert.equal(await page.locator("tbody tr").count(), 1);
+  const cells = (await page.evaluate(() => window.clipboardFixture)).split(
+    String.fromCharCode(9),
+  );
+  assert.equal(cells.length, 10);
+  assert.equal(cells[5], "");
+  assert.equal(cells[6], "");
+  await page
+    .getByRole("button", { name: "Copy again (no status change)", exact: true })
+    .click();
+  assert.equal(copyRequests, 1);
+  await page.evaluate(() =>
+    Object.defineProperty(navigator, "clipboard", {
+      value: {
+        writeText: async () => {
+          throw new Error("denied");
+        },
+      },
+      configurable: true,
+    }),
+  );
+  await page
+    .getByRole("button", { name: "Copy again (no status change)", exact: true })
+    .click();
+  await page.getByRole("alert").waitFor();
+  assert.equal(copyRequests, 1);
   assert.deepEqual(errors, []);
   console.log(
-    "PASS: 48 mobile/desktop Arabic/English theme layouts; search, paging, export, modal navigation, order save/bulk/warranty, delete cancellation, product field preservation, validation and failure/retry. Synthetic actions only.",
+    "PASS: 80 mobile/desktop Arabic/English theme layouts; search, paging, export, modal navigation, order save/bulk/warranty, delete cancellation, product field preservation, validation and failure/retry. Synthetic actions only.",
   );
   console.log("Visual artifacts: " + output);
 } finally {
