@@ -16,6 +16,10 @@ import {
 import { adminOrderSchema } from "../lib/validation";
 import { reportRange } from "../components/admin/reporting";
 import { financeTotals } from "../components/admin/FinanceLedger";
+import {
+  financialLedger,
+  financialSeries,
+} from "../components/admin/financial-result";
 import { tigerSheetCells } from "../components/admin/TigerNewSheetCopy";
 assert.equal(csvCell('a,"b"\nc'), '"a,""b""\nc"');
 for (const value of ["=1+1", "+21355", "@SUM(1)", "-cmd", '  =HYPERLINK("x")'])
@@ -154,4 +158,95 @@ assert.equal(sheet[6], "");
 assert.equal(sheet[8], "Flexy");
 console.log(
   "Report calendar validation, salary/commission profit and sheet column checks passed.",
+);
+const netSales = [
+  {
+    id: "net-test",
+    adminId: "salary",
+    admin: "Test",
+    plan: 12,
+    date: "2026-09-08T23:30:00Z",
+    revenue: 2300,
+    cost: 535,
+    credit: 0,
+  },
+];
+const netAds = [
+  { date: "2026-09-09", amount: 100, platform: "instagram" },
+  { date: "2026-09-10", amount: 50, platform: "instagram" },
+];
+const series = financialSeries(netSales, netAds);
+assert.deepEqual(series, [
+  { date: "2026-09-09", revenue: 2300, net: 1665 },
+  { date: "2026-09-10", revenue: 0, net: -50 },
+]);
+assert.equal(
+  series.reduce((sum, row) => sum + row.net, 0),
+  1615,
+);
+assert.equal(financialSeries(netSales, netAds, false)[0].net, 1765);
+assert.equal(
+  financialSeries([{ ...netSales[0], credit: 100 }], netAds)[0].net,
+  1565,
+);
+const mapped = financialLedger([], {
+  sales: [
+    {
+      order_id: "telegram",
+      card_type: "inr_199",
+      card_cost_usd_cents: 214,
+      gross_profit_dzd: 1765,
+      admin_telegram_user_id: "salary",
+      plan_months: 12,
+      completed_at: "2026-09-09T10:00:00Z",
+      revenue_dzd: 2300,
+      card_cost_dzd: 535,
+      commission_dzd: 0,
+    },
+  ],
+  admins: [],
+  advertisingSpend: [],
+});
+assert.equal(mapped.sales[0].credit, 0);
+assert.equal(financialSeries(mapped.sales, mapped.spend)[0].net, 1765);
+const saleReport = {
+  sales: [
+    {
+      order_id: order.id,
+      card_type: "inr_199",
+      card_cost_usd_cents: 214,
+      gross_profit_dzd: 1765,
+      admin_telegram_user_id: "salary",
+      plan_months: 12,
+      completed_at: order.createdAt,
+      revenue_dzd: 2300,
+      card_cost_dzd: 535,
+      commission_dzd: 0,
+    },
+  ],
+  admins: [],
+  advertisingSpend: [],
+};
+assert.equal(financialLedger([order], saleReport).sales.length, 1);
+assert.equal(
+  financialLedger([{ ...order, status: "cancelled" }], saleReport).sales.length,
+  0,
+);
+assert.equal(
+  financialLedger([{ ...order, status: "refunded" }], saleReport).sales.length,
+  0,
+);
+assert.equal(
+  financialLedger([{ ...order, status: "pending" }], {
+    ...saleReport,
+    sales: [],
+  }).sales.length,
+  0,
+);
+assert.equal(
+  financialLedger([order], { ...saleReport, sales: [] }).sales[0].adminId,
+  "website",
+);
+console.log(
+  "Net-profit series: recorded costs, salary credit, advertising-only days, timezone and revenue isolation passed.",
 );

@@ -1,6 +1,7 @@
 // Synthetic browser fixture. Bundled only by test-admin-ui.mjs; never a public route.
 import { createRoot } from "react-dom/client";
 import { Overview } from "../components/admin/Overview";
+import { FinancialResult } from "../components/admin/FinancialResult";
 import { OrdersWorkspace } from "../components/admin/OrdersWorkspace";
 import { ProductsWorkspace } from "../components/admin/ProductsWorkspace";
 import { ProductForm } from "../components/admin/ProductForm";
@@ -192,7 +193,40 @@ const views: Record<string, React.ReactNode> = {
       dates={Object.fromEntries(orders.map((o) => [o.id, o.createdAt]))}
     />
   ),
-  overview: <Overview orders={orders} availableProducts={24} />,
+  statistics: (
+    <FinancialResult
+      sales={orders.map((o) => ({
+        id: o.id,
+        adminId: "fixture",
+        admin: "Test",
+        plan: 12,
+        date: o.createdAt,
+        revenue: 2300,
+        cost: 135,
+        credit: 100,
+      }))}
+      spend={[]}
+      charts
+      monthly
+    />
+  ),
+  overview: (
+    <Overview
+      orders={orders}
+      availableProducts={24}
+      sales={orders.map((o) => ({
+        id: o.id,
+        adminId: "fixture",
+        admin: "Test",
+        plan: 12,
+        date: o.createdAt,
+        revenue: 2300,
+        cost: 135,
+        credit: 100,
+      }))}
+      spend={[]}
+    />
+  ),
   orders: <OrdersWorkspace orders={orders} />,
   products: (
     <ProductsWorkspace

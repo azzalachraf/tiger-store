@@ -2,6 +2,7 @@
 import { useState } from "react";
 import { Pagination, ExportControls } from "./TableControls";
 import { localDay } from "./data-tools";
+import { FinancialResult } from "./FinancialResult";
 export type LedgerSale = {
   id: string;
   adminId: string;
@@ -112,10 +113,11 @@ export function FinanceLedger({
           ])}
         />
       </div>
+      <FinancialResult sales={rows} spend={spend} deductAds={all} />
       <div className="admin-metrics">
         {[
           ["Completed orders", rows.length],
-          ["Revenue", money(totals.revenue)],
+          ["Recorded advertising", money(totals.ads)],
           ["Card costs", money(totals.cost)],
           ["Admin credit", money(totals.credit)],
         ].map(([l, v]) => (
@@ -125,38 +127,6 @@ export function FinanceLedger({
           </div>
         ))}
       </div>
-      <section className="admin-panel mb-5">
-        <div className="flex flex-wrap justify-between gap-4">
-          <div>
-            <p className="admin-muted">
-              {all
-                ? "Profit after recorded advertising"
-                : "Profit before advertising"}
-            </p>
-            <strong className="text-2xl">
-              {money(totals.profit - (all ? totals.ads : 0))}
-            </strong>
-          </div>
-          <div>
-            <p className="admin-muted">Business advertising in this period</p>
-            <strong>{money(totals.ads)}</strong>
-          </div>
-        </div>
-        <p className="admin-muted mt-3">
-          {all
-            ? "Website orders without a recorded cost contribute revenue only; missing costs are not estimated."
-            : "Advertising is business-wide. Filtered admin/plan profit is shown before advertising."}
-        </p>
-        {totals.missing.length > 0 && (
-          <details className="admin-feedback" data-error="true">
-            <summary>
-              Advertising missing on {totals.missing.length} sales day(s).
-              Profit is provisional.
-            </summary>
-            <p className="mt-2 text-xs">{totals.missing.join(", ")}</p>
-          </details>
-        )}
-      </section>
       <div className="admin-table-wrap">
         <table className="admin-table admin-table-responsive">
           <thead>

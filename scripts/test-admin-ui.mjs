@@ -104,6 +104,7 @@ try {
       for (const dark of [false, true])
         for (const view of [
           "overview",
+          "statistics",
           "orders",
           "products",
           "editor",
@@ -288,8 +289,34 @@ try {
     "card-30",
   );
   await page.goto(origin + "/?view=finance");
+  assert.equal(await page.getByLabel("Financial metric").inputValue(), "net");
+  assert.equal(
+    await page.getByTestId("financial-value").innerText(),
+    "64,015 DA",
+  );
+  await page.getByLabel("Financial metric").selectOption("revenue");
+  assert.equal(
+    await page.getByTestId("financial-value").innerText(),
+    "71,300 DA",
+  );
+  await page.getByLabel("Financial metric").selectOption("net");
   await page.getByLabel("Sales by admin").selectOption("admin-a");
   assert.ok(!(await page.locator("tbody").innerText()).includes("Sara"));
+  assert.equal(
+    await page.getByTestId("financial-value").innerText(),
+    "30,975 DA",
+  );
+  for (const view of ["overview", "statistics"]) {
+    await page.goto(origin + "/?view=" + view);
+    assert.equal(await page.getByLabel("Financial metric").inputValue(), "net");
+    await page
+      .getByRole("heading", { name: "Net profit Over Time", exact: true })
+      .waitFor();
+    await page.getByLabel("Financial metric").selectOption("revenue");
+    await page
+      .getByRole("heading", { name: "Revenue Over Time", exact: true })
+      .waitFor();
+  }
   let copyRequests = 0;
   await page.route("**/api/admin/tiger-new-sheet/copy", async (route) => {
     copyRequests++;
@@ -347,7 +374,7 @@ try {
   assert.equal(copyRequests, 1);
   assert.deepEqual(errors, []);
   console.log(
-    "PASS: 80 mobile/desktop Arabic/English theme layouts; search, paging, export, modal navigation, order save/bulk/warranty, delete cancellation, product field preservation, validation and failure/retry. Synthetic actions only.",
+    "PASS: 88 mobile/desktop Arabic/English theme layouts; net-profit default/revenue switching, search, paging, export, modal navigation, order save/bulk/warranty, delete cancellation, product field preservation, validation and failure/retry. Synthetic actions only.",
   );
   console.log("Visual artifacts: " + output);
 } finally {

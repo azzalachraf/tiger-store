@@ -1,13 +1,14 @@
 import Link from "next/link";
 import { ReportRangeControls } from "@/components/admin/ReportRangeControls";
 import { reportRange, type ReportQuery } from "@/components/admin/reporting";
-import { filterOrders, revenueSeries } from "@/components/admin/data-tools";
+import { filterOrders, localDay } from "@/components/admin/data-tools";
+import { financialLedger } from "@/components/admin/financial-result";
+import { FinancialResult } from "@/components/admin/FinancialResult";
+import { getFinanceReports } from "@/lib/finance";
 import { getAnalytics, formatCurrency } from "@/lib/analytics";
 import { readAdminOrders } from "@/app/admin/read-orders";
 import { AdminShell } from "@/components/admin/AdminShell";
 import {
-  DollarSign,
-  TrendingUp,
   ShoppingBag,
   CheckCircle2,
   Clock,
@@ -18,15 +19,12 @@ import {
   UserPlus,
   UserCheck,
   Repeat,
-  Banknote,
   RotateCcw,
   BarChart3,
   Target,
 } from "lucide-react";
 import {
   StatCard,
-  RevenueLineChart,
-  MonthlyRevenueBarChart,
   PaymentMethodPieChart,
   OrderStatusChart,
   CategoryRevenueChart,
@@ -54,26 +52,11 @@ export default async function AdminStatisticsPage({
   )
     ? query.view!
     : "sales";
-  const orders = filterOrders(
-    await readAdminOrders(),
-    "",
-    "all",
-    range.start,
-    range.end,
-  );
+  const allOrders = await readAdminOrders();
+  const financial = financialLedger(allOrders, await getFinanceReports());
+  const inRange = (date: string) => date >= range.start && date <= range.end;
+  const orders = filterOrders(allOrders, "", "all", range.start, range.end);
   const a = await getAnalytics(orders);
-  const daily = revenueSeries(orders);
-  const monthly = Array.from(
-    daily.reduce(
-      (map, d) =>
-        map.set(
-          d.date.slice(0, 7),
-          (map.get(d.date.slice(0, 7)) ?? 0) + d.revenue,
-        ),
-      new Map<string, number>(),
-    ),
-    ([month, revenue]) => ({ month, revenue }),
-  );
   const params = new URLSearchParams({
     range: range.range,
     start: range.start,
@@ -103,40 +86,12 @@ export default async function AdminStatisticsPage({
           1. Revenue Overview
           ════════════════════════════════════════════════ */}
       {view === "sales" && (
-        <section>
-          <h2 className="mb-4 text-xl font-extrabold text-white">
-            Revenue Overview
-          </h2>
-          <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-            <StatCard
-              icon={<DollarSign className="h-5 w-5" />}
-              label="Total Revenue"
-              value={formatCurrency(a.totalRevenue)}
-              trend={a.revenueGrowthPercent}
-              trendLabel="vs last month"
-            />
-            <StatCard
-              icon={<TrendingUp className="h-5 w-5" />}
-              label="Monthly"
-              value={formatCurrency(a.monthlyRevenue)}
-            />
-            <StatCard
-              icon={<Banknote className="h-5 w-5" />}
-              label="Weekly"
-              value={formatCurrency(a.weeklyRevenue)}
-            />
-            <StatCard
-              icon={<Banknote className="h-5 w-5" />}
-              label="Today"
-              value={formatCurrency(a.todayRevenue)}
-            />
-          </div>
-
-          <div className="mt-4 grid gap-4 lg:grid-cols-2">
-            <RevenueLineChart data={daily} />
-            <MonthlyRevenueBarChart data={monthly} />
-          </div>
-        </section>
+        <FinancialResult
+          sales={financial.sales.filter((sale) => inRange(localDay(sale.date)))}
+          spend={financial.spend.filter((ad) => inRange(ad.date))}
+          charts
+          monthly
+        />
       )}
 
       {/* ════════════════════════════════════════════════

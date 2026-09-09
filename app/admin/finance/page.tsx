@@ -5,6 +5,7 @@ import { FinanceLedger } from "@/components/admin/FinanceLedger";
 import { ReportRangeControls } from "@/components/admin/ReportRangeControls";
 import { reportRange, type ReportQuery } from "@/components/admin/reporting";
 import { localDay } from "@/components/admin/data-tools";
+import { financialLedger } from "@/components/admin/financial-result";
 import { ActionForm } from "@/components/admin/ActionForm";
 import { AdminShell } from "@/components/admin/AdminShell";
 import {
@@ -49,61 +50,15 @@ export default async function AdminFinancePage({
     ),
   );
   const today = localDay(new Date());
-  const labels = new Map(
-    admins.map((a) => [
-      String(a.telegram_user_id),
-      a.first_name || a.username || "Former admin",
-    ]),
-  );
-  const financeIds = new Set(reports.sales.map((s) => String(s.order_id)));
-  const ledger = [
-    ...reports.sales
-      .filter(
-        (s) =>
-          !orders.some(
-            (o) =>
-              o.id === String(s.order_id) &&
-              (o.status === "cancelled" || o.status === "refunded"),
-          ),
-      )
-      .map((s) => ({
-        id: String(s.order_id),
-        adminId: String(s.admin_telegram_user_id),
-        admin: labels.get(String(s.admin_telegram_user_id)) || "Former admin",
-        plan: Number(s.plan_months),
-        date: String(s.completed_at),
-        revenue: Number(s.revenue_dzd),
-        cost: Number(s.card_cost_dzd),
-        credit: Number(s.commission_dzd),
-      })),
-    ...orders
-      .filter((o) => o.status === "delivered" && !financeIds.has(o.id))
-      .map((o) => ({
-        id: o.id,
-        adminId: "website",
-        admin: "Website",
-        plan: 0,
-        date: o.createdAt,
-        revenue: o.total,
-        cost: 0,
-        credit: 0,
-      })),
-  ]
+  const financial = financialLedger(orders, { ...reports, admins });
+  const ledger = financial.sales
     .filter(
       (s) => localDay(s.date) >= range.start && localDay(s.date) <= range.end,
     )
     .sort((a, b) => b.date.localeCompare(a.date));
-  const spend = reports.advertisingSpend
-    .filter(
-      (s) =>
-        String(s.spend_date) >= range.start &&
-        String(s.spend_date) <= range.end,
-    )
-    .map((s) => ({
-      date: String(s.spend_date),
-      amount: Number(s.amount_dzd),
-      platform: String(s.platform),
-    }));
+  const spend = financial.spend.filter(
+    (s) => s.date >= range.start && s.date <= range.end,
+  );
 
   return (
     <AdminShell

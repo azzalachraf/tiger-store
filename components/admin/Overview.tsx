@@ -3,7 +3,8 @@ import Link from "next/link";
 import { useState } from "react";
 import { ShoppingBag, Clock3, Wallet, Package } from "lucide-react";
 import type { AdminOrder } from "@/lib/types";
-import { RevenueLineChart } from "./DashboardCharts";
+import { FinancialResult } from "./FinancialResult";
+import type { LedgerSale, LedgerSpend } from "./FinanceLedger";
 import {
   filterOrders,
   localDay,
@@ -15,9 +16,13 @@ import { ExportControls, StatusBadge } from "./TableControls";
 export function Overview({
   orders,
   availableProducts,
+  sales,
+  spend,
 }: {
   orders: AdminOrder[];
   availableProducts: number;
+  sales: LedgerSale[];
+  spend: LedgerSpend[];
 }) {
   const [period, setPeriod] = useState("month");
   const [start, setStart] = useState("");
@@ -25,19 +30,10 @@ export function Overview({
   const from = period === "custom" ? start : periodStart(period);
   const to = period === "custom" ? end : localDay(new Date());
   const filtered = filterOrders(orders, "", "all", from, to);
-  const paid = filtered.filter(
-    (o) => o.status === "paid" || o.status === "delivered",
-  );
-  const revenue = paid.reduce((s, o) => s + o.total, 0);
-  const byDay = new Map<string, number>();
-  paid.forEach((o) => {
-    const d = localDay(o.createdAt);
-    byDay.set(d, (byDay.get(d) ?? 0) + o.total);
-  });
-  const chart = Array.from(byDay, ([date, revenue]) => ({
-    date,
-    revenue,
-  })).sort((a, b) => a.date.localeCompare(b.date));
+  const inRange = (date: string) =>
+    (!from || date >= from) && (!to || date <= to);
+  const periodSales = sales.filter((sale) => inRange(localDay(sale.date)));
+  const periodSpend = spend.filter((ad) => inRange(ad.date));
   const money = (value: number) => value.toLocaleString("en-US") + " DA";
   return (
     <>
@@ -81,9 +77,10 @@ export function Overview({
           rows={filtered.map(orderCells)}
         />
       </div>
+      <FinancialResult sales={periodSales} spend={periodSpend} charts />
       <div className="admin-metrics">
         {[
-          ["Collected revenue", money(revenue), Wallet],
+          ["Completed sales", periodSales.length, Wallet],
           ["Orders", filtered.length, ShoppingBag],
           [
             "Awaiting review",
@@ -104,20 +101,7 @@ export function Overview({
           );
         })}
       </div>
-      <div className="admin-chart-grid">
-        <section className="admin-panel">
-          <p className="admin-muted mb-3">
-            Revenue includes paid and delivered orders. Cancelled and refunded
-            orders are excluded.
-          </p>
-          {chart.length ? (
-            <RevenueLineChart data={chart} />
-          ) : (
-            <div className="admin-empty">
-              No collected revenue in this period.
-            </div>
-          )}
-        </section>
+      <div className="mb-5">
         <section className="admin-panel">
           <h2 className="admin-panel-title">Order pipeline</h2>
           <p className="admin-muted mb-6">

@@ -86,11 +86,13 @@ function currencyFmt(v: number) {
 
 export function RevenueLineChart({
   data,
+  label = 'Revenue',
 }: {
   data: { date: string; revenue: number }[];
+  label?: string;
 }) {
   return (
-    <ChartCard title="Revenue Over Time">
+    <ChartCard title={`${label} Over Time`}>
       <ResponsiveContainer width="100%" height={300}>
         <AreaChart data={data}>
           <defs>
@@ -130,7 +132,7 @@ export function RevenueLineChart({
             stroke="#ff6a00"
             strokeWidth={2.5}
             fill="url(#revenueGrad)"
-            name="Revenue"
+            name={label}
           />
         </AreaChart>
       </ResponsiveContainer>
@@ -144,11 +146,13 @@ export function RevenueLineChart({
 
 export function MonthlyRevenueBarChart({
   data,
+  label = 'Revenue',
 }: {
   data: { month: string; revenue: number }[];
+  label?: string;
 }) {
   return (
-    <ChartCard title="Monthly Revenue">
+    <ChartCard title={`Monthly ${label}`}>
       <ResponsiveContainer width="100%" height={300}>
         <BarChart data={data}>
           <defs>
@@ -179,7 +183,7 @@ export function MonthlyRevenueBarChart({
             dataKey="revenue"
             fill="url(#barGrad)"
             radius={[6, 6, 0, 0]}
-            name="Revenue"
+            name={label}
           />
         </BarChart>
       </ResponsiveContainer>
