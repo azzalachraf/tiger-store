@@ -223,7 +223,6 @@ export default async function Home() {
           <nav aria-label={c.footerNav}>
             {[
               ["/shop", c.shop],
-              ["/categories", c.categories],
               ["/payment-methods", c.payWith],
               ["/contact", c.support],
               ["/refund-policy", c.refund],

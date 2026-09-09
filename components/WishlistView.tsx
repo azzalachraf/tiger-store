@@ -23,6 +23,14 @@ export function WishlistView({ products }: WishlistViewProps) {
         empty: "قائمة المفضلة فارغة.",
         browse: "تصفح المنتجات",
       }
+    : locale === "fr"
+    ? {
+        eyebrow: "Favoris",
+        title: "Produits favoris",
+        description: "Retrouvez vos abonnements favoris au même endroit.",
+        empty: "Votre liste de favoris est vide.",
+        browse: "Voir les produits",
+      }
     : {
         eyebrow: "Wishlist",
         title: "Favorite Products",

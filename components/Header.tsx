@@ -8,7 +8,7 @@ import { t } from "@/lib/i18n";
 import { useLocale } from "@/lib/useLocale";
 import { useTheme } from "@/lib/useTheme";
 
-const links = [["/shop", "shop"], ["/categories", "categories"], ["/payment-methods", "payment"], ["/faq", "faq"], ["/contact", "support"]] as const;
+const links = [["/shop", "shop"], ["/payment-methods", "payment"], ["/faq", "faq"], ["/contact", "support"]] as const;
 
 export function Header() {
   const [menuOpen, setMenuOpen] = useState(false);

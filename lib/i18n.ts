@@ -13,7 +13,7 @@ export function productFaqEntries(locale: Locale, name: string, nameAr: string) 
   const isArabic = locale === "ar";
   const productName = isArabic ? nameAr : name;
   return [
-    { question: isArabic ? "متى يتم التفعيل؟" : "When is activation completed?", answer: isArabic ? "يبدأ التفعيل عادة خلال 15 دقيقة إلى 12 ساعة بعد تأكيد الدفع ووصول وصل التحويل." : "Activation usually begins within 15 minutes–12 hours after payment verification and receipt upload." },
-    { question: isArabic ? `كيف يتم تفعيل ${productName}؟` : `How is ${productName} activated?`, answer: isArabic ? "نطلب فقط المعلومات الضرورية للتفعيل، ثم نفعّل الخدمة بالطريقة الموضحة في تفاصيل المنتج." : "We request only the information needed for activation, then activate the service as described in the product details." },
+    { question: isArabic ? "متى يتم التفعيل؟" : locale === "fr" ? "Quand l’activation est-elle effectuée ?" : "When is activation completed?", answer: isArabic ? "يبدأ التفعيل عادة خلال 15 دقيقة إلى 12 ساعة بعد تأكيد الدفع ووصول وصل التحويل." : locale === "fr" ? "L’activation commence généralement dans un délai de 15 minutes à 12 heures après la vérification du paiement et la réception du justificatif." : "Activation usually begins within 15 minutes–12 hours after payment verification and receipt upload." },
+    { question: isArabic ? `كيف يتم تفعيل ${productName}؟` : locale === "fr" ? `Comment ${productName} est-il activé ?` : `How is ${productName} activated?`, answer: isArabic ? "نطلب فقط المعلومات الضرورية للتفعيل، ثم نفعّل الخدمة بالطريقة الموضحة في تفاصيل المنتج." : locale === "fr" ? "Nous demandons uniquement les informations nécessaires, puis nous activons le service selon les indications de la fiche produit." : "We request only the information needed for activation, then activate the service as described in the product details." },
   ];
 }

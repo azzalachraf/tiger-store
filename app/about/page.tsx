@@ -20,6 +20,16 @@ export default function AboutPage() {
           { title: "تنبيه", body: "Tiger Store is independent and not officially affiliated with the listed brands." },
         ],
       }}
+      fr={{
+        eyebrow: "À propos",
+        title: "Tiger Store — abonnements numériques",
+        description: "Tiger Store est une boutique indépendante d’abonnements numériques destinée aux clients en Algérie.",
+        sections: [
+          { title: "Notre offre", body: "Des abonnements numériques pour l’IA, le design, l’architecture, l’apprentissage, le montage vidéo et les logiciels." },
+          { title: "Comment commander", items: ["Choisissez un produit.", "Sélectionnez une offre.", "Choisissez un mode de paiement.", "Ajoutez le justificatif et confirmez la commande."] },
+          { title: "Indépendance", body: "Tiger Store est une boutique indépendante et n’est pas officiellement affiliée aux marques présentées." },
+        ],
+      }}
       en={{
         eyebrow: "About",
         title: "Tiger Store Digital Subscriptions",

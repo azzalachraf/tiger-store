@@ -25,9 +25,9 @@ export default function ContactPage() {
       <main className="store-shell min-h-screen px-4 py-10 sm:px-6 lg:px-8">
         <div className="mx-auto max-w-4xl">
           <section className="rounded-3xl border border-[var(--border-color)] bg-[var(--surface)] p-6 sm:p-9">
-            <p className="text-sm font-black text-[#C54E00]"><LocalizedText ar="الدعم" en="Support" /></p>
-            <h1 className="mt-3 text-3xl font-black tracking-tight text-[var(--text)] sm:text-4xl"><LocalizedText ar="تواصل مع Tiger Store" en="Contact Tiger Store" /></h1>
-            <p className="mt-3 max-w-2xl leading-7 text-[var(--muted-text)]"><LocalizedText ar="للمساعدة في طلبك أو التفعيل، تواصل معنا عبر القناة المناسبة." en="For help with an order or activation, contact us through the channel that suits you." /></p>
+            <p className="text-sm font-black text-[#C54E00]"><LocalizedText ar="الدعم" fr="Assistance" en="Support" /></p>
+            <h1 className="mt-3 text-3xl font-black tracking-tight text-[var(--text)] sm:text-4xl"><LocalizedText ar="تواصل مع Tiger Store" fr="Contacter Tiger Store" en="Contact Tiger Store" /></h1>
+            <p className="mt-3 max-w-2xl leading-7 text-[var(--muted-text)]"><LocalizedText ar="للمساعدة في طلبك أو التفعيل، تواصل معنا عبر القناة المناسبة." fr="Pour toute question concernant une commande ou une activation, contactez-nous par le canal qui vous convient." en="For help with an order or activation, contact us through the channel that suits you." /></p>
           </section>
 
           <section className="mt-4 grid gap-3 sm:grid-cols-2" aria-label="Tiger Store contact channels">
@@ -40,11 +40,11 @@ export default function ContactPage() {
           </section>
 
           <section className="mt-4 rounded-3xl border border-[var(--border-color)] bg-[var(--surface)] p-6 sm:p-8">
-            <h2 className="text-xl font-black text-[var(--text)]"><LocalizedText ar="عند المتابعة بخصوص طلب" en="For order follow-up" /></h2>
-            <p className="mt-2 max-w-2xl leading-7 text-[var(--muted-text)]"><LocalizedText ar="أرسل رمز الطلب فقط حتى نقدر نلقاو طلبك بسرعة. التفعيل يبدأ عادةً خلال 15 دقيقة إلى 12 ساعة بعد تأكيد الدفع." en="Send only your order code so we can find the order quickly. Activation usually begins within 15 minutes–12 hours after payment verification." /></p>
+            <h2 className="text-xl font-black text-[var(--text)]"><LocalizedText ar="عند المتابعة بخصوص طلب" fr="Suivi d’une commande" en="For order follow-up" /></h2>
+            <p className="mt-2 max-w-2xl leading-7 text-[var(--muted-text)]"><LocalizedText ar="أرسل رمز الطلب فقط حتى نقدر نلقاو طلبك بسرعة. التفعيل يبدأ عادةً خلال 15 دقيقة إلى 12 ساعة بعد تأكيد الدفع." fr="Envoyez uniquement votre numéro de commande afin que nous la retrouvions rapidement. L’activation commence généralement dans un délai de 15 minutes à 12 heures après vérification du paiement." en="Send only your order code so we can find the order quickly. Activation usually begins within 15 minutes–12 hours after payment verification." /></p>
             <div className="mt-5 flex flex-wrap gap-3">
-              <Link href="/shop" className="inline-flex min-h-11 items-center justify-center rounded-full bg-[#FF7300] px-5 text-sm font-black text-[#17120F] hover:bg-[#E76800] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#FF7300] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--surface)]"><LocalizedText ar="تصفح المتجر" en="Browse store" /></Link>
-              <Link href="/faq" className="inline-flex min-h-11 items-center justify-center rounded-full border border-[var(--border-color)] px-5 text-sm font-black text-[var(--text)] hover:bg-[var(--page)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#FF7300] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--surface)]"><LocalizedText ar="الأسئلة الشائعة" en="FAQ" /></Link>
+              <Link href="/shop" className="inline-flex min-h-11 items-center justify-center rounded-full bg-[#FF7300] px-5 text-sm font-black text-[#17120F] hover:bg-[#E76800] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#FF7300] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--surface)]"><LocalizedText ar="تصفح المتجر" fr="Voir la boutique" en="Browse store" /></Link>
+              <Link href="/faq" className="inline-flex min-h-11 items-center justify-center rounded-full border border-[var(--border-color)] px-5 text-sm font-black text-[var(--text)] hover:bg-[var(--page)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#FF7300] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--surface)]"><LocalizedText ar="الأسئلة الشائعة" fr="Questions fréquentes" en="FAQ" /></Link>
             </div>
           </section>
         </div>

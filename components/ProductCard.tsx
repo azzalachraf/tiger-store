@@ -40,7 +40,7 @@ function durationLabel(offers: ProductPriceOption[], locale: Locale) {
 export function ProductCard({ product, compact = false, priority = false }: { product: Product; compact?: boolean; priority?: boolean }) {
   const { locale } = useLocale();
   const isArabic = locale === "ar";
-  const unavailableAction = isArabic ? "أخبرني عند التوفر" : "Notify me when available";
+  const unavailableAction = isArabic ? "أخبرني عند التوفر" : locale === "fr" ? "Me prévenir lorsqu’il sera disponible" : "Notify me when available";
   const offers = getProductOffers(product);
   const availableOffers = offers.filter((offer) => offer.available !== false);
   const displayedOffers = availableOffers.length ? availableOffers : offers;

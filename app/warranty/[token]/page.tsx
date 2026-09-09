@@ -28,19 +28,26 @@ export default async function WarrantyPage({ params }: WarrantyPageProps) {
 
   const cookieStore = await cookies();
   const recipientName = verifyWarrantyClaimCookie(payload, cookieStore.get(warrantyClaimCookieName(token))?.value);
-  const isArabic = cookieStore.get("tiger-store-locale")?.value !== "en";
+  const savedLocale = cookieStore.get("tiger-store-locale")?.value;
+  const locale = savedLocale === "fr" || savedLocale === "en" ? savedLocale : "ar";
+  const isArabic = locale === "ar";
   const copy = isArabic ? {
     eyebrow: "شهادة الضمان", title: "شهادة الضمان", intro: "رابط خاص لإصدار شهادة ضمان اشتراكك الرقمي.",
     ready: "تم إنشاء شهادة الضمان", readyText: "احتفظ بها للرجوع إليها عند الحاجة إلى الدعم.", recipient: "صاحب الشهادة", product: "المنتج", plan: "الخطة", order: "رمز الطلب", certificate: "رمز الشهادة", coverage: "مدة التغطية", ends: "تنتهي التغطية", days: "يوم",
     terms: "شروط الضمان", replacement: "عند وجود مشكلة مشمولة سببها Tiger Store، نحاول الاستبدال أولاً.", refund: "إذا تعذر الاستبدال، يُحتسب استرجاع الجزء غير المستخدم من مدة الضمان بشكل نسبي.", excluded: "المشاكل الناتجة عن العميل غير مشمولة.", download: "تحميل الشهادة PDF", follow: "تابع Tiger Store على Telegram", support: "تحتاج مساعدة؟ تواصل معنا",
     complete: "أكمل بيانات الشهادة", instruction: "أدخل معلوماتك الصحيحة ثم أكّد استلام المنتج.", name: "الاسم", familyName: "اللقب", phone: "رقم الهاتف", email: "البريد الإلكتروني", accept: "أؤكد أن المنتج تم تسليمه وأفهم شروط الضمان أعلاه.", issue: "إصدار شهادتي",
+  } : locale === "fr" ? {
+    eyebrow: "CERTIFICAT DE GARANTIE", title: "Certificat de garantie", intro: "Un lien privé pour établir le certificat de garantie de votre abonnement numérique.",
+    ready: "Votre certificat de garantie est prêt", readyText: "Conservez-le afin de pouvoir le consulter si vous avez besoin d’assistance.", recipient: "Titulaire", product: "Produit", plan: "Offre", order: "Numéro de commande", certificate: "Numéro du certificat", coverage: "Couverture", ends: "Fin de la couverture", days: "jours",
+    terms: "Conditions de garantie", replacement: "Pour un problème couvert causé par Tiger Store, nous tentons d’abord un remplacement.", refund: "Si le remplacement est impossible, la période couverte non utilisée est remboursée proportionnellement.", excluded: "Les problèmes causés par le client ne sont pas couverts.", download: "Télécharger le certificat PDF", follow: "Suivre Tiger Store sur Telegram", support: "Besoin d’aide ? Contactez-nous",
+    complete: "Complétez votre certificat", instruction: "Renseignez vos informations exactes, puis confirmez la réception du produit.", name: "Prénom", familyName: "Nom", phone: "Numéro de téléphone", email: "E-mail", accept: "Je confirme avoir reçu le produit et avoir compris les conditions de garantie ci-dessus.", issue: "Établir mon certificat",
   } : {
     eyebrow: "WARRANTY CERTIFICATE", title: "Warranty certificate", intro: "A private link to issue your digital subscription warranty certificate.",
     ready: "Your warranty certificate is ready", readyText: "Keep it for reference if you ever need support.", recipient: "Certificate holder", product: "Product", plan: "Plan", order: "Order code", certificate: "Certificate code", coverage: "Coverage", ends: "Coverage ends", days: "days",
     terms: "Warranty terms", replacement: "For a covered failure caused by Tiger Store, we attempt replacement first.", refund: "If replacement is impossible, the unused covered period is refunded proportionally.", excluded: "Customer-caused problems are not covered.", download: "Download PDF certificate", follow: "Follow Tiger Store on Telegram", support: "Need help? Contact us",
     complete: "Complete your certificate", instruction: "Enter your correct details, then confirm that you received the product.", name: "First name", familyName: "Family name", phone: "Phone number", email: "Email", accept: "I confirm that the product was delivered and I understand the warranty terms above.", issue: "Issue my certificate",
   };
-  const coverageEnd = new Intl.DateTimeFormat(isArabic ? "ar-DZ" : "en-GB", { dateStyle: "long" }).format(warrantyEndDate(payload));
+  const coverageEnd = new Intl.DateTimeFormat(isArabic ? "ar-DZ" : locale === "fr" ? "fr-DZ" : "en-GB", { dateStyle: "long" }).format(warrantyEndDate(payload));
   const certificateCode = warrantyCertificateCode(payload);
   const productName = isArabic ? item.nameAr || item.name : item.name;
   const planName = isArabic ? item.optionAr || item.option : item.option;

@@ -4,7 +4,6 @@ import Image from "next/image";
 import Link from "next/link";
 import { ArrowUpRight, Search, ChevronDown } from "lucide-react";
 import type { Locale } from "@/lib/types";
-import { productCategories } from "@/lib/product-localization";
 import type { HomeProduct } from "./products";
 import { homeCopy } from "./copy";
 import styles from "./landing.module.css";
@@ -16,17 +15,9 @@ export function HomeCatalog({
   products: HomeProduct[];
   locale: Locale;
 }) {
-  const [category, setCategory] = useState("all");
   const [expanded, setExpanded] = useState(false);
   const c = homeCopy[locale];
-  const categories = productCategories.filter(
-    (entry) =>
-      entry.id === "all" ||
-      products.some((product) => product.categoryId === entry.id),
-  );
-  const filtered = products
-    .filter((product) => category === "all" || product.categoryId === category)
-    .sort(
+  const filtered = [...products].sort(
       (a, b) =>
         Number(b.available) - Number(a.available) ||
         Number(b.slug === "snapchat-plus") -
@@ -60,25 +51,6 @@ export function HomeCatalog({
             <Search size={20} aria-hidden="true" />
           </button>
         </form>
-      </div>
-      <div
-        className={styles.filters}
-        role="group"
-        aria-label={c.catalogEyebrow}
-      >
-        {categories.map((entry) => (
-          <button
-            key={entry.id}
-            type="button"
-            aria-pressed={category === entry.id}
-            onClick={() => {
-              setCategory(entry.id);
-              setExpanded(false);
-            }}
-          >
-            {entry.id === "all" ? c.all : entry[locale]}
-          </button>
-        ))}
       </div>
       <div className={styles.productGrid}>
         {shown.map((product) => (

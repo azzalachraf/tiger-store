@@ -79,6 +79,19 @@ export default function FaqPage() {
           },
         ],
       }}
+      fr={{
+        eyebrow: "FAQ",
+        title: "Questions fréquentes",
+        description: "Des réponses claires sur la commande, le paiement, l’activation et l’assistance.",
+        sections: [
+          { title: "Comment recevoir mon abonnement ?", body: "Après confirmation de la commande et du paiement, l’activation est préparée selon le produit et l’offre choisis." },
+          { title: "Combien de temps prend l’activation ?", body: "L’activation commence généralement dans un délai de 15 minutes à 12 heures après vérification du paiement." },
+          { title: "Y a-t-il une garantie ?", body: "La garantie dépend du produit et de l’offre sélectionnés. Les conditions applicables sont affichées sur la fiche produit." },
+          { title: "Que faire après le paiement ?", body: "Ajoutez le justificatif de paiement et vérifiez que les informations d’activation sont correctes." },
+          { title: "Ai-je besoin d’un compte ?", body: "Non. Aucun compte client n’est requis pour commander." },
+          { title: "Quels paiements sont acceptés ?", body: "Tiger Store accepte BaridiMob, Binance et RedotPay. Les coordonnées correctes sont affichées lors de la commande." },
+        ],
+      }}
       en={{
         eyebrow: "FAQ",
         title: "Frequently Asked Questions",

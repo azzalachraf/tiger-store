@@ -31,6 +31,16 @@ export default function RefundPolicyPage() {
           { title: "حالات الدعم", body: "يراجع Tiger Store مشاكل التفعيل ويوفر الحل المناسب عند الإمكان." },
         ],
       }}
+      fr={{
+        eyebrow: "Remboursement",
+        title: "Politique de remboursement et d’assistance",
+        description: "Les produits numériques sont traités selon leur statut d’activation et les conditions de garantie affichées.",
+        sections: [
+          { title: "Avant l’activation", body: "Une commande peut être examinée avant l’activation selon son statut." },
+          { title: "Après l’activation", body: "Pour un problème couvert causé par Tiger Store, nous tentons d’abord un remplacement. Si cela est impossible, le remboursement est calculé au prorata des jours de garantie restants." },
+          { title: "Assistance", body: "Tiger Store examine les problèmes liés à l’activation et propose une solution lorsqu’ils sont couverts." },
+        ],
+      }}
       en={content}
     />
   );

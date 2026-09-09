@@ -7,7 +7,6 @@ import { ProductCard } from "@/components/ProductCard";
 import { ProductDetails } from "@/components/ProductDetails";
 import { LocalizedText } from "@/components/LocalizedText";
 import { getProductBySlug, getProducts } from "@/lib/admin-store";
-import { categorySlug } from "@/lib/categories";
 import { absoluteUrl, createPageMetadata, serializeJsonLd } from "@/lib/seo";
 import { Product } from "@/lib/types";
 
@@ -104,14 +103,8 @@ export default async function ProductDetailPage({ params }: PageProps) {
     "@context": "https://schema.org",
     "@type": "BreadcrumbList",
     itemListElement: [
-      { "@type": "ListItem", position: 1, name: locale === "ar" ? "الرئيسية" : "Home", item: absoluteUrl("/") },
-      {
-        "@type": "ListItem",
-        position: 2,
-        name: locale === "ar" ? product.categoryAr : product.category,
-        item: absoluteUrl(`/categories/${categorySlug(product.category)}`),
-      },
-      { "@type": "ListItem", position: 3, name: locale === "ar" ? product.nameAr : product.name, item: productUrl },
+      { "@type": "ListItem", position: 1, name: locale === "ar" ? "الرئيسية" : locale === "fr" ? "Accueil" : "Home", item: absoluteUrl("/") },
+      { "@type": "ListItem", position: 2, name: locale === "ar" ? product.nameAr : product.name, item: productUrl },
     ],
   });
 
@@ -128,10 +121,10 @@ export default async function ProductDetailPage({ params }: PageProps) {
             <section className="mt-10">
               <div className="mb-5">
                 <p className="font-bold text-tiger-gold">
-                  <LocalizedText ar="منتجات مشابهة" en="Related Products" />
+                  <LocalizedText ar="منتجات مشابهة" fr="Produits similaires" en="Related Products" />
                 </p>
                 <h2 className="mt-2 text-2xl font-black text-white">
-                  <LocalizedText ar="من نفس القسم" en="From the same category" />
+                  <LocalizedText ar="اكتشف منتجات أخرى" fr="Découvrez d’autres produits" en="Discover more products" />
                 </h2>
               </div>
               <div className="grid grid-cols-2 gap-3 sm:gap-4 md:grid-cols-3 xl:grid-cols-4">

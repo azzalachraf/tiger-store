@@ -1,21 +1,12 @@
 import type { MetadataRoute } from "next";
 import { getProducts } from "@/lib/admin-store";
-import { categorySlug, getSiteCategories } from "@/lib/categories";
 import { absoluteUrl } from "@/lib/seo";
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const products = await getProducts();
-  const categories = getSiteCategories(products).filter((category) => category.id !== "all");
-
   return [
     { url: absoluteUrl("/"), changeFrequency: "weekly", priority: 1 },
     { url: absoluteUrl("/shop"), changeFrequency: "daily", priority: 0.9 },
-    { url: absoluteUrl("/categories"), changeFrequency: "weekly", priority: 0.8 },
-    ...categories.map((category) => ({
-      url: absoluteUrl(`/categories/${categorySlug(category.id)}`),
-      changeFrequency: "weekly" as const,
-      priority: 0.7,
-    })),
     ...products.map((product) => ({
       url: absoluteUrl(`/products/${product.slug}`),
       changeFrequency: "weekly" as const,
