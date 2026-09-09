@@ -2,7 +2,6 @@
 import { useState } from "react";
 import type { LedgerSale, LedgerSpend } from "./FinanceLedger";
 import { financialSeries } from "./financial-result";
-import { localDay } from "./data-tools";
 import { RevenueLineChart, MonthlyRevenueBarChart } from "./DashboardCharts";
 
 export function FinancialResult({
@@ -34,11 +33,6 @@ export function FinancialResult({
       row.date.slice(0, 7),
       (months.get(row.date.slice(0, 7)) ?? 0) + row.revenue,
     );
-  const missing = new Set(
-    sales
-      .filter((sale) => !spend.some((ad) => ad.date === localDay(sale.date)))
-      .map((sale) => localDay(sale.date)),
-  );
   return (
     <section className="admin-panel mb-5" aria-label="Financial result">
       <div className="flex flex-wrap items-start justify-between gap-4">
@@ -74,12 +68,6 @@ export function FinancialResult({
           {sales.some((sale) => sale.adminId === "website") && (
             <p className="admin-muted mt-2">
               Website costs not recorded are not estimated; profit is
-              provisional.
-            </p>
-          )}
-          {missing.size > 0 && (
-            <p className="admin-feedback" data-error="true">
-              Advertising missing on {missing.size} sales day(s). Profit is
               provisional.
             </p>
           )}
