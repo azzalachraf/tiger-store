@@ -117,10 +117,10 @@ function accountStockLabel(acc: AdminAccount) {
   return acc.email.split("@")[1] || "Other";
 }
 
-export async function getAnalytics(): Promise<Analytics> {
+export async function getAnalytics(ordersOverride?: AdminOrder[]): Promise<Analytics> {
   const [products, orders, accounts] = await Promise.all([
     getProducts(),
-    getOrders(),
+    ordersOverride ?? getOrders(),
     getAccounts(),
   ]);
 

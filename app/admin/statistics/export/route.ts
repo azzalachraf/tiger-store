@@ -1,56 +1,91 @@
 import { NextResponse } from "next/server";
+import { z } from "zod";
 import { getAnalytics } from "@/lib/analytics";
 import { requireAdmin } from "@/lib/admin-auth";
-
+import { readAdminOrders } from "@/app/admin/read-orders";
+import {
+  toCsv,
+  orderHeaders,
+  orderCells,
+  type Cell,
+} from "@/components/admin/data-tools";
 export const dynamic = "force-dynamic";
-
+export const runtime = "nodejs";
 export async function GET(request: Request) {
   await requireAdmin();
-  const { searchParams } = new URL(request.url);
-  const type = searchParams.get("type");
-
-  const a = await getAnalytics();
-  let csv = "";
-  let filename = "";
-
-  if (type === "customers") {
-    filename = "customers.csv";
-    csv = "Name,Email,Orders,Total Spent,First Order,Last Order\n";
-    for (const c of a.customers) {
-      csv += `"${c.name}","${c.email}",${c.orderCount},${c.totalSpent},"${c.firstOrder}","${c.lastOrder}"\n`;
+  const parsed = z
+    .enum(["customers", "orders", "products", "revenue", "accounts"])
+    .safeParse(new URL(request.url).searchParams.get("type"));
+  if (!parsed.success)
+    return NextResponse.json(
+      { error: "Choose a valid export type." },
+      { status: 400 },
+    );
+  const type = parsed.data;
+  let headers: string[] = [];
+  let rows: Cell[][] = [];
+  if (type === "orders") {
+    headers = orderHeaders;
+    rows = (await readAdminOrders()).map(orderCells);
+  } else {
+    const a = await getAnalytics(await readAdminOrders());
+    if (type === "customers") {
+      headers = [
+        "Name",
+        "Email",
+        "Orders",
+        "Total spent (DA)",
+        "First order",
+        "Last order",
+      ];
+      rows = a.customers.map((c) => [
+        c.name,
+        c.email,
+        c.orderCount,
+        c.totalSpent,
+        c.firstOrder,
+        c.lastOrder,
+      ]);
     }
-  } else if (type === "orders") {
-    filename = "orders.csv";
-    csv = "ID,Date,Customer,Email,Phone,Total,Status,Payment Method,UTM Source,UTM Medium,UTM Campaign\n";
-    for (const o of a.recentOrders) {
-      csv += `"${o.id}","${o.createdAt}","${o.customerName}","${o.email}","${o.phone}",${o.total},"${o.status}","${o.paymentMethod}","${o.utm_source || ""}","${o.utm_medium || ""}","${o.utm_campaign || ""}"\n`;
+    if (type === "products") {
+      headers = ["ID", "Name", "Category", "Sales count", "Revenue (DA)"];
+      rows = a.topProducts.map((p) => [
+        p.id,
+        p.name,
+        p.category,
+        p.salesCount,
+        p.revenue,
+      ]);
     }
-  } else if (type === "products") {
-    filename = "products.csv";
-    csv = "ID,Name,Category,Sales Count,Revenue\n";
-    for (const p of a.topProducts) {
-      csv += `"${p.id}","${p.name}","${p.category}",${p.salesCount},${p.revenue}\n`;
+    if (type === "revenue") {
+      headers = ["Date", "Revenue (DA)"];
+      rows = a.revenueByDay.map((r) => [r.date, r.revenue]);
     }
-  } else if (type === "revenue") {
-    filename = "revenue_by_day.csv";
-    csv = "Date,Revenue\n";
-    for (const r of a.revenueByDay) {
-      csv += `"${r.date}",${r.revenue}\n`;
-    }
-  } else if (type === "accounts") {
-    filename = "account_stock.csv";
-    csv = "Account Type,Available,Sold,Expired,Problem,Total\n";
-    for (const s of a.accountStock) {
-      csv += `"${s.label}",${s.available},${s.sold},${s.expired},${s.problem},${s.total}\n`;
+    if (type === "accounts") {
+      headers = [
+        "Account type",
+        "Available",
+        "Sold",
+        "Expired",
+        "Problem",
+        "Total",
+      ];
+      rows = a.accountStock.map((s) => [
+        s.label,
+        s.available,
+        s.sold,
+        s.expired,
+        s.problem,
+        s.total,
+      ]);
     }
   }
-
-  // To properly support Arabic characters in Excel, add a BOM
-  const bom = "\uFEFF";
-  return new NextResponse(bom + csv, {
+  return new NextResponse(toCsv(headers, rows), {
     headers: {
       "Content-Type": "text/csv; charset=utf-8",
-      "Content-Disposition": `attachment; filename="${filename}"`,
+      "Content-Disposition": 'attachment; filename="' + type + '.csv"',
+      "Cache-Control": "private, no-store",
+      "X-Content-Type-Options": "nosniff",
     },
   });
 }

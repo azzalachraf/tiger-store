@@ -10,9 +10,14 @@ export const metadata = {
 };
 
 export default async function NewProductPage() {
-  const categories = getSiteCategories(await getProducts()).filter((category) => category.id !== "all");
+  const categories = getSiteCategories(await getProducts()).filter(
+    (category) => category.id !== "all",
+  );
   return (
-    <AdminShell title="منتج جديد" description="نموذج جاهز للربط لاحقا مع قاعدة بيانات أو API.">
+    <AdminShell
+      title="New product"
+      description="Create a product with localized content, prices, plans and artwork."
+    >
       <ProductForm categories={categories} />
     </AdminShell>
   );

@@ -1,0 +1,172 @@
+// Synthetic browser fixture. Bundled only by test-admin-ui.mjs; never a public route.
+import { createRoot } from "react-dom/client";
+import { Overview } from "../components/admin/Overview";
+import { OrdersWorkspace } from "../components/admin/OrdersWorkspace";
+import { ProductsWorkspace } from "../components/admin/ProductsWorkspace";
+import { ProductForm } from "../components/admin/ProductForm";
+import { AdminNavigation } from "../components/admin/AdminNavigation";
+import { ActionForm } from "../components/admin/ActionForm";
+import { CustomersWorkspace } from "../components/admin/CustomersWorkspace";
+import { AccountsTable } from "../components/admin/AccountsTable";
+import type { AdminOrder, Product } from "../lib/types";
+import "../components/admin/admin.css";
+declare global {
+  interface Window {
+    calls: { name: string; data: Record<string, FormDataEntryValue> }[];
+    failAction: boolean;
+  }
+}
+window.calls = [];
+window.failAction = false;
+const product: Product = {
+  id: "fixture-product",
+  slug: "fixture-product",
+  name: "Snapchat Plus",
+  nameAr: "سناب شات بلس",
+  category: "social",
+  categoryAr: "تواصل",
+  price: 2300,
+  currency: "DZD",
+  duration: "12 months",
+  durationAr: "عام كامل",
+  shortDescriptionAr: "منتج للاختبار فقط",
+  shortDescriptionEn: "Synthetic test product",
+  featuresAr: ["اختبار"],
+  featuresEn: ["Fixture"],
+  activationTypeAr: "اختبار",
+  activationTypeEn: "Test",
+  image: "/fixture.svg",
+  available: true,
+  featured: true,
+  priceOptions: [
+    {
+      id: "plan-1",
+      label: "12 months",
+      labelAr: "عام كامل",
+      duration: "12 months",
+      durationAr: "عام كامل",
+      price: 2300,
+      available: true,
+      compatibilityAr: "آيفون",
+      compatibilityEn: "iPhone",
+    },
+  ],
+};
+const orders: AdminOrder[] = Array.from({ length: 31 }, (_, i) => ({
+  id: "TEST-" + i,
+  customerName: i % 2 ? "عميل تجريبي " + i : "Test client " + i,
+  phone: "0555000000",
+  email: "fixture" + i + "@example.test",
+  products: [
+    {
+      id: "line-" + i,
+      productId: product.id,
+      slug: product.slug,
+      name: product.name,
+      nameAr: product.nameAr,
+      image: product.image,
+      option: "12 months",
+      optionId: "plan-1",
+      optionAr: "عام كامل",
+      duration: "12 months",
+      durationAr: "عام كامل",
+      price: 2300,
+      quantity: 1,
+    },
+  ],
+  paymentMethod: "Binance",
+  total: 2300,
+  status: i % 3 ? "pending" : "delivered",
+  createdAt: new Date(Date.now() - i * 86400000).toISOString(),
+  receiptPath: "fixture.png",
+  adminNotes: "Retain this note",
+}));
+const view = new URLSearchParams(location.search).get("view") ?? "overview";
+const views: Record<string, React.ReactNode> = {
+  overview: <Overview orders={orders} availableProducts={24} />,
+  orders: <OrdersWorkspace orders={orders} />,
+  products: (
+    <ProductsWorkspace
+      products={Array.from({ length: 24 }, (_, i) => ({
+        ...product,
+        id: "fixture-" + i,
+        name: "Product " + i,
+      }))}
+    />
+  ),
+  editor: (
+    <ProductForm
+      product={product}
+      categories={[{ id: "social", name: { ar: "تواصل", en: "Social" } }]}
+    />
+  ),
+  customers: (
+    <CustomersWorkspace
+      customers={orders.map((o) => ({
+        name: o.customerName,
+        email: o.email,
+        orderCount: 1,
+        totalSpent: 2300,
+        averageOrderValue: 2300,
+        isReturning: false,
+        firstOrder: o.createdAt,
+        lastOrder: o.createdAt,
+      }))}
+    />
+  ),
+  accounts: (
+    <AccountsTable
+      accounts={Array.from({ length: 21 }, (_, i) => ({
+        id: "account-" + i,
+        email: "fixture" + i + "@example.test",
+        emailPassword: "synthetic",
+        chatgptPassword: "synthetic",
+        dateCreated: "2026-09-01",
+        price: 100,
+        status: "Available",
+        updatedAt: "2026-09-01T12:00:00Z",
+      }))}
+    />
+  ),
+  action: (
+    <ActionForm
+      confirmation="Test confirmation only"
+      action={async (data) => {
+        await new Promise((r) => setTimeout(r, 150));
+        if (window.failAction) throw new Error("secret-must-not-leak");
+        window.calls.push({ name: "test", data: Object.fromEntries(data) });
+      }}
+    >
+      <label>
+        Test input
+        <input name="field" required />
+      </label>
+      <button className="admin-btn">Save test</button>
+    </ActionForm>
+  ),
+};
+createRoot(document.getElementById("root")!).render(
+  <div className="admin-app" dir="ltr">
+    <header className="admin-topbar">
+      <div className="admin-brand">
+        Tiger Store<small>Business workspace</small>
+      </div>
+      <button className="admin-btn">Sign out</button>
+    </header>
+    <div className="admin-layout">
+      <AdminNavigation />
+      <main className="admin-content">
+        <div className="admin-page-heading">
+          <p className="admin-overline">Tiger / Workspace</p>
+          <h1>
+            {view === "editor"
+              ? "Edit product"
+              : view[0].toUpperCase() + view.slice(1)}
+          </h1>
+          <p>Manage your store in one workspace.</p>
+        </div>
+        {views[view]}
+      </main>
+    </div>
+  </div>,
+);

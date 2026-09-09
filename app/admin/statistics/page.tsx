@@ -1,4 +1,5 @@
 import { getAnalytics, formatCurrency } from "@/lib/analytics";
+import { readAdminOrders } from "@/app/admin/read-orders";
 import { AdminShell } from "@/components/admin/AdminShell";
 import {
   DollarSign,
@@ -38,7 +39,7 @@ export const metadata = {
 };
 
 export default async function AdminStatisticsPage() {
-  const a = await getAnalytics();
+  const a = await getAnalytics(await readAdminOrders());
 
   return (
     <AdminShell title="Statistics & Analytics" description="Comprehensive business intelligence dashboard.">

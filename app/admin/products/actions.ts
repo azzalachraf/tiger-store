@@ -6,8 +6,13 @@ import { requireAdmin } from "@/lib/admin-auth";
 import { deleteProduct, getProducts, saveProduct } from "@/lib/admin-store";
 import { getSiteCategories } from "@/lib/categories";
 import { getSupabaseServiceClient } from "@/lib/supabase";
-import { Product, ProductDetails, ProductPriceOption } from "@/lib/types";
-import { productPriceOptionSchema } from "@/lib/validation";
+import { Product, ProductDetails } from "@/lib/types";
+import { productSchema } from "@/lib/validation";
+
+import {
+  parseProductOptions,
+  parseProductExtra,
+} from "@/components/admin/product-form-data";
 
 function text(formData: FormData, key: string) {
   return String(formData.get(key) ?? "").trim();
@@ -30,15 +35,20 @@ function fileExtension(file: File) {
   if (extension) return extension;
 
   const nameExtension = file.name.split(".").pop()?.toLowerCase();
-  return nameExtension && ["png", "jpg", "jpeg", "webp", "avif"].includes(nameExtension) ? nameExtension : null;
+  return nameExtension &&
+    ["png", "jpg", "jpeg", "webp", "avif"].includes(nameExtension)
+    ? nameExtension
+    : null;
 }
 
 function safeFileBase(value: string) {
-  return value
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-+|-+$/g, "")
-    .slice(0, 80) || "product";
+  return (
+    value
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/^-+|-+$/g, "")
+      .slice(0, 80) || "product"
+  );
 }
 
 async function saveUploadedProductImage(formData: FormData, slug: string) {
@@ -47,7 +57,9 @@ async function saveUploadedProductImage(formData: FormData, slug: string) {
 
   const maxSize = 4 * 1024 * 1024;
   if (uploaded.size > maxSize) {
-    throw new Error("Product image is too large. Please upload an image under 4 MB.");
+    throw new Error(
+      "Product image is too large. Please upload an image under 4 MB.",
+    );
   }
 
   const extension = fileExtension(uploaded);
@@ -81,57 +93,40 @@ function lines(value: string) {
     .filter(Boolean);
 }
 
-function parseVariants(value: string): ProductPriceOption[] | undefined {
-  try {
-    const parsed = JSON.parse(value) as ProductPriceOption[];
-    const variants = parsed
-      .map((variant) => ({
-        id: String(variant.id || crypto.randomUUID()),
-        label: String(variant.label ?? "").trim(),
-        labelAr: String(variant.labelAr || variant.label || "").trim(),
-        price: Number(variant.price),
-        duration: String(variant.duration || variant.label || "").trim(),
-        durationAr: String(variant.durationAr || variant.labelAr || variant.duration || "").trim(),
-        oldPrice: variant.oldPrice ? Number(variant.oldPrice) : undefined,
-        available: variant.available !== false,
-      }))
-      .map((variant) => productPriceOptionSchema.parse(variant))
-      .filter((variant) => variant.label && variant.duration && Number.isFinite(variant.price) && variant.price > 0);
-
-    return variants.length ? variants : undefined;
-  } catch {
-    return undefined;
-  }
-}
-
-function parseOptionalJson<T>(value: string): T | undefined {
-  try {
-    const parsed: unknown = JSON.parse(value);
-    return parsed && typeof parsed === "object" ? parsed as T : undefined;
-  } catch {
-    return undefined;
-  }
-}
-
 export async function saveProductAction(formData: FormData) {
   await requireAdmin();
 
   const selectedCategory = text(formData, "category");
   const customCategory = text(formData, "customCategory");
-  const category = selectedCategory === "__custom" ? customCategory : selectedCategory;
+  const category =
+    selectedCategory === "__custom" ? customCategory : selectedCategory;
   if (!category) {
     throw new Error("Please choose or enter a product category.");
   }
-  const categoryConfig = getSiteCategories(await getProducts()).find((entry) => entry.id === category);
-  const categoryAr = selectedCategory === "__custom"
-    ? text(formData, "customCategoryAr") || category
-    : categoryConfig?.name.ar || category;
-  const id = text(formData, "id") || text(formData, "slug") || crypto.randomUUID();
+  const existingProducts = await getProducts();
+  const categoryConfig = getSiteCategories(existingProducts).find(
+    (entry) => entry.id === category,
+  );
+  const categoryAr =
+    selectedCategory === "__custom"
+      ? text(formData, "customCategoryAr") || category
+      : categoryConfig?.name.ar || category;
+  const id =
+    text(formData, "id") || text(formData, "slug") || crypto.randomUUID();
   const slug = text(formData, "slug");
+  if (
+    existingProducts.some(
+      (p) => (p.slug === slug || p.id === id) && p.id !== text(formData, "id"),
+    )
+  )
+    throw new Error(
+      "A product with this slug already exists. Edit it or choose a different slug.",
+    );
   const price = numberValue(formData, "price") ?? 0;
   const oldPrice = numberValue(formData, "oldPrice");
-  const uploadedImagePath = await saveUploadedProductImage(formData, slug);
-  const image = uploadedImagePath ?? text(formData, "image");
+  const uploaded = formData.get("imageUpload");
+  const hasUpload = uploaded instanceof File && uploaded.size > 0;
+  const image = text(formData, "image") || (hasUpload ? "/pending-upload" : "");
 
   if (!image) {
     throw new Error("Please upload a product image or enter an image path.");
@@ -158,11 +153,16 @@ export async function saveProductAction(formData: FormData) {
     image,
     available: formData.get("available") === "on",
     featured: formData.get("featured") === "on",
-    priceOptions: parseVariants(text(formData, "priceOptions")),
-    details: parseOptionalJson<ProductDetails>(text(formData, "details")),
-    faqs: parseOptionalJson<Product["faqs"]>(text(formData, "faqs")),
+    priceOptions: parseProductOptions(text(formData, "priceOptions")),
+    details: parseProductExtra(text(formData, "details"), "details") as
+      | ProductDetails
+      | undefined,
+    faqs: parseProductExtra(text(formData, "faqs"), "faqs") as Product["faqs"],
   };
 
+  productSchema.parse(product);
+  const uploadedImagePath = await saveUploadedProductImage(formData, slug);
+  if (uploadedImagePath) product.image = uploadedImagePath;
   await saveProduct(product);
   revalidatePath("/");
   revalidatePath("/shop");
@@ -180,5 +180,3 @@ export async function deleteProductAction(formData: FormData) {
   revalidatePath("/shop");
   revalidatePath("/admin/products");
 }
-
-

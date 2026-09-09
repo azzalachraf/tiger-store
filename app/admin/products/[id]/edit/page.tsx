@@ -18,7 +18,9 @@ export async function generateMetadata({ params }: EditProductPageProps) {
   };
 }
 
-export default async function EditProductPage({ params }: EditProductPageProps) {
+export default async function EditProductPage({
+  params,
+}: EditProductPageProps) {
   const { id } = await params;
   const product = await getProductById(id);
 
@@ -26,10 +28,15 @@ export default async function EditProductPage({ params }: EditProductPageProps) 
     notFound();
   }
 
-  const categories = getSiteCategories(await getProducts()).filter((category) => category.id !== "all");
+  const categories = getSiteCategories(await getProducts()).filter(
+    (category) => category.id !== "all",
+  );
 
   return (
-    <AdminShell title={`تعديل ${product.nameAr}`} description="القيم الحالية معروضة من seed data.">
+    <AdminShell
+      title={`Edit ${product.name}`}
+      description="Review and update the saved product. Changes go live when you save."
+    >
       <ProductForm product={product} categories={categories} />
     </AdminShell>
   );

@@ -1,90 +1,69 @@
 import Image from "next/image";
 import Link from "next/link";
-import { ReactNode } from "react";
-import { BarChart3, Boxes, ClipboardCopy, CreditCard, ExternalLink, LayoutDashboard, LogOut, Settings, ShoppingBag, TicketCheck, Users, WalletCards } from "lucide-react";
+import type { ReactNode } from "react";
+import { ExternalLink, LogOut } from "lucide-react";
 import { logoutAction } from "@/app/admin/login/actions";
 import { requireAdmin } from "@/lib/admin-auth";
-import { Button } from "@/components/ui/button";
+import { AdminNavigation } from "./AdminNavigation";
+import "./admin.css";
 
-const adminNav = [{ href: "/admin", label: "Overview", icon: LayoutDashboard, group: "Store" }, { href: "/admin/orders", label: "Orders", icon: ShoppingBag, group: "Store" }, { href: "/admin/tiger-new-sheet", label: "Tiger New Sheet", icon: ClipboardCopy, group: "Store" }, { href: "/admin/products", label: "Products", icon: Boxes, group: "Store" }, { href: "/admin/card-stock", label: "Card stock", icon: TicketCheck, group: "Store" }, { href: "/admin/team", label: "Team", icon: Users, group: "Store" }, { href: "/admin/marketing/funnel", label: "Traffic", icon: BarChart3, group: "Store" }, { href: "/admin/payment-methods", label: "Payments", icon: CreditCard, group: "Store" }, { href: "/admin/stock-alerts", label: "Alerts", icon: Boxes, group: "Store" }, { href: "/admin/finance", label: "Finance", icon: WalletCards, group: "Store" }, { href: "/admin/settings", label: "Settings", icon: Settings, group: "Store" }];
-
-const groupedNav = adminNav.reduce<Record<string, typeof adminNav>>((groups, item) => {
-  groups[item.group] = [...(groups[item.group] ?? []), item];
-  return groups;
-}, {});
-
-type AdminShellProps = {
+export async function AdminShell({
+  title,
+  description,
+  children,
+}: {
   title: string;
   description?: string;
   children: ReactNode;
-};
-
-export async function AdminShell({ title, description, children }: AdminShellProps) {
+}) {
   await requireAdmin();
-
   return (
-    <main className="min-h-screen bg-[#0b0b0b] text-white">
-      <div className="border-b border-white/10 bg-[#111]/95 backdrop-blur">
-        <div className="mx-auto flex max-w-[1500px] items-center justify-between gap-3 px-3 py-2 sm:px-5 sm:py-3 lg:px-8">
-          <Link href="/admin" className="flex items-center gap-3 font-extrabold">
-            <span className="relative h-11 w-11 overflow-hidden rounded-2xl border border-white/10 bg-white">
-              <Image src="/logo/tiger-store-ui.png" alt="Tiger Store" fill sizes="44px" className="object-cover object-left" />
-            </span>
-            <span className="hidden sm:block">
-              <span className="block text-sm text-white">Tiger Admin</span>
-              <span className="block text-xs font-bold text-tiger-gold">tiger-storedz.com</span>
-            </span>
+    <div className="admin-app" dir="ltr">
+      <a href="#admin-content" className="sr-only focus:not-sr-only">
+        Skip to content
+      </a>
+      <header className="admin-topbar">
+        <Link href="/admin" className="admin-brand">
+          <Image
+            src="/logo/tiger-store-ui.png"
+            alt="Tiger Store"
+            width={40}
+            height={40}
+            className="rounded-xl bg-white object-contain"
+          />
+          <span>
+            Tiger Store<small>Business workspace</small>
+          </span>
+        </Link>
+        <div className="admin-top-actions">
+          <Link
+            href="/"
+            target="_blank"
+            rel="noreferrer"
+            className="admin-btn admin-desktop-only"
+          >
+            <ExternalLink size={15} />
+            View store
           </Link>
-
-          <div className="flex items-center gap-2">
-            <Button asChild variant="secondary" size="sm" className="hidden rounded-full sm:inline-flex">
-              <Link href="/" target="_blank">
-                <ExternalLink className="h-4 w-4" />
-                View Store
-              </Link>
-            </Button>
-            <form action={logoutAction}>
-              <Button type="submit" variant="secondary" size="sm" className="min-h-11 rounded-full px-3 sm:px-4">
-                <LogOut className="h-4 w-4" />
-                <span className="hidden sm:inline">Logout</span>
-              </Button>
-            </form>
-          </div>
+          <form action={logoutAction}>
+            <button className="admin-btn" aria-label="Sign out">
+              <LogOut size={17} />
+              <span className="admin-desktop-only">Sign out</span>
+            </button>
+          </form>
         </div>
-      </div>
-
-      <div className="mx-auto grid max-w-[1500px] gap-4 px-3 py-4 sm:px-5 sm:py-5 lg:grid-cols-[270px_1fr] lg:px-8">
-        <aside className="h-fit overflow-hidden rounded-2xl border border-white/10 bg-[linear-gradient(180deg,rgba(32,32,32,0.96),rgba(16,16,16,0.98))] p-2 shadow-[0_20px_60px_rgba(0,0,0,0.3)] lg:sticky lg:top-5 lg:rounded-md lg:p-3">
-          <nav className="flex gap-2 overflow-x-auto pb-1 lg:block lg:overflow-visible lg:pb-0" aria-label="Admin navigation">
-            {Object.entries(groupedNav).map(([group, items]) => (
-              <div key={group} className="contents lg:block">
-                <p className="mb-1 mt-3 hidden px-2 text-[11px] font-black uppercase tracking-[0.18em] text-white/35 first:mt-0 lg:block">{group}</p>
-                <div className="flex gap-2 lg:grid lg:gap-1">
-                  {items.map((item) => (
-                    <Link
-                      key={item.href}
-                      href={item.href}
-                      className="flex min-h-12 min-w-20 shrink-0 flex-col items-center justify-center gap-1 rounded-xl border border-white/8 bg-white/[0.03] px-2 py-2 text-center text-[11px] font-bold leading-4 text-white/80 transition-colors duration-150 hover:border-tiger-ember/35 hover:bg-tiger-ember/12 hover:text-white lg:min-h-11 lg:w-full lg:flex-row lg:justify-start lg:gap-3 lg:border-transparent lg:bg-transparent lg:px-3 lg:py-0 lg:text-left lg:text-sm"
-                    >
-                      <item.icon className="h-4 w-4 text-tiger-ember" />
-                      {item.label}
-                    </Link>
-                  ))}
-                </div>
-              </div>
-            ))}
-          </nav>
-        </aside>
-
-        <section className="min-w-0">
-          <div className="mb-4 rounded-2xl border border-white/10 bg-[linear-gradient(135deg,rgba(255,106,0,0.12),rgba(24,24,24,0.96))] p-4 shadow-[0_20px_60px_rgba(0,0,0,0.28)] sm:mb-5 sm:rounded-md sm:p-5">
-            <p className="text-[10px] font-black uppercase tracking-[0.18em] text-tiger-gold sm:text-xs">Control Center</p>
-            <h1 className="mt-1 text-2xl font-extrabold tracking-tight text-white sm:mt-2 sm:text-3xl">{title}</h1>
-            {description ? <p className="mt-1 max-w-3xl text-sm leading-6 text-white/62 sm:mt-2 sm:leading-7">{description}</p> : null}
+      </header>
+      <div className="admin-layout">
+        <AdminNavigation />
+        <main id="admin-content" className="admin-content">
+          <div className="admin-page-heading">
+            <div className="admin-overline">Tiger / Workspace</div>
+            <h1 dir="auto">{title}</h1>
+            {description && <p dir="auto">{description}</p>}
           </div>
           {children}
-        </section>
+        </main>
       </div>
-    </main>
+    </div>
   );
 }
