@@ -1,13 +1,12 @@
 "use client";
 import { useState } from "react";
-type Copy = { review: string; name: string; familyName: string; user: string; phone: string; email: string; paymentMethod: string; confirm: string; back: string; next: string; paymentOptions: { placeholder: string; baridiMob: string; binance: string; redotPay: string; flexy: string } };
+type Copy = { review: string; name: string; user: string; phone: string; email: string; paymentMethod: string; confirm: string; back: string; next: string; paymentOptions: { placeholder: string; baridiMob: string; binance: string; redotPay: string; flexy: string } };
 
 export function WarrantyForm({ token, copy, action }: { token: string; copy: Copy; action: (formData: FormData) => void | Promise<void> }) {
   const [review, setReview] = useState(false);
-  const [values, setValues] = useState({ name: "", familyName: "", username: "", phone: "", email: "", paymentMethod: "" });
-  const reviewFields: [keyof typeof values, string][] = [["name", copy.name], ["familyName", copy.familyName], ["username", copy.user], ["phone", copy.phone], ["email", copy.email], ["paymentMethod", copy.paymentMethod]];
+  const [values, setValues] = useState({ name: "", username: "", phone: "", email: "", paymentMethod: "" });
+  const reviewFields: [keyof typeof values, string][] = [["name", copy.name], ["username", copy.user], ["phone", copy.phone], ["email", copy.email], ["paymentMethod", copy.paymentMethod]];
   const requiredValuesComplete = values.name.trim().length >= 2
-    && values.familyName.trim().length >= 2
     && values.username.trim().length >= 2
     && values.phone.trim().length >= 6
     && values.email.trim().length > 3
@@ -17,7 +16,6 @@ export function WarrantyForm({ token, copy, action }: { token: string; copy: Cop
 
   return <form className="grid gap-4" onSubmit={(event) => { event.preventDefault(); if (requiredValuesComplete) setReview(true); }}>
     <RequiredInput label={copy.name} type="text" value={values.name} minLength={2} maxLength={160} autoComplete="name" onChange={(value) => setValues({ ...values, name: value })} />
-    <RequiredInput label={copy.familyName} type="text" value={values.familyName} minLength={2} maxLength={160} autoComplete="family-name" onChange={(value) => setValues({ ...values, familyName: value })} />
     <RequiredInput label={copy.user} type="text" value={values.username} minLength={2} maxLength={80} autoComplete="username" onChange={(value) => setValues({ ...values, username: value })} />
     <label className="grid gap-1 font-bold text-[var(--text)]">{copy.paymentMethod} *<select required aria-required="true" value={values.paymentMethod} onChange={(event) => setValues({ ...values, paymentMethod: event.target.value })} className="min-h-12 rounded-xl border border-[var(--border-color)] bg-[var(--page)] px-3"><option value="" disabled>{copy.paymentOptions.placeholder}</option><option value="BaridiMob">{copy.paymentOptions.baridiMob}</option><option value="Binance">{copy.paymentOptions.binance}</option><option value="RedotPay">{copy.paymentOptions.redotPay}</option><option value="Flexy">{copy.paymentOptions.flexy}</option></select></label>
     <RequiredInput label={copy.phone} type="tel" value={values.phone} minLength={6} maxLength={40} autoComplete="tel" onChange={(value) => setValues({ ...values, phone: value })} />
