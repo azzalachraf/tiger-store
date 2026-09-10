@@ -6,7 +6,7 @@ import { getSupabaseServiceClient } from "@/lib/supabase";
 import type { TelegramInterfaceLocale, TelegramRole } from "@/lib/types";
 import { advertisingUsdSchema, productSchema, telegramCallbackDataSchema } from "@/lib/validation";
 import { cardLabel, cardsForPlan, snapchatCardTypes, type SnapchatCardType, type SnapchatPlanMonths } from "@/lib/snapchat-cards";
-import { claimSnapchatCard, clearAvailableRedeemCards, clearTelegramRedeemCardUploadSession, finishSnapchatOperation, getPrivateRedeemCards, getTelegramRedeemCardUploadSession, restoreManuallyUsedRedeemCard, returnReservedRedeemCardToStock, startTelegramRedeemCardUploadSession, syncRedeemInventory, uploadRedeemCardsFromTelegram } from "@/lib/snapchat-operations";
+import { claimSnapchatCard, clearAvailableRedeemCards, clearTelegramRedeemCardUploadSession, finishSnapchatOperation, getPrivateRedeemCards, getTelegramRedeemCardUploadSession, quarantineUsedCardAndClaimReplacement, restoreManuallyUsedRedeemCard, returnReservedRedeemCardToStock, startTelegramRedeemCardUploadSession, syncRedeemInventory, uploadRedeemCardsFromTelegram } from "@/lib/snapchat-operations";
 import { parseTelegramRedeemCardLines } from "@/lib/telegram-card-upload";
 import { completeSnapchatSale, createExternalSnapchatSale } from "@/lib/telegram-warranty";
 import { absoluteUrl } from "@/lib/seo";
@@ -836,6 +836,8 @@ export async function handleTelegramOperationsCallback(input: {
       await reply(String(input.chatId), textFor(locale, `✅ تم اختيار بطاقة ${cardLabel(cardType, locale)}. رابط التفعيل في الرسالة التالية.`, `✅ ${cardLabel(cardType, locale)} card has been chosen. The activation link is in the next message.`), { inline_keyboard: [[
         { text: textFor(locale, "✅ إكمال", "✅ Complete"), callback_data: `op|${operation.operationId}|complete` },
         { text: textFor(locale, "❌ إلغاء", "❌ Cancel"), callback_data: `op|${operation.operationId}|cancel` },
+      ], [
+        { text: textFor(locale, "🚫 الكود مستعمل", "🚫 Code already used"), callback_data: `op|${operation.operationId}|used` },
         { text: textFor(locale, "✏️ لقب", "✏️ Nickname"), callback_data: `nn|${operation.operationId}` },
       ]] });
       await replyPlain(String(input.chatId), activationLink);
@@ -847,7 +849,18 @@ export async function handleTelegramOperationsCallback(input: {
   if (selected[0] === "op") {
     const [, operationId, outcome] = selected;
     try {
-      if (outcome === "complete") {
+      if (outcome === "used") {
+        const replacement = await quarantineUsedCardAndClaimReplacement(operationId, identity.userId);
+        if (!replacement) {
+          await reply(String(input.chatId), textFor(locale, "🚫 حُذف الكود المستعمل نهائياً، ولا يوجد بديل متاح من نفس النوع حالياً.", "🚫 The used code was permanently removed, but no replacement of this type is available."));
+          return;
+        }
+        await reply(String(input.chatId), textFor(locale, "✅ حُذف الكود المستعمل نهائياً وتم اختيار بديل. الرابط في الرسالة التالية.", "✅ The used code was permanently removed and a replacement was selected. Its link is in the next message."), { inline_keyboard: [[
+          { text: textFor(locale, "✅ إكمال", "✅ Complete"), callback_data: `op|${replacement.operationId}|complete` },
+          { text: textFor(locale, "❌ إلغاء", "❌ Cancel"), callback_data: `op|${replacement.operationId}|cancel` },
+        ], [{ text: textFor(locale, "🚫 الكود مستعمل", "🚫 Code already used"), callback_data: `op|${replacement.operationId}|used` }]] });
+        await replyPlain(String(input.chatId), `https://apps.apple.com/redeem?code=${encodeURIComponent(replacement.code)}`);
+      } else if (outcome === "complete") {
         const sale = await completeSnapchatSale({ operationId, adminTelegramUserId: identity.userId });
         await reply(String(input.chatId), textFor(locale, `تم إكمال البيع. أرسل رابط الضمان الخاص للعميل:\n${absoluteUrl(`/w/${sale.token}`)}`, `Sale completed. Send this private warranty link to the customer:\n${absoluteUrl(`/w/${sale.token}`)}`));
       } else {
@@ -892,6 +905,8 @@ export async function handleTelegramOperationsMessage(input: {
       await reply(chatId, textFor(locale, `📝 الطلب: ${rawText}\nاللقب مؤقت ويظهر هنا فقط.`, `📝 Order: ${rawText}\nThis nickname is temporary and appears only here.`), { inline_keyboard: [[
         { text: textFor(locale, "✅ إكمال", "✅ Complete"), callback_data: `op|${nicknameOperationId}|complete` },
         { text: textFor(locale, "❌ إلغاء", "❌ Cancel"), callback_data: `op|${nicknameOperationId}|cancel` },
+      ], [
+        { text: textFor(locale, "🚫 الكود مستعمل", "🚫 Code already used"), callback_data: `op|${nicknameOperationId}|used` },
       ]] });
       return;
     }

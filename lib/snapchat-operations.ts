@@ -220,6 +220,39 @@ export async function finishSnapchatOperation(operationId: string, adminTelegram
   if (error || data !== true) throw new Error("This operation is unavailable.");
 }
 
+export async function quarantineUsedCardAndClaimReplacement(operationId: string, adminTelegramUserId: string) {
+  const client = getSupabaseServiceClient();
+  const { data: operation, error } = await client
+    .from("snapchat_operations")
+    .select("plan_months, card_type")
+    .eq("id", operationId)
+    .eq("admin_telegram_user_id", adminTelegramUserId)
+    .eq("status", "active")
+    .maybeSingle();
+  if (error || !operation) throw new Error("This operation is unavailable.");
+
+  // The existing RPC atomically makes the exposed card unavailable. Re-label
+  // the operation as cancelled afterwards so it never counts as a sale.
+  await finishSnapchatOperation(operationId, adminTelegramUserId, "completed");
+  const { error: relabelError } = await client
+    .from("snapchat_operations")
+    .update({ status: "cancelled", completed_at: null, cancelled_at: new Date().toISOString() })
+    .eq("id", operationId)
+    .eq("admin_telegram_user_id", adminTelegramUserId)
+    .eq("status", "completed");
+  if (relabelError) throw new Error("The used card was secured but the operation needs review.");
+
+  try {
+    return await claimSnapchatCard(
+      adminTelegramUserId,
+      Number(operation.plan_months) as SnapchatPlanMonths,
+      operation.card_type as SnapchatCardType,
+    );
+  } catch {
+    return null;
+  }
+}
+
 /** Owner-only recovery for a card that is still reserved in an active operation.
  * The code itself is never returned or logged. Completed cards are deliberately
  * excluded because a code that may have been redeemed must never be reissued. */
