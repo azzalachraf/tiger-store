@@ -10,6 +10,9 @@ const nextConfig: NextConfig = {
     },
   },
   images: {
+    // Temporary mitigation: do not expose the vulnerable AVIF decoder endpoint.
+    // Remove only after both Next and sharp advisory patches are installable.
+    unoptimized: true,
     localPatterns: [
       {
         pathname: "/hero/**",

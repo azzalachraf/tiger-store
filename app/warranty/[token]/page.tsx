@@ -4,7 +4,8 @@ import { cookies } from "next/headers";
 import { CheckCircle2, Download, ShieldCheck } from "lucide-react";
 import { getOrderById, getProductBySlug } from "@/lib/admin-store";
 import { claimWarrantyCertificateAction } from "@/app/warranty/actions";
-import { directWarrantyOrderId, warrantyCertificateCode, warrantyClaimCookieName, warrantyEndDate, verifyWarrantyClaimCookie, verifyWarrantyLink } from "@/lib/warranty";
+import { directWarrantyOrderId, warrantyCertificateCode, warrantyEndDate, verifyWarrantyLink } from "@/lib/warranty";
+import { getLegacyClaim } from "@/lib/legacy-warranty-claim";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Warranty certificate", robots: { index: false, follow: false } };
@@ -27,7 +28,7 @@ export default async function WarrantyPage({ params }: WarrantyPageProps) {
   if (!item) notFound();
 
   const cookieStore = await cookies();
-  const recipientName = verifyWarrantyClaimCookie(payload, cookieStore.get(warrantyClaimCookieName(token))?.value);
+  const recipientName = await getLegacyClaim(token);
   const savedLocale = cookieStore.get("tiger-store-locale")?.value;
   const locale = savedLocale === "fr" || savedLocale === "en" ? savedLocale : "ar";
   const isArabic = locale === "ar";

@@ -1,0 +1,12 @@
+import { createRoot } from "react-dom/client";
+import { WarrantyForm } from "../app/w/[token]/WarrantyForm";
+import { ProductDetails } from "../components/ProductDetails";
+import { LocaleProvider } from "../components/LocaleProvider";
+import { products } from "../data/products";
+const params=new URLSearchParams(location.search);
+const locale=params.get("lang")==="fr"?"fr":params.get("lang")==="en"?"en":"ar";
+document.documentElement.lang=locale;
+document.documentElement.dir=locale==="ar"?"rtl":"ltr";
+document.documentElement.classList.toggle("dark",params.get("dark")==="1");
+const copy={review:"Vérifiez vos informations",name:"Nom et prénom",user:"Instagram",phone:"Téléphone",email:"E-mail",paymentMethod:"Mode de paiement",confirm:"Confirmer",back:"Retour",next:"Vérifier",paymentOptions:{placeholder:"Choisir",baridiMob:"BaridiMob",binance:"Binance",redotPay:"RedotPay",flexy:"Flexy"}};
+createRoot(document.getElementById("root")!).render(<LocaleProvider locale={locale}><main className="store-shell mx-auto max-w-6xl p-4">{params.get("view")==="warranty"?<WarrantyForm token="synthetic-token" copy={copy} action={async(form)=>{document.documentElement.dataset.submitted=String(form.get("paymentMethod"));}}/>:<ProductDetails product={products.find(p=>p.slug==="snapchat-plus")!}/>}</main></LocaleProvider>);

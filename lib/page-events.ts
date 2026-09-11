@@ -1,6 +1,7 @@
 import "server-only";
 
 import { getSupabaseServiceClient } from "@/lib/supabase";
+import { readAll } from "@/lib/read-all";
 
 const supabaseService = getSupabaseServiceClient();
 
@@ -42,7 +43,7 @@ export async function countEventsByType(
   if (startDate) query = query.gte("created_at", startDate);
   if (endDate) query = query.lte("created_at", endDate);
 
-  const { data, error } = await query;
+  const { data, error } = await readAll(query.order("id"));
   if (error || !data) return {};
 
   const counts: Record<string, number> = {};
@@ -66,7 +67,7 @@ export async function getTrafficOverview(range?: { startIso: string; endExclusiv
     .select("id, event_type, session_id")
     .in("event_type", ["page_view", "purchase_completed"]);
   if (range) query = query.gte("created_at", range.startIso).lt("created_at", range.endExclusiveIso);
-  const { data, error } = await query;
+  const { data, error } = await readAll(query.order("id"));
 
   if (error || !data) return { visitors: 0, conversions: 0, conversionRate: 0 };
 
@@ -121,7 +122,7 @@ export async function getAttributionData(
   if (startDate) query = query.gte("createdAt", startDate);
   if (endDate) query = query.lte("createdAt", endDate);
 
-  const { data, error } = await query;
+  const { data, error } = await readAll(query.order("id"));
   if (error || !data) return { bySource: [], byCampaign: [], byMedium: [] };
 
   type Row = { utm_source?: string; utm_medium?: string; utm_campaign?: string; total: number; status: string };

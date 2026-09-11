@@ -3,7 +3,8 @@
 import { revalidatePath } from "next/cache";
 import { requireAdminAction } from "@/lib/admin-auth";
 import { adminFinanceAdjustmentSchema, adminPaymentSchema, adminPaymentScheduleSchema, advertisingSpendSchema, financeSettingsSchema } from "@/lib/validation";
-import { getAdminFinanceSummary, saveFinanceSettings, type FinanceSettings } from "@/lib/finance";
+import { saveFinanceSettings, type FinanceSettings } from "@/lib/finance";
+import { z } from "zod";
 import { getSupabaseServiceClient } from "@/lib/supabase";
 import { snapchatCardTypes, type SnapchatCardType } from "@/lib/snapchat-cards";
 
@@ -19,13 +20,9 @@ export async function addAdminAdjustmentAction(formData: FormData) { await requi
 export async function markAdminPaidAction(formData: FormData) {
   await requireAdminAction();
   const input = adminPaymentSchema.parse({ adminId: form(formData, "adminId"), amountDzd: form(formData, "amountDzd"), note: form(formData, "note") });
-  const summary = await getAdminFinanceSummary(input.adminId);
-  if (input.amountDzd > summary.remainingDzd) throw new Error("Payment cannot exceed the remaining credit.");
-  const { error } = await getSupabaseServiceClient().from("admin_payments").insert({
-    admin_telegram_user_id: input.adminId,
-    amount_dzd: input.amountDzd,
-    note: input.note,
-    settles_cycle: input.amountDzd === summary.remainingDzd,
+  const key = z.string().uuid().parse(form(formData, "requestKey"));
+  const { error } = await getSupabaseServiceClient().rpc("record_admin_payment_atomic", {
+    p_admin: input.adminId, p_amount: input.amountDzd, p_note: input.note, p_key: key,
   });
   if (error) throw new Error("Payment could not be saved.");
   revalidatePath("/admin/finance");

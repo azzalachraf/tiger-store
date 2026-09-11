@@ -3,7 +3,7 @@ import "server-only";
 import { getServerEnv } from "@/lib/env";
 import type { AdminOrder } from "@/lib/types";
 
-export async function notifyOwnerOfReceipt(order: AdminOrder) {
+export async function notifyOwnerOfReceipt(order: AdminOrder, strict = false) {
   const env = getServerEnv();
   if (!env.WHATSAPP_ACCESS_TOKEN || !env.WHATSAPP_PHONE_NUMBER_ID || !env.WHATSAPP_OWNER_PHONE) {
     console.warn("WhatsApp owner notification is not configured; order was saved without a notification.");
@@ -23,11 +23,13 @@ export async function notifyOwnerOfReceipt(order: AdminOrder) {
   try {
     const response = await fetch(`https://graph.facebook.com/v21.0/${env.WHATSAPP_PHONE_NUMBER_ID}/messages`, {
       method: "POST",
+      signal: AbortSignal.timeout(8000),
       headers: { Authorization: `Bearer ${env.WHATSAPP_ACCESS_TOKEN}`, "Content-Type": "application/json" },
       body: JSON.stringify({ messaging_product: "whatsapp", to: env.WHATSAPP_OWNER_PHONE.replace(/\D/g, ""), type: "text", text: { body } }),
     });
-    if (!response.ok) console.warn("WhatsApp owner notification failed; order remains saved.");
+    if (!response.ok) throw new Error("WhatsApp delivery failed.");
   } catch {
+    if (strict) throw new Error("WhatsApp delivery failed.");
     console.warn("WhatsApp owner notification failed; order remains saved.");
   }
 }

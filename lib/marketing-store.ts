@@ -1,7 +1,6 @@
-"use server";
+import "server-only";
 
 import { getSupabaseServiceClient } from "@/lib/supabase";
-import { logger } from "@/lib/logger";
 import type { MarketingConfig } from "@/lib/types";
 import { marketingConfigSchema } from "@/lib/validation";
 
@@ -25,19 +24,16 @@ export async function getMarketingConfig(): Promise<MarketingConfig> {
       .maybeSingle();
 
     if (error) {
-      logger.error("getMarketingConfig failed", error);
-      return defaultConfig;
+      throw new Error("Marketing configuration unavailable.");
     }
     if (!data) return defaultConfig;
     const parsed = marketingConfigSchema.safeParse(data);
     if (!parsed.success) {
-      logger.error("getMarketingConfig validation failed", parsed.error);
-      return defaultConfig;
+      throw new Error("Marketing configuration invalid.");
     }
     return parsed.data;
-  } catch (error) {
-    logger.error("getMarketingConfig unexpected failure", error);
-    return defaultConfig;
+  } catch {
+    throw new Error("Marketing configuration unavailable.");
   }
 }
 
@@ -48,7 +44,7 @@ export async function saveMarketingConfig(
   const { error } = await supabaseService
     .from("marketing_config")
     .upsert(payload, { onConflict: "id" });
-  if (error) throw new Error(`saveMarketingConfig failed: ${error.message}`);
+  if (error) throw new Error("Marketing configuration could not be saved.");
 }
 
 

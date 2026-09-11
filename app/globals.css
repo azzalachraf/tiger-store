@@ -10,6 +10,8 @@ html.dark .store-shell .text-\[\#C54E00\],html.dark .store-shell .text-tiger-gol
 html.dark .store-shell .text-emerald-700,html.dark .store-shell .text-\[\#16803C\] { color: #61D889 !important; }
 html.dark .store-shell .text-\[\#C62828\] { color: #FF8B8B !important; }
 html.dark .trust-section--quiet { background: #2A1B12; }
+.product-policy-panel { background-color: #FFF2E6; }
+html.dark .product-policy-panel { background-color: #2A1B12; }
 * { border-color: #DDD7CE; }
 body { min-height: 100vh; background: var(--page); color: var(--text); font-family: var(--font-arabic), "Segoe UI", Arial, sans-serif; text-rendering: optimizeLegibility; }
 ::selection { background: #FFF1E6; color: #151515; }

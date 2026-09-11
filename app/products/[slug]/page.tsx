@@ -9,6 +9,7 @@ import { LocalizedText } from "@/components/LocalizedText";
 import { getProductBySlug, getProducts } from "@/lib/admin-store";
 import { absoluteUrl, createPageMetadata, serializeJsonLd } from "@/lib/seo";
 import { Product } from "@/lib/types";
+import { productValue } from "@/lib/product-localization";
 
 export const dynamic = "force-dynamic";
 
@@ -17,7 +18,7 @@ type PageProps = {
 };
 
 function productDescription(product: Product, locale: "ar" | "en" | "fr" = "ar") {
-  return locale === "ar" ? product.shortDescriptionAr || product.shortDescriptionEn : product.shortDescriptionEn || product.shortDescriptionAr;
+  return productValue(product, locale, "description");
 }
 
 function productOffersJsonLd(product: Product, url: string) {

@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { FormEvent, useEffect, useMemo, useState } from "react";
+import { FormEvent, useEffect, useMemo, useRef, useState } from "react";
 import {
   CheckCircle2,
   Home,
@@ -26,7 +26,8 @@ import type {
 } from "@/lib/types";
 import { formatPriceDZD } from "@/lib/utils";
 import { useLocale } from "@/lib/useLocale";
-import { getTrackingSessionId } from "@/components/PageTracker";
+import { getTrackingSessionId, readStoredUtm } from "@/components/PageTracker";
+import { trackPurchase } from "@/lib/meta-pixel";
 
 const standardPaymentMethods: PaymentMethodId[] = [
   "BaridiMob",
@@ -66,6 +67,7 @@ export function CheckoutView({
   const [orderCode, setOrderCode] = useState("");
   const [error, setError] = useState("");
   const [saving, setSaving] = useState(false);
+  const checkoutRequest = useRef<string | null>(null);
   const { locale } = useLocale();
   const ar = locale === "ar";
   const fr = locale === "fr";
@@ -232,20 +234,6 @@ export function CheckoutView({
     return () => window.clearTimeout(timer);
   }, [orderCode, settings.instagramUrl, step]);
 
-  useEffect(() => {
-    if (step !== "complete" || !orderCode) return;
-
-    fetch("/api/track", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        event_type: "purchase_completed",
-        page_url: "/checkout",
-        session_id: getTrackingSessionId(),
-      }),
-    }).catch(() => {});
-  }, [orderCode, step]);
-
   async function sendReceipt(event?: FormEvent<HTMLFormElement>) {
     event?.preventDefault();
     if (!receipt) {
@@ -266,6 +254,10 @@ export function CheckoutView({
     setError("");
     try {
       const form = new FormData();
+      checkoutRequest.current ??= crypto.randomUUID();
+      form.set("requestKey",checkoutRequest.current);
+      form.set("sessionId",getTrackingSessionId());
+      form.set("attribution",JSON.stringify(readStoredUtm()));
       form.set("customerName", name);
       form.set("phone", phone);
       form.set("notes", notes);
@@ -290,6 +282,7 @@ export function CheckoutView({
         return;
       }
       setOrderCode(result.order.id);
+      trackPurchase(result.order.id,result.order.total,items);
       if (!lockedProductLink) {
         writeCart([]);
         setItems([]);

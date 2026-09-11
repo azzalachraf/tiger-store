@@ -65,17 +65,19 @@ function formatOrderMessage(order: AdminOrder) {
 
 async function sendTelegramMessage(token: string, body: Record<string, unknown>) {
   return fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
+    signal: AbortSignal.timeout(8000),
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(body),
   });
 }
 
-async function sendTelegramReceipt(token: string, chatId: string, order: AdminOrder) {
+async function sendTelegramReceipt(token: string, chatId: string, order: AdminOrder, strict = false) {
   if (!order.receiptPath) return;
 
   const receipt = await getSupabaseServiceClient().storage.from("receipts").download(order.receiptPath);
   if (receipt.error || !receipt.data) {
+    if (strict) throw new Error("Receipt delivery failed.");
     console.warn("Telegram receipt attachment could not be downloaded; order notification was sent without it.");
     return;
   }
@@ -88,16 +90,18 @@ async function sendTelegramReceipt(token: string, chatId: string, order: AdminOr
   formData.set("document", new Blob([await receipt.data.arrayBuffer()], { type: receipt.data.type || "application/octet-stream" }), `receipt-${order.id}.${extension}`);
 
   const response = await fetch(`https://api.telegram.org/bot${token}/sendDocument`, {
+    signal: AbortSignal.timeout(8000),
     method: "POST",
     body: formData,
   });
 
   if (!response.ok) {
+    if (strict) throw new Error("Receipt delivery failed.");
     console.warn("Telegram receipt attachment failed; order notification was sent without it.");
   }
 }
 
-export async function notifyTelegramOfOrder(order: AdminOrder) {
+export async function notifyTelegramOfOrder(order: AdminOrder, strict = false) {
   const env = getServerEnv();
   if (!env.TELEGRAM_BOT_TOKEN || !env.TELEGRAM_CHAT_ID) {
     console.warn("Telegram order notification is not configured; order was saved without a Telegram message.");
@@ -113,12 +117,14 @@ export async function notifyTelegramOfOrder(order: AdminOrder) {
     });
 
     if (!response.ok) {
+      if (strict) throw new Error("Telegram delivery failed.");
       console.warn("Telegram order notification failed; order remains saved.");
       return;
     }
 
-    await sendTelegramReceipt(env.TELEGRAM_BOT_TOKEN, env.TELEGRAM_CHAT_ID, order);
+    await sendTelegramReceipt(env.TELEGRAM_BOT_TOKEN, env.TELEGRAM_CHAT_ID, order, strict);
   } catch {
+    if (strict) throw new Error("Telegram delivery failed.");
     console.warn("Telegram order notification failed; order remains saved.");
   }
 }

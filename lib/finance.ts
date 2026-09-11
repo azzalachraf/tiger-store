@@ -4,6 +4,7 @@ import { getSupabaseServiceClient } from "@/lib/supabase";
 import { snapchatCardTypes, type SnapchatCardType, type SnapchatPlanMonths } from "@/lib/snapchat-cards";
 import { getOrders } from "@/lib/admin-store";
 import { adminOrderSchema } from "@/lib/validation";
+import { readAll, readInBatches } from "@/lib/read-all";
 import { calculateAdminCycleStatistics, type AdminCycleStatistics } from "@/lib/admin-cycle-statistics";
 
 export { calculateAdminCycleStatistics, type AdminCycleStatistics } from "@/lib/admin-cycle-statistics";
@@ -60,7 +61,7 @@ export type AdminFinanceSummary = { adminId: string; completedOrders: number; co
 export async function getAdminCycleStatistics(adminId: string): Promise<AdminCycleStatistics> {
   const client = getSupabaseServiceClient();
   const [{ data: sales, error: salesError }, { data: settlements, error: settlementsError }] = await Promise.all([
-    client.from("finance_sales").select("commission_dzd, completed_at").eq("admin_telegram_user_id", adminId),
+    readAll(client.from("finance_sales").select("commission_dzd, completed_at").eq("admin_telegram_user_id", adminId).order("order_id")),
     client.from("admin_payments").select("paid_at").eq("admin_telegram_user_id", adminId).eq("settles_cycle", true).order("paid_at", { ascending: false }).limit(1),
   ]);
   if (salesError || settlementsError) throw new Error("Admin cycle statistics could not be read.");
@@ -70,9 +71,9 @@ export async function getAdminFinanceSummary(adminId: string): Promise<AdminFina
   const client = getSupabaseServiceClient();
   const [{ data: user, error: userError }, { data: sales, error: salesError }, { data: payments, error: paymentsError }, { data: adjustments, error: adjustmentsError }, settings] = await Promise.all([
     client.from("telegram_users").select("work_started_at, next_payment_date").eq("telegram_user_id", adminId).maybeSingle(),
-    client.from("finance_sales").select("commission_dzd").eq("admin_telegram_user_id", adminId),
-    client.from("admin_payments").select("amount_dzd").eq("admin_telegram_user_id", adminId),
-    client.from("financial_adjustments").select("amount_dzd").eq("recipient_telegram_user_id", adminId),
+    readAll(client.from("finance_sales").select("commission_dzd").eq("admin_telegram_user_id", adminId).order("order_id")),
+    readAll(client.from("admin_payments").select("amount_dzd").eq("admin_telegram_user_id", adminId).order("id")),
+    readAll(client.from("financial_adjustments").select("amount_dzd").eq("recipient_telegram_user_id", adminId).order("id")),
     getFinanceSettings(),
   ]);
   if (userError || salesError || paymentsError || adjustmentsError) throw new Error("Admin finance summary could not be read.");
@@ -106,16 +107,16 @@ export type AdminClientSheetRow = {
  */
 export async function getAdminClientSheet(adminId: string): Promise<AdminClientSheetRow[]> {
   const client = getSupabaseServiceClient();
-  const { data: sales, error } = await client
+  const { data: sales, error } = await readAll(client
     .from("finance_sales")
     .select("order_id, plan_months, revenue_dzd, commission_dzd, completed_at")
     .eq("admin_telegram_user_id", adminId)
-    .order("completed_at", { ascending: false });
+    .order("completed_at", { ascending: false }).order("order_id"));
   if (error) throw new Error("Admin client sheet could not be loaded.");
 
   const orderIds = (sales ?? []).map((sale) => String(sale.order_id));
   const { data: orderData, error: ordersError } = orderIds.length
-    ? await client.from("orders").select("*").in("id", orderIds)
+    ? await readInBatches(orderIds, ids => client.from("orders").select("*").in("id", ids).order("id"))
     : { data: [], error: null };
   if (ordersError) throw new Error("Admin client orders could not be loaded.");
   const orders = adminOrderSchema.array().catch([]).parse(orderData ?? []);
@@ -142,10 +143,10 @@ export async function getAdminClientSheet(adminId: string): Promise<AdminClientS
 export async function getFinanceReports() {
   const client = getSupabaseServiceClient();
   const [{ data: sales, error: salesError }, { data: admins, error: adminsError }, { data: cards, error: cardsError }, { data: advertising, error: advertisingError }, settings] = await Promise.all([
-    client.from("finance_sales").select("order_id, admin_telegram_user_id, plan_months, card_type, revenue_dzd, commission_dzd, card_cost_usd_cents, card_cost_dzd, gross_profit_dzd, completed_at").order("completed_at", { ascending: true }),
-    client.from("telegram_users").select("telegram_user_id, first_name, username, role, work_started_at, next_payment_date").in("role", ["owner", "admin"]),
-    client.from("redeem_cards").select("card_type, status"),
-    client.from("advertising_spend").select("spend_date, platform, campaign, amount_dzd, amount_usd_cents, note").order("spend_date", { ascending: false }),
+    readAll(client.from("finance_sales").select("order_id, admin_telegram_user_id, plan_months, card_type, revenue_dzd, commission_dzd, card_cost_usd_cents, card_cost_dzd, gross_profit_dzd, completed_at").order("completed_at", { ascending: true }).order("order_id")),
+    readAll(client.from("telegram_users").select("telegram_user_id, first_name, username, role, work_started_at, next_payment_date").order("telegram_user_id")),
+    readAll(client.from("redeem_cards").select("card_type, status").order("id")),
+    readAll(client.from("advertising_spend").select("spend_date, platform, campaign, amount_dzd, amount_usd_cents, note").order("spend_date", { ascending: false }).order("id")),
     getFinanceSettings(),
   ]);
   if (salesError || adminsError || cardsError || advertisingError) throw new Error("Finance reports could not be read.");

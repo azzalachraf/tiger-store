@@ -93,6 +93,7 @@ export async function sendConversionEvent(params: {
   try {
     const url = `https://graph.facebook.com/${GRAPH_API_VERSION}/${pixelId}/events`;
     const response = await fetch(url, {
+      signal: AbortSignal.timeout(8000),
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -102,15 +103,11 @@ export async function sendConversionEvent(params: {
     });
 
     if (!response.ok) {
-      const body = await response.text();
-      console.error("Meta CAPI error:", response.status, body);
-      return { success: false, error: `HTTP ${response.status}: ${body}` };
+      return { success: false, error: `HTTP ${response.status}` };
     }
 
     return { success: true };
-  } catch (err) {
-    const message = err instanceof Error ? err.message : String(err);
-    console.error("Meta CAPI exception:", message);
-    return { success: false, error: message };
+  } catch {
+    return { success: false, error: "Delivery unavailable" };
   }
 }

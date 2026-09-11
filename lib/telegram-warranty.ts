@@ -7,6 +7,7 @@ import type { CartItem, ProductPriceOption } from "@/lib/types";
 import type { SnapchatCardType, SnapchatPlanMonths } from "@/lib/snapchat-cards";
 import { cardCostDzd, getFinanceSettings } from "@/lib/finance";
 import { getAdminCommissionDzd } from "@/lib/admin-compensation";
+import { readInBatches } from "@/lib/read-all";
 
 export type TelegramWarrantyRecord = { id: string; order_id: string; certificate_code: string; recipient_name: string; customer_username: string | null; activation_platform: string | null; customer_details_complete: boolean; form_submitted_at: string | null; balance_warning_required: boolean; balance_warning_acknowledged_at: string | null; starts_at: string; ends_at: string; covered_days: number; option_id: string };
 function tokenHashes(token: string) {
@@ -191,7 +192,7 @@ export async function createExternalSnapchatSale(input: { planMonths: SnapchatPl
   return { orderId, token };
 }
 
-export async function completeSnapchatSale(input: { operationId: string; adminTelegramUserId: string; totalDzd?: number }) {
+export async function completeSnapchatSale(input: { operationId: string; adminTelegramUserId: string; totalDzd?: number; websiteOrderId?: string }) {
   const { data: operation } = await getSupabaseServiceClient().from("snapchat_operations").select("plan_months, card_type, admin_telegram_user_id, status").eq("id", input.operationId).eq("admin_telegram_user_id", input.adminTelegramUserId).eq("status", "active").maybeSingle();
   if (!operation) throw new Error("This operation is unavailable.");
   const planMonths = Number(operation.plan_months) as SnapchatPlanMonths;
@@ -210,6 +211,16 @@ export async function completeSnapchatSale(input: { operationId: string; adminTe
   const item: CartItem = { id: `${product.id}:${offer.id}`, productId: product.id, slug: product.slug, name: product.name, nameAr: product.nameAr, image: product.image, option: offer.label, optionId: offer.id, optionAr: offer.labelAr, duration: offer.duration, durationAr: offer.durationAr, price: totalDzd, quantity: 1 };
   const orderId = `TS-${crypto.randomUUID().replace(/-/g, "").slice(0, 10).toUpperCase()}`;
   const certificateCode = `TW-${randomBytes(6).toString("hex").toUpperCase()}`;
+  if (input.websiteOrderId) {
+    const { error } = await getSupabaseServiceClient().rpc("complete_website_sale", {
+      p_operation: input.operationId, p_admin: input.adminTelegramUserId, p_order: input.websiteOrderId,
+      p_credit: commissionDzd, p_cost_usd: settings.cardCostsUsdCents[cardType], p_cost: cardCostDzd(settings, cardType),
+      p_code: certificateCode, p_hash: tokenHashes(token)[0], p_hint: token.slice(-6),
+      p_days: Math.max(1, Math.ceil((endsAt.getTime()-now.getTime())/86400000)), p_end: endsAt.toISOString(), p_warning: cardType === "inr_100" || cardType === "inr_199",
+    });
+    if (error) throw new Error("Website fulfillment could not be completed.");
+    return { orderId: input.websiteOrderId, token };
+  }
   const { error } = await getSupabaseServiceClient().rpc("complete_snapchat_operation_sale", { p_operation_id: input.operationId, p_admin_telegram_user_id: input.adminTelegramUserId, p_order_id: orderId, p_product_item: item, p_total: totalDzd, p_commission: commissionDzd, p_card_cost_usd_cents: settings.cardCostsUsdCents[cardType], p_card_cost_dzd: cardCostDzd(settings, cardType), p_certificate_code: certificateCode, p_token_hash: tokenHashes(token)[0], p_token_hint: token.slice(-6), p_covered_days: Math.max(1, Math.ceil((endsAt.getTime() - now.getTime()) / 86_400_000)), p_ends_at: endsAt.toISOString(), p_balance_warning_required: cardType === "inr_100" || cardType === "inr_199" });
   if (error) throw new Error("The sale could not be completed.");
   return { orderId, token };
@@ -231,12 +242,12 @@ export async function getCompletedTelegramWarrantyDetails(orderIds: string[]): P
   const uniqueOrderIds = [...new Set(orderIds.filter(Boolean))];
   if (!uniqueOrderIds.length) return new Map();
 
-  const { data, error } = await getSupabaseServiceClient()
+  const { data, error } = await readInBatches(uniqueOrderIds, ids => getSupabaseServiceClient()
     .from("warranty_certificates")
     .select("order_id, customer_username, activation_platform, form_submitted_at")
-    .in("order_id", uniqueOrderIds)
+    .in("order_id", ids)
     .eq("customer_details_complete", true)
-    .not("form_submitted_at", "is", null);
+    .not("form_submitted_at", "is", null).order("id"));
   if (error) throw new Error("Warranty completion state could not be loaded.");
   const details = new Map<string, CompletedTelegramWarrantyDetails>();
   for (const row of data ?? []) {
@@ -253,9 +264,7 @@ export async function submitTelegramWarranty(token: string, input: { name: strin
   const warranty = await findTelegramWarranty(token);
   if (!warranty) throw new Error("Warranty form is unavailable.");
   const client = getSupabaseServiceClient();
-  const { error: paymentError } = await client.from("orders").update({ paymentMethod: input.paymentMethod }).eq("id", warranty.order_id);
-  if (paymentError) throw new Error("Warranty payment method could not be saved.");
-  const { error } = await client.rpc("submit_snapchat_warranty_form", { p_token_hash: warranty.public_token_hash, p_name: input.name, p_username: input.username, p_platform: input.platform, p_phone: input.phone, p_email: input.email });
+  const { error } = await client.rpc("submit_snapchat_warranty_form_v2", { p_token_hash: warranty.public_token_hash, p_name: input.name, p_username: input.username, p_platform: input.platform, p_phone: input.phone, p_email: input.email, p_payment_method: input.paymentMethod });
   if (error) throw new Error("Warranty form is unavailable.");
 }
 

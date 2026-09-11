@@ -1,14 +1,17 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { getProductBySlug, saveOrder } from "@/lib/admin-store";
+import { getProductBySlug } from "@/lib/admin-store";
+import { createHmac } from "node:crypto";
+import { after } from "next/server";
+import { headers } from "next/headers";
+import { getServerEnv } from "@/lib/env";
+import { enforceRateLimit } from "@/lib/request-security";
+import { deliverNotificationJobs } from "@/lib/notification-jobs";
 import { normalizeAlgerianPhone } from "@/lib/stock-alerts";
 import { receiptOrderInputSchema } from "@/lib/validation";
 import { getSupabaseServiceClient } from "@/lib/supabase";
 import type { AdminOrder, CartItem, Product, ProductPriceOption } from "@/lib/types";
-import { notifyTelegramOfOrder } from "@/lib/telegram-notifications";
-import { notifyOwnerOfReceipt } from "@/lib/whatsapp-notifications";
-import { logger } from "@/lib/logger";
 
 const MAX_RECEIPT_BYTES = 5 * 1024 * 1024;
 const receiptTypes = new Map<string, string>([["image/jpeg", "jpg"], ["image/png", "png"], ["image/webp", "webp"]]);
@@ -40,9 +43,16 @@ async function createReceiptOrder(formData: FormData) {
   const receipt = formData.get("receipt");
   if (!(receipt instanceof File) || receipt.size === 0 || receipt.size > MAX_RECEIPT_BYTES || !receiptTypes.has(receipt.type)) throw new Error("Upload a PNG, JPG, or WebP receipt no larger than 5 MB.");
   const parsed = receiptOrderInputSchema.parse({
+    requestKey: formData.get("requestKey"), sessionId: formData.get("sessionId") || undefined,
+    attribution: JSON.parse(String(formData.get("attribution") ?? "{}")),
     customerName: formData.get("customerName"), phone: formData.get("phone"), notes: formData.get("notes"), paymentMethod: formData.get("paymentMethod"),
     lines: JSON.parse(String(formData.get("lines") ?? "[]")),
   });
+  const client = getSupabaseServiceClient();
+  const existing = await client.from("orders").select("id,total").eq("request_key",parsed.requestKey).maybeSingle();
+  if (existing.error) throw new Error("Checkout unavailable.");
+  if (existing.data) return { id: String(existing.data.id), total: Number(existing.data.total) };
+  await enforceRateLimit("checkout", (await headers()).get("x-forwarded-for")?.split(",")[0]?.trim() ?? "unknown", 6, 600);
   const phone = normalizeAlgerianPhone(parsed.phone);
   if (!phone) throw new Error("Enter a valid Algerian mobile number.");
   const bytes = new Uint8Array(await receipt.arrayBuffer());
@@ -53,7 +63,7 @@ async function createReceiptOrder(formData: FormData) {
     throw new Error("Flexy is available only for Snapchat Plus.");
   }
   const total = products.reduce((sum, item) => sum + item.price * item.quantity, 0);
-  const id = `TS-${crypto.randomUUID().replaceAll("-", "").slice(0, 10).toUpperCase()}`;
+  const id = `TS-${createHmac("sha256",getServerEnv().ENCRYPTION_KEY).update(`checkout:${parsed.requestKey}`).digest("hex").slice(0,20).toUpperCase()}`;
   const extension = receiptTypes.get(receipt.type)!;
   const receiptPath = `orders/${id}/${crypto.randomUUID()}.${extension}`;
   const storage = getSupabaseServiceClient().storage.from("receipts");
@@ -61,23 +71,24 @@ async function createReceiptOrder(formData: FormData) {
   if (uploaded.error) throw new Error("Unable to store the receipt. Please try again.");
 
   const order: AdminOrder = { id, customerName: parsed.customerName, phone, email: "", products, paymentMethod: parsed.paymentMethod, total, notes: parsed.notes, status: "pending", createdAt: new Date().toISOString(), receiptPath, receiptUploadedAt: new Date().toISOString() };
-  try {
-    await saveOrder(order);
-  } catch {
+  const saved = await client.from("orders").insert({ ...order, ...parsed.attribution, request_key: parsed.requestKey, tracking_session_id: parsed.sessionId ?? null }).select("id,total").single();
+  if (saved.error) {
     await storage.remove([receiptPath]);
+    if (saved.error.code === "23505") {
+      const duplicate = await client.from("orders").select("id,total").eq("request_key",parsed.requestKey).single();
+      if (!duplicate.error) return {id:String(duplicate.data.id),total:Number(duplicate.data.total)};
+    }
     throw new Error("Unable to save the order. Please try again.");
   }
-  await notifyOwnerOfReceipt(order);
-  await notifyTelegramOfOrder(order);
+  after(async () => { await deliverNotificationJobs().catch(() => {}); });
   revalidatePath("/admin", "layout");
-  return { id: order.id, total: order.total };
+  return { id: String(saved.data.id), total: Number(saved.data.total) };
 }
 
 export async function submitReceiptOrderAction(formData: FormData) {
   try {
     return { ok: true as const, order: await createReceiptOrder(formData) };
   } catch (error) {
-    logger.error("checkout receipt order failed", error);
     const code = error instanceof Error && error.message === "Enter a valid Algerian mobile number." ? "invalid_phone" : "save_failed";
     return { ok: false as const, code };
   }

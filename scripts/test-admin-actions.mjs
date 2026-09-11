@@ -43,7 +43,7 @@ const mocks = {
     record +
     `export const getAdminFinanceSummary=async()=>({remainingDzd:1000});export const getFinanceSettings=async()=>({usdDzdRate:250});export const saveFinanceSettings=record('saveFinanceSettings');`,
   "@/lib/marketing-store":
-    record + `export const saveMarketingConfig=record('saveMarketingConfig');`,
+    record + `export const getMarketingConfig=async()=>({meta_capi_token:'fixture-existing-token'});export const saveMarketingConfig=record('saveMarketingConfig');`,
   "@/lib/snapchat-operations":
     record +
     [
@@ -62,7 +62,7 @@ const mocks = {
   "@/lib/product-checkout-link":
     record +
     `export const createProductCheckoutLink=async input=>{s.calls.push({name:'checkout',args:[input]});return 'fixture-token';};`,
-  "@/lib/supabase": `const s=globalThis.__adminTest;export function getSupabaseServiceClient(){return {from(table){const q={select(){return q},order(){return q},range(a,b){s.ranges.push([a,b]);return Promise.resolve({data:s.rows.slice(a,b+1),error:s.error});},insert(v){s.calls.push({name:table,args:[v]});return q;},update(v){s.calls.push({name:table,args:[v]});return q;},eq(k,v){s.predicates.push([k,v]);return q;},in(){return q;},then(resolve,reject){return Promise.resolve({data:table==="telegram_users"?[{telegram_user_id:"12345"}]:[],count:s.activeCount,error:s.error}).then(resolve,reject);}};return q;}};}`,
+  "@/lib/supabase": `const s=globalThis.__adminTest;export function getSupabaseServiceClient(){return {async rpc(name,args){s.calls.push({name,args:[args]});return {error:args.p_amount>1000?{message:'overrun'}:null};},from(table){const q={select(){return q},order(){return q},range(a,b){s.ranges.push([a,b]);return Promise.resolve({data:s.rows.slice(a,b+1),error:s.error});},insert(v){s.calls.push({name:table,args:[v]});return q;},update(v){s.calls.push({name:table,args:[v]});return q;},eq(k,v){s.predicates.push([k,v]);return q;},in(){return q;},then(resolve,reject){return Promise.resolve({data:table==="telegram_users"?[{telegram_user_id:"12345"}]:[],count:s.activeCount,error:s.error}).then(resolve,reject);}};return q;}};}`,
 };
 const groups = [
   "orders",
@@ -277,15 +277,17 @@ await modules.group4.addAdminAdjustmentAction(
   data({ adminId: "12345", amountDzd: -100, reason: "Fixture adjustment" }),
 );
 await modules.group4.markAdminPaidAction(
-  data({ adminId: "12345", amountDzd: 1000 }),
+  data({ adminId: "12345", amountDzd: 1000, requestKey: "00000000-0000-4000-8000-000000000001" }),
 );
-assert.equal(state.calls.at(-1).args[0].settles_cycle, true);
+assert.equal(state.calls.at(-1).name, "record_admin_payment_atomic");
+assert.equal(state.calls.at(-1).args[0].p_amount, 1000);
+assert.equal(state.calls.at(-1).args[0].p_key, "00000000-0000-4000-8000-000000000001");
 await assert.rejects(
   () =>
     modules.group4.markAdminPaidAction(
-      data({ adminId: "12345", amountDzd: 1001 }),
+      data({ adminId: "12345", amountDzd: 1001, requestKey: "00000000-0000-4000-8000-000000000002" }),
     ),
-  /exceed/,
+  /could not be saved/,
 );
 await modules.group4.saveAdminPaymentScheduleAction(
   data({

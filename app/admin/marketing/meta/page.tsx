@@ -3,6 +3,7 @@ import { getMarketingConfig } from "@/lib/marketing-store";
 import { AdminShell } from "@/components/admin/AdminShell";
 import { saveMarketingConfigAction } from "./actions";
 import { Button } from "@/components/ui/button";
+import { requireAdmin } from "@/lib/admin-auth";
 
 export const dynamic = "force-dynamic";
 
@@ -11,6 +12,7 @@ export const metadata = {
 };
 
 export default async function MetaPixelPage() {
+  await requireAdmin();
   const config = await getMarketingConfig();
 
   return (
@@ -87,8 +89,7 @@ export default async function MetaPixelPage() {
               <input
                 type="password"
                 name="meta_capi_token"
-                defaultValue={config.meta_capi_token || ""}
-                placeholder="EAA..."
+                placeholder={config.meta_capi_token ? "Configured — leave blank to keep" : "EAA..."}
                 className="w-full rounded-xl border border-white/10 bg-black px-4 py-2 text-white placeholder:text-white/20 focus:border-tiger-gold focus:outline-none"
               />
             </label>

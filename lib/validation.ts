@@ -43,7 +43,7 @@ export const telegramCallbackDataSchema = z.union([
   z.tuple([z.literal("tr"), snapchatPlanSchema]),
   z.tuple([z.literal("tr"), snapchatPlanSchema, snapchatCardTypeSchema]),
   z.tuple([z.literal("td"), snapchatPlanSchema, z.enum(["complete", "cancel"])]),
-  z.tuple([z.literal("op"), z.string().uuid(), z.enum(["complete", "cancel"])]),
+  z.tuple([z.literal("op"), z.string().uuid(), z.enum(["complete", "cancel", "used"])]),
   z.tuple([z.literal("an"), z.enum(["today", "yesterday", "7d", "30d"])]),
   z.tuple([z.literal("up"), snapchatCardTypeSchema]),
   z.tuple([z.literal("cs"), snapchatCardTypeSchema]),
@@ -59,6 +59,7 @@ export const telegramCallbackDataSchema = z.union([
   z.tuple([z.literal("wi"), z.string().regex(/^[A-Za-z0-9_-]{1,160}$/), z.string().regex(/^(?:0|[1-9][0-9]?)$/)]),
   z.tuple([z.literal("wc"), z.string().regex(/^[A-Za-z0-9_-]{1,160}$/), z.string().regex(/^(?:0|[1-9][0-9]?)$/), snapchatPlanSchema, snapchatCardTypeSchema]),
   z.tuple([z.literal("wp"), z.string().uuid(), z.string().regex(/^[A-Za-z0-9_-]{1,160}$/), z.string().regex(/^(?:0|[1-9][0-9]?)$/), z.enum(["complete", "cancel"])]),
+  z.tuple([z.literal("wf"), z.string().uuid(), z.enum(["complete", "cancel"])]),
   z.tuple([z.literal("ex"), snapchatPlanSchema]),
   z.tuple([z.literal("ex"), snapchatPlanSchema, z.literal("confirm")]),
   z.tuple([z.literal("rd"), snapchatPlanSchema]),
@@ -265,6 +266,9 @@ export const checkoutLineSchema = z.object({
 });
 
 export const receiptOrderInputSchema = z.object({
+  requestKey: z.string().uuid(),
+  sessionId: z.string().uuid().optional(),
+  attribution: z.object({ utm_source: z.string().max(160).optional(), utm_medium: z.string().max(160).optional(), utm_campaign: z.string().max(160).optional() }).optional(),
   customerName: z.string().trim().min(2).max(160),
   phone: z.string().trim().min(6).max(60),
   notes: optionalTextSchema,
@@ -321,16 +325,16 @@ export const marketingConfigSchema = z.object({
 });
 
 export const pageEventInputSchema = z.object({
-  event_type: z.enum(["page_view", "product_view", "add_to_cart", "checkout_started", "purchase_completed"]),
-  page_url: optionalTextSchema,
-  product_id: optionalTextSchema,
-  session_id: optionalTextSchema,
-  utm_source: optionalTextSchema,
-  utm_medium: optionalTextSchema,
-  utm_campaign: optionalTextSchema,
-  utm_content: optionalTextSchema,
-  utm_term: optionalTextSchema,
-  referrer: optionalTextSchema,
+  event_type: z.enum(["page_view", "product_view", "add_to_cart", "checkout_started"]),
+  page_url: z.string().max(500).optional(),
+  product_id: z.string().max(160).optional(),
+  session_id: z.string().uuid().optional(),
+  utm_source: z.string().max(160).optional(),
+  utm_medium: z.string().max(160).optional(),
+  utm_campaign: z.string().max(160).optional(),
+  utm_content: z.string().max(160).optional(),
+  utm_term: z.string().max(160).optional(),
+  referrer: z.string().max(500).optional(),
 });
 
 export function formatValidationError(error: z.ZodError) {

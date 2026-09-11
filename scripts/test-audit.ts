@@ -1,0 +1,43 @@
+import assert from "node:assert/strict";
+import { readFile } from "node:fs/promises";
+import { readAll, readInBatches } from "../lib/read-all";
+import { isPublicTrackingPath, safeTrackingUrl } from "../lib/tracking-policy";
+import { pageEventInputSchema, receiptOrderInputSchema } from "../lib/validation";
+import { configuredCoverageDays } from "../lib/coverage-days";
+import { buildOwnerAnalytics } from "../lib/owner-analytics-core";
+
+async function main() {
+  for (const path of ["/admin", "/admin/orders", "/w/private", "/warranty/private", "/p/private", "/%77/private", "//evil.test", "/demo/warranty"]) assert.equal(isPublicTrackingPath(path),false,path);
+  assert.equal(isPublicTrackingPath("/products/snapchat-plus"),true);
+  assert.equal(safeTrackingUrl("https://example.test/w/secret?x=1"),undefined);
+  assert.equal(safeTrackingUrl("https://example.test/products?token=secret#private"),"https://example.test/products");
+  assert.equal(pageEventInputSchema.safeParse({event_type:"purchase_completed",page_url:"/checkout"}).success,false);
+  assert.equal(pageEventInputSchema.safeParse({event_type:"page_view",page_url:"/".repeat(501)}).success,false);
+  const checkout={customerName:"Fixture",phone:"0550123456",paymentMethod:"Binance",lines:[{slug:"snapchat-plus",optionId:"12",quantity:1}]};
+  assert.equal(receiptOrderInputSchema.safeParse(checkout).success,false);
+  assert.equal(receiptOrderInputSchema.safeParse({...checkout,requestKey:"00000000-0000-4000-8000-000000000001"}).success,true);
+  const rows=Array.from({length:1501},(_,id)=>({id}));
+  const query={range:async(a:number,b:number)=>({data:rows.slice(a,b+1),error:null})};
+  assert.equal((await readAll(query)).data.length,1501);
+  await assert.rejects(()=>readAll({range:async()=>({data:null,error:"failure"})}),/could not be read/);
+  const groups:number[]=[];
+  const batched=await readInBatches(rows.map(r=>String(r.id)),ids=>{groups.push(ids.length);return {range:async()=>({data:ids,error:null})};});
+  assert.equal(batched.data.length,1501); assert.ok(Math.max(...groups)<=100);
+  const start=new Date("2026-01-01T00:00:00Z");
+  assert.equal(configuredCoverageDays("Full warranty for the offer duration","3 months",start),90);
+  assert.equal(configuredCoverageDays("Full-year warranty","1 month",start),365);
+  assert.equal(configuredCoverageDays("No warranty after activation","12 months",start),null);
+  assert.equal(configuredCoverageDays("Unknown policy","12 months",start),null);
+  const report=buildOwnerAnalytics({start:"2026-09-01",end:"2026-09-02",label:"custom"},[],[{id:"fixture",source_id:"instagram",spend_date:"2026-09-01",amount_dzd:250,amount_usd_cents:100}],999);
+  assert.equal(report.netProfitDzd,-250); assert.equal(report.advertisingDzd,250);
+  const read=(path:string)=>readFile(path,"utf8");
+  assert.ok(!(await read("lib/marketing-store.ts")).includes('"use server"'));
+  const manifest=await read(".next/server/server-reference-manifest.json");
+  assert.ok(!manifest.includes('"exportedName":"getMarketingConfig"'));
+  assert.ok(!manifest.includes('"exportedName":"saveMarketingConfig"'));
+  assert.ok((await read("next.config.ts")).includes("unoptimized: true"));
+  assert.ok((await read("app/w/[token]/page.tsx")).includes('fr: {'));
+  assert.ok((await read("app/products/[slug]/page.tsx")).includes('productValue(product, locale, "description")'));
+  console.log("PASS: private/encoded tracking paths, forged conversions, bounded input, checkout key, 1,501-row pagination, batch bounds, coverage, historical advertising, private action manifest, image-decoder mitigation, French routes.");
+}
+main().catch(error=>{console.error(error);process.exitCode=1;});

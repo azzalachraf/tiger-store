@@ -2,6 +2,7 @@ import { timingSafeEqual } from "node:crypto";
 import { getServerEnv } from "@/lib/env";
 import { handleTelegramOperationsCallback, handleTelegramOperationsMessage } from "@/lib/telegram-operations";
 import { telegramWebhookUpdateSchema } from "@/lib/validation";
+import { processTelegramUpdate } from "@/lib/telegram-delivery";
 
 export const runtime = "nodejs";
 
@@ -28,7 +29,7 @@ export async function POST(request: Request) {
     const callback = parsed.data.callback_query;
     if (callback.from.is_bot) return Response.json({ ok: true });
     try {
-      await handleTelegramOperationsCallback({ callbackId: callback.id, chatId: callback.message?.chat.id, chatType: callback.message?.chat.type, userId: callback.from.id, firstName: callback.from.first_name, username: callback.from.username, languageCode: callback.from.language_code, data: callback.data });
+      await processTelegramUpdate(parsed.data.update_id, () => handleTelegramOperationsCallback({ callbackId: callback.id, chatId: callback.message?.chat.id, chatType: callback.message?.chat.type, userId: callback.from.id, firstName: callback.from.first_name, username: callback.from.username, languageCode: callback.from.language_code, data: callback.data }));
     } catch { return Response.json({ ok: false }, { status: 500 }); }
     return Response.json({ ok: true });
   }
@@ -37,7 +38,7 @@ export async function POST(request: Request) {
   const message = parsed.data.message;
   if (message.from.is_bot) return Response.json({ ok: true });
   try {
-    await handleTelegramOperationsMessage({
+    await processTelegramUpdate(parsed.data.update_id, () => handleTelegramOperationsMessage({
       chatId: message.chat.id,
       chatType: message.chat.type,
       userId: message.from.id,
@@ -46,7 +47,7 @@ export async function POST(request: Request) {
       languageCode: message.from.language_code,
       text: message.text,
       replyToText: message.reply_to_message?.text,
-    });
+    }));
   } catch {
     // Telegram retries transient failures. Do not log the update payload:
     // it may include registration IDs or customer information.

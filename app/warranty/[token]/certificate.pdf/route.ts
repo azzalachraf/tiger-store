@@ -1,8 +1,8 @@
 import { NextResponse } from "next/server";
-import { cookies } from "next/headers";
+import { getLegacyClaim } from "@/lib/legacy-warranty-claim";
 import { getOrderById } from "@/lib/admin-store";
 import { createWarrantyPdf } from "@/lib/warranty-pdf";
-import { directWarrantyOrderId, verifyWarrantyLink, warrantyCertificateCode, warrantyClaimCookieName, verifyWarrantyClaimCookie } from "@/lib/warranty";
+import { directWarrantyOrderId, verifyWarrantyLink, warrantyCertificateCode } from "@/lib/warranty";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -13,7 +13,7 @@ export async function GET(_request: Request, { params }: { params: Promise<{ tok
   if (!payload) return new NextResponse("Not found", { status: 404 });
   const order = await getOrderById(payload.source === "direct" ? directWarrantyOrderId(payload) : payload.orderId);
   const item = order?.products[payload.source === "direct" ? 0 : payload.itemIndex];
-  const recipientName = verifyWarrantyClaimCookie(payload, (await cookies()).get(warrantyClaimCookieName(token))?.value);
+  const recipientName = await getLegacyClaim(token);
   if (!order || order.status !== "delivered" || !item || !recipientName) return new NextResponse("Not found", { status: 404 });
 
   const pdf = await createWarrantyPdf({

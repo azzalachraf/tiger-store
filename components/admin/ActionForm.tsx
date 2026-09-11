@@ -21,6 +21,7 @@ export function ActionForm({
   const [failed, setFailed] = useState(false);
   const dialog = useRef<HTMLDialogElement>(null);
   const queued = useRef<FormData | null>(null);
+  const requestId = useRef<string | null>(null);
   function submit(data: FormData) {
     const validation = validate?.(data);
     if (validation) {
@@ -33,6 +34,7 @@ export function ActionForm({
     startTransition(async () => {
       try {
         await action(data);
+        requestId.current = null;
         setMessage(successMessage);
         router.refresh();
       } catch (error) {
@@ -60,6 +62,8 @@ export function ActionForm({
           if (pending) return;
           const submitter = (event.nativeEvent as SubmitEvent).submitter;
           const data = new FormData(event.currentTarget);
+          requestId.current ??= crypto.randomUUID();
+          data.set("requestKey", requestId.current);
           if (submitter instanceof HTMLButtonElement && submitter.name)
             data.set(submitter.name, submitter.value);
           if (confirmation) {

@@ -3,26 +3,14 @@ import "server-only";
 import { getOrders } from "@/lib/admin-store";
 import { getFinanceReports } from "@/lib/finance";
 import { getSupabaseServiceClient } from "@/lib/supabase";
+import { readAll, readInBatches } from "@/lib/read-all";
 import type { TigerNewSheetData, TigerNewSheetRow } from "@/lib/tiger-new-sheet-types";
 export { tigerNewSheetHeaders, type TigerNewSheetData, type TigerNewSheetRow } from "@/lib/tiger-new-sheet-types";
-
-const flexyGrossByMonths: Record<number, number> = { 1: 750, 2: 1000, 3: 1900, 6: 2400, 12: 2800 };
-
-function monthsFromDuration(value: string) {
-  const match = value.match(/(?:^|\D)(12|6|3|2|1)(?:\D|$)/);
-  return match ? Number(match[1]) : undefined;
-}
 
 function displayAdmin(admin: { first_name: string | null; username: string | null } | undefined) {
   if (!admin) return "Website";
   if (admin.username?.trim()) return `@${admin.username.trim()}`;
   return admin.first_name?.trim() || "Admin";
-}
-
-function flexyAmountPaid(paymentMethod: string, subscription: string, duration: string, total: number) {
-  if (paymentMethod !== "Flexy" || !/snapchat/i.test(subscription)) return total;
-  const grossAmount = flexyGrossByMonths[monthsFromDuration(duration) ?? 0];
-  return grossAmount ? Math.floor(grossAmount * 85 / 100) : total;
 }
 
 function sheetPaymentMethod(paymentMethod: string) {
@@ -40,7 +28,7 @@ function toRow(
   const subscription = order.products.length ? order.products.map((item) => item.name).join(" + ") : "Manual order";
   const duration = order.products.length ? order.products.map((item) => item.option || item.duration).join(" + ") : "";
   const sale = salesByOrder.get(order.id);
-  const amountPaid = flexyAmountPaid(order.paymentMethod, subscription, duration, order.total);
+  const amountPaid = sale ? Number(sale.revenue_dzd) : order.total;
   const costPrice = sale ? Number(sale.card_cost_dzd) : 0;
   const commissionDzd = sale ? Number(sale.commission_dzd) : 0;
   const completed = order.status === "paid" || order.status === "delivered";
@@ -68,8 +56,8 @@ type CertificateState = { order_id: string; customer_details_complete: boolean; 
 export async function getTigerNewSheetData(ordersOverride?: Awaited<ReturnType<typeof getOrders>>): Promise<TigerNewSheetData> {
   const client = getSupabaseServiceClient();
   const [{ data: exports, error: exportsError }, { data: copyEvents, error: copyEventsError }, orders, finance] = await Promise.all([
-    client.from("order_sheet_exports").select("order_id, copied_at, warranty_issued_at").order("warranty_issued_at", { ascending: true }),
-    client.from("operation_events").select("entity_id, action").eq("entity_type", "order").in("action", ["tiger_new_sheet_copied", "tiger_new_sheet_incomplete_copied"]),
+    readAll(client.from("order_sheet_exports").select("order_id, copied_at, warranty_issued_at").order("order_id")),
+    readAll(client.from("operation_events").select("entity_id, action").eq("entity_type", "order").in("action", ["tiger_new_sheet_copied", "tiger_new_sheet_incomplete_copied"]).order("id")),
     ordersOverride ?? getOrders(),
     getFinanceReports(),
   ]);
@@ -79,7 +67,7 @@ export async function getTigerNewSheetData(ordersOverride?: Awaited<ReturnType<t
   const exportRows = exports ?? [];
   const orderIds = orders.map((order) => order.id);
   const { data: certificates, error: certificatesError } = orderIds.length
-    ? await client.from("warranty_certificates").select("order_id, customer_details_complete, form_submitted_at").in("order_id", orderIds)
+    ? await readInBatches(orderIds, ids => client.from("warranty_certificates").select("order_id, customer_details_complete, form_submitted_at").in("order_id", ids).order("id"))
     : { data: [], error: null };
   if (certificatesError) throw new Error("Tiger New Sheet warranty state could not be loaded.");
 

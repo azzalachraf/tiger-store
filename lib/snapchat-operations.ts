@@ -3,9 +3,10 @@ import "server-only";
 import { getSupabaseServiceClient } from "@/lib/supabase";
 import { decryptRedeemCode, encryptRedeemCode, redeemCodeHash, snapchatCardTypes, type SnapchatCardType, type SnapchatPlanMonths } from "@/lib/snapchat-cards";
 import { readRedeemCardsSheet } from "@/lib/google-redeem-sheet";
+import { readAll } from "@/lib/read-all";
 
 type ClaimRow = { operation_id: string; card_id: string; code_ciphertext: string };
-type StoredRedeemCardRow = { id: string; code_ciphertext: string; status: "available" | "reserved" | "consumed" | "disabled"; source_available: boolean };
+type StoredRedeemCardRow = { id: string; code_ciphertext: string; status: "available" | "reserved" | "consumed" | "disabled"; source_available: boolean; redeemed_permanently: boolean | null };
 
 const uploadSessionLifetimeMs = 30 * 60 * 1000;
 
@@ -46,7 +47,7 @@ export async function syncRedeemInventory() {
     if (error) throw new Error("Inventory synchronization could not be saved.");
     synchronized += 1;
   }
-  const { data, error } = await client.from("redeem_cards").select("card_type").eq("status", "available").eq("source_available", true);
+  const { data, error } = await readAll(client.from("redeem_cards").select("card_type").eq("status", "available").eq("source_available", true).order("id"));
   if (error) throw new Error("Inventory stock could not be read.");
   const availableCards = (data ?? []) as { card_type: SnapchatCardType }[];
   const counts = availableCards.reduce<Partial<Record<SnapchatCardType, number>>>((result, item) => ({ ...result, [item.card_type]: (result[item.card_type] ?? 0) + 1 }), {});
@@ -62,9 +63,9 @@ export async function syncRedeemInventory() {
 export async function uploadRedeemCardsFromTelegram(cardType: SnapchatCardType, codes: string[]) {
   const client = getSupabaseServiceClient();
   const hashes = codes.map(redeemCodeHash);
-  const { data: existing, error: readError } = await client.from("redeem_cards").select("id, code_hash, card_type, status, source_available").in("code_hash", hashes);
+  const { data: existing, error: readError } = await client.from("redeem_cards").select("id, code_hash, card_type, status, source_available, redeemed_permanently").in("code_hash", hashes);
   if (readError) throw new Error("Inventory could not be read.");
-  const existingRows = (existing ?? []) as { id: string; code_hash: string; card_type: SnapchatCardType; status: "available" | "reserved" | "consumed" | "disabled"; source_available: boolean }[];
+  const existingRows = (existing ?? []) as { id: string; code_hash: string; card_type: SnapchatCardType; status: "available" | "reserved" | "consumed" | "disabled"; source_available: boolean; redeemed_permanently: boolean | null }[];
   const existingByHash = new Map(existingRows.map((row) => [row.code_hash, row]));
   const consumedIds = existingRows.filter((row) => row.status === "consumed").map((row) => row.id);
   const { data: completedOperations, error: completedOperationsError } = consumedIds.length
@@ -75,7 +76,7 @@ export async function uploadRedeemCardsFromTelegram(cardType: SnapchatCardType, 
   const newCodes = codes.filter((code) => !existingByHash.has(redeemCodeHash(code)));
   const restorableCodes = codes.filter((code) => {
     const existingCard = existingByHash.get(redeemCodeHash(code));
-    return Boolean(existingCard && existingCard.card_type === cardType && existingCard.status === "consumed" && existingCard.source_available && !completedCardIds.has(existingCard.id));
+    return Boolean(existingCard && existingCard.redeemed_permanently === false && existingCard.card_type === cardType && existingCard.status === "consumed" && existingCard.source_available && !completedCardIds.has(existingCard.id));
   });
   if (newCodes.length) {
     const { error } = await client.from("redeem_cards").upsert(newCodes.map((code) => ({
@@ -94,10 +95,11 @@ export async function uploadRedeemCardsFromTelegram(cardType: SnapchatCardType, 
       .update({ status: "available", consumed_at: null })
       .in("id", restoredIds)
       .eq("status", "consumed")
+      .eq("redeemed_permanently", false)
       .eq("source_available", true);
     if (error) throw new Error("Manually used cards could not be restored.");
   }
-  const { data, error } = await client.from("redeem_cards").select("card_type").eq("status", "available").eq("source_available", true);
+  const { data, error } = await readAll(client.from("redeem_cards").select("card_type").eq("status", "available").eq("source_available", true).order("id"));
   if (error) throw new Error("Inventory stock could not be read.");
   const availableCards = (data ?? []) as { card_type: SnapchatCardType }[];
   const counts = availableCards.reduce<Partial<Record<SnapchatCardType, number>>>((result, item) => ({ ...result, [item.card_type]: (result[item.card_type] ?? 0) + 1 }), {});
@@ -155,10 +157,10 @@ export async function restoreManuallyUsedRedeemCard(cardId: string) {
   const client = getSupabaseServiceClient();
   const { data: card, error: cardError } = await client
     .from("redeem_cards")
-    .select("id, status, source_available")
+    .select("id, status, source_available, redeemed_permanently")
     .eq("id", cardId)
     .maybeSingle();
-  if (cardError || !card || card.status !== "consumed" || !card.source_available) throw new Error("This card cannot be restored.");
+  if (cardError || !card || card.redeemed_permanently !== false || card.status !== "consumed" || !card.source_available) throw new Error("This card cannot be restored.");
 
   const { data: completedOperation, error: operationError } = await client
     .from("snapchat_operations")
@@ -182,11 +184,11 @@ export async function restoreManuallyUsedRedeemCard(cardId: string) {
  * decrypts codes only after application-level authentication. */
 export async function getPrivateRedeemCards(cardType: SnapchatCardType) {
   const client = getSupabaseServiceClient();
-  const { data, error } = await client
+  const { data, error } = await readAll(client
     .from("redeem_cards")
-    .select("id, code_ciphertext, status, source_available")
+    .select("id, code_ciphertext, status, source_available, redeemed_permanently")
     .eq("card_type", cardType)
-    .order("created_at", { ascending: false });
+    .order("created_at", { ascending: false }).order("id"));
   if (error) throw new Error("Card stock could not be read.");
   const rows = (data ?? []) as StoredRedeemCardRow[];
   const ids = rows.filter((row) => row.status === "consumed").map((row) => row.id);
@@ -204,12 +206,14 @@ export async function getPrivateRedeemCards(cardType: SnapchatCardType) {
     id: row.id,
     code: decryptRedeemCode(row.code_ciphertext),
     status: row.status,
-    canRestore: row.status === "consumed" && row.source_available && !completedIds.has(row.id),
+    canRestore: row.redeemed_permanently === false && row.status === "consumed" && row.source_available && !completedIds.has(row.id),
   }));
 }
 
-export async function claimSnapchatCard(adminTelegramUserId: string, planMonths: SnapchatPlanMonths, cardType: SnapchatCardType) {
-  const { data, error } = await getSupabaseServiceClient().rpc("claim_snapchat_redeem_card", { p_admin_telegram_user_id: adminTelegramUserId, p_plan_months: planMonths, p_card_type: cardType });
+export async function claimSnapchatCard(adminTelegramUserId: string, planMonths: SnapchatPlanMonths, cardType: SnapchatCardType, websiteOrderId?: string) {
+  const { data, error } = websiteOrderId
+    ? await getSupabaseServiceClient().rpc("claim_website_card", { p_order: websiteOrderId, p_admin: adminTelegramUserId, p_plan: planMonths, p_card: cardType })
+    : await getSupabaseServiceClient().rpc("claim_snapchat_redeem_card", { p_admin_telegram_user_id: adminTelegramUserId, p_plan_months: planMonths, p_card_type: cardType });
   const row = (data as unknown as ClaimRow[] | null)?.[0];
   if (error || !row) throw new Error("No code is currently available for this card type.");
   return { operationId: row.operation_id, code: decryptRedeemCode(row.code_ciphertext) };
@@ -218,6 +222,17 @@ export async function claimSnapchatCard(adminTelegramUserId: string, planMonths:
 export async function finishSnapchatOperation(operationId: string, adminTelegramUserId: string, outcome: "completed" | "cancelled") {
   const { data, error } = await getSupabaseServiceClient().rpc("finish_snapchat_operation", { p_operation_id: operationId, p_admin_telegram_user_id: adminTelegramUserId, p_outcome: outcome });
   if (error || data !== true) throw new Error("This operation is unavailable.");
+}
+
+export async function quarantineUsedCardAndClaimReplacement(operationId: string, adminTelegramUserId: string) {
+  const client = getSupabaseServiceClient();
+  const { data: operation, error } = await client.from("snapchat_operations").select("plan_months, card_type").eq("id", operationId).eq("admin_telegram_user_id", adminTelegramUserId).eq("status", "active").maybeSingle();
+  if (error || !operation) throw new Error("This operation is unavailable.");
+  await finishSnapchatOperation(operationId, adminTelegramUserId, "completed");
+  const { error: relabelError } = await client.from("snapchat_operations").update({ status: "cancelled", completed_at: null, cancelled_at: new Date().toISOString() }).eq("id", operationId).eq("admin_telegram_user_id", adminTelegramUserId).eq("status", "completed");
+  if (relabelError) throw new Error("The used card was secured but the operation needs review.");
+  try { return await claimSnapchatCard(adminTelegramUserId, Number(operation.plan_months) as SnapchatPlanMonths, operation.card_type as SnapchatCardType); }
+  catch { return null; }
 }
 
 /** Owner-only recovery for a card that is still reserved in an active operation.

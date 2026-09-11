@@ -1,11 +1,12 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { saveMarketingConfig } from "@/lib/marketing-store";
+import { getMarketingConfig, saveMarketingConfig } from "@/lib/marketing-store";
 import { requireAdmin } from "@/lib/admin-auth";
 
 export async function saveMarketingConfigAction(formData: FormData) {
   await requireAdmin();
+  const existing = await getMarketingConfig();
 
   const meta_pixel_id = formData.get("meta_pixel_id")?.toString().trim() || "";
   const meta_pixel_enabled = formData.get("meta_pixel_enabled") === "on";
@@ -16,7 +17,7 @@ export async function saveMarketingConfigAction(formData: FormData) {
   await saveMarketingConfig({
     meta_pixel_id,
     meta_pixel_enabled,
-    meta_capi_token,
+    meta_capi_token: meta_capi_token || existing.meta_capi_token,
     meta_capi_enabled,
   });
 

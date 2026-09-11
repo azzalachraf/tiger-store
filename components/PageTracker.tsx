@@ -2,6 +2,7 @@
 
 import { useEffect, useRef } from "react";
 import { usePathname } from "next/navigation";
+import { isPublicTrackingPath, safeTrackingUrl } from "@/lib/tracking-policy";
 
 const UTM_STORAGE_KEY = "tiger-store-utm";
 const SESSION_KEY = "tiger-store-session";
@@ -19,12 +20,14 @@ export function readStoredUtm(): Record<string, string> {
 /** Get or create a session ID. */
 export function getTrackingSessionId(): string {
   if (typeof window === "undefined") return "";
+  try {
   let sid = sessionStorage.getItem(SESSION_KEY);
   if (!sid) {
     sid = crypto.randomUUID();
     sessionStorage.setItem(SESSION_KEY, sid);
   }
   return sid;
+  } catch { return crypto.randomUUID(); }
 }
 
 /**
@@ -38,7 +41,7 @@ export function PageTracker() {
 
   // Capture UTM params on mount
   useEffect(() => {
-    if (typeof window === "undefined") return;
+    if (typeof window === "undefined" || !isPublicTrackingPath(window.location.pathname)) return;
     const params = new URLSearchParams(window.location.search);
     const utmKeys = ["utm_source", "utm_medium", "utm_campaign", "utm_content", "utm_term"];
     const utm: Record<string, string> = {};
@@ -46,12 +49,12 @@ export function PageTracker() {
     for (const key of utmKeys) {
       const val = params.get(key);
       if (val) {
-        utm[key] = val;
+        utm[key] = val.slice(0,160);
         hasUtm = true;
       }
     }
     if (hasUtm) {
-      localStorage.setItem(UTM_STORAGE_KEY, JSON.stringify(utm));
+      try { localStorage.setItem(UTM_STORAGE_KEY, JSON.stringify(utm)); } catch { /* Storage can be disabled in private browsers. */ }
     }
   }, []);
 
@@ -61,7 +64,7 @@ export function PageTracker() {
     prevPath.current = pathname;
 
     // Don't track admin pages
-    if (pathname.startsWith("/admin")) return;
+    if (!isPublicTrackingPath(pathname)) return;
 
     const utm = readStoredUtm();
     const sessionId = getTrackingSessionId();
@@ -73,7 +76,7 @@ export function PageTracker() {
         event_type: "page_view",
         page_url: pathname,
         session_id: sessionId,
-        referrer: typeof document !== "undefined" ? document.referrer : undefined,
+        referrer: typeof document !== "undefined" ? safeTrackingUrl(document.referrer) : undefined,
         ...utm,
       }),
     }).catch(() => {});

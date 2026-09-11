@@ -1,6 +1,7 @@
 import { timingSafeEqual } from "node:crypto";
 import { getServerEnv } from "@/lib/env";
-import { sendOwnerDailyReport } from "@/lib/telegram-operations";
+import { sendOwnerDailyReport, retryOwnerDailyReports } from "@/lib/telegram-operations";
+import { deliverNotificationJobs } from "@/lib/notification-jobs";
 
 export const runtime = "nodejs";
 
@@ -12,5 +13,5 @@ function authorized(value: string | null, secret: string) {
 
 export async function GET(request: Request) {
   if (!authorized(request.headers.get("authorization"), getServerEnv().CRON_SECRET)) return Response.json({ ok: false }, { status: 401 });
-  try { const result = await sendOwnerDailyReport(); return Response.json({ ok: true, sent: result.sent }); } catch { return Response.json({ ok: false }, { status: 500 }); }
+  try { await deliverNotificationJobs(); await retryOwnerDailyReports(); const result = await sendOwnerDailyReport(); return Response.json({ ok: true, sent: result.sent }); } catch { return Response.json({ ok: false }, { status: 500 }); }
 }

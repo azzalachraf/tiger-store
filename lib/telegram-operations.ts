@@ -2,11 +2,12 @@ import "server-only";
 
 import { randomBytes } from "node:crypto";
 import { getServerEnv } from "@/lib/env";
+import { telegramDelivery } from "@/lib/telegram-delivery";
 import { getSupabaseServiceClient } from "@/lib/supabase";
 import type { TelegramInterfaceLocale, TelegramRole } from "@/lib/types";
 import { advertisingUsdSchema, productSchema, telegramCallbackDataSchema } from "@/lib/validation";
 import { cardLabel, cardsForPlan, snapchatCardTypes, type SnapchatCardType, type SnapchatPlanMonths } from "@/lib/snapchat-cards";
-import { claimSnapchatCard, clearAvailableRedeemCards, clearTelegramRedeemCardUploadSession, finishSnapchatOperation, getPrivateRedeemCards, getTelegramRedeemCardUploadSession, restoreManuallyUsedRedeemCard, returnReservedRedeemCardToStock, startTelegramRedeemCardUploadSession, syncRedeemInventory, uploadRedeemCardsFromTelegram } from "@/lib/snapchat-operations";
+import { claimSnapchatCard, clearAvailableRedeemCards, clearTelegramRedeemCardUploadSession, finishSnapchatOperation, getPrivateRedeemCards, getTelegramRedeemCardUploadSession, quarantineUsedCardAndClaimReplacement, restoreManuallyUsedRedeemCard, returnReservedRedeemCardToStock, startTelegramRedeemCardUploadSession, syncRedeemInventory, uploadRedeemCardsFromTelegram } from "@/lib/snapchat-operations";
 import { parseTelegramRedeemCardLines } from "@/lib/telegram-card-upload";
 import { completeSnapchatSale, createExternalSnapchatSale } from "@/lib/telegram-warranty";
 import { absoluteUrl } from "@/lib/seo";
@@ -14,6 +15,7 @@ import { getAdminCycleStatistics, getAdminFinanceSummary, getFinanceSettings } f
 import { formatOwnerAnalytics, getOwnerAnalytics, rangeFor, type AnalyticsRange } from "@/lib/owner-analytics";
 import { deleteProduct, getOrderById, getOrders, getProductById, saveProduct } from "@/lib/admin-store";
 import { issueOrderWarrantyLink } from "@/lib/order-warranty";
+import { configuredCoverageDays } from "@/lib/coverage-days";
 import { clearCustomCommissionInput, getAdminCompensation, saveAdminCompensation, startCustomCommissionInput, takeCustomCommissionInput } from "@/lib/admin-compensation";
 
 type TelegramIdentity = {
@@ -104,13 +106,7 @@ function routeMenuButton(value: string | undefined) {
 }
 
 async function telegramCall(method: string, body: Record<string, unknown>) {
-  const token = getServerEnv().TELEGRAM_BOT_TOKEN;
-  if (!token) return;
-  await fetch(`https://api.telegram.org/bot${token}/${method}`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(body),
-  });
+  await telegramDelivery(method,body);
 }
 
 async function reply(chatId: string, text: string, replyMarkup?: ReplyMarkup) {
@@ -596,7 +592,13 @@ export async function handleTelegramOperationsCallback(input: {
       const item = order?.products[Number(selected[2])];
       if (item && websiteSnapchatPlan(item)) await sendWebsiteCardPicker(String(input.chatId), locale, selected[1], Number(selected[2]));
       else {
-        const token = await issueOrderWarrantyLink({ orderId: selected[1], itemIndex: Number(selected[2]), coveredDays: 365, markDelivered: true });
+        const product = item ? await getProductById(item.productId) : undefined;
+        const coveredDays = configuredCoverageDays(product?.details?.warrantyEn, item?.duration);
+        if (!coveredDays || order?.products.length !== 1 || item?.quantity !== 1) {
+          await reply(String(input.chatId),textFor(locale,"لا توجد مدة ضمان واضحة لهذا الطلب أو يحتاج إلى تسليم جزئي. راجعه في لوحة الإدارة.","This order has no configured warranty or requires item-level fulfillment. Review it in the admin panel."));
+          return;
+        }
+        const token = await issueOrderWarrantyLink({ orderId: selected[1], itemIndex: Number(selected[2]), coveredDays, markDelivered: true });
         await audit(identity.userId, "order", selected[1], "website_order_delivered_with_warranty", { itemIndex: selected[2] });
         await reply(String(input.chatId), textFor(locale, "✅ تم تسليم الطلب. رابط الضمان في الرسالة التالية.", "✅ The order is delivered. The warranty link is in the next message."));
         await reply(String(input.chatId), absoluteUrl(`/warranty/${token}`));
@@ -608,28 +610,34 @@ export async function handleTelegramOperationsCallback(input: {
     if (!canOperate(user)) { await reply(String(input.chatId), textFor(locale, "غير مصرح لك بهذه العملية.", "Not authorised.")); return; }
     const [, orderId, itemIndex, plan, cardType] = selected;
     try {
-      const operation = await claimSnapchatCard(identity.userId, plan, cardType);
+      const order = await getOrderById(orderId);
+      const item = order?.products[Number(itemIndex)];
+      if (!item || websiteSnapchatPlan(item) !== plan) throw new Error("Order plan mismatch.");
+      const operation = await claimSnapchatCard(identity.userId, plan, cardType, orderId);
       await reply(String(input.chatId), textFor(locale, `✅ تم اختيار بطاقة ${cardLabel(cardType, locale)}. رابط التفعيل في الرسالة التالية.`, `✅ ${cardLabel(cardType, locale)} card has been chosen. The activation link is in the next message.`), { inline_keyboard: [[
-        { text: textFor(locale, "✅ إكمال طلب الموقع", "✅ Complete website order"), callback_data: `wp|${operation.operationId}|${orderId}|${itemIndex}|complete` },
-        { text: textFor(locale, "❌ إلغاء", "❌ Cancel"), callback_data: `wp|${operation.operationId}|${orderId}|${itemIndex}|cancel` },
+        { text: textFor(locale, "✅ إكمال طلب الموقع", "✅ Complete website order"), callback_data: `wf|${operation.operationId}|complete` },
+        { text: textFor(locale, "❌ إلغاء", "❌ Cancel"), callback_data: `wf|${operation.operationId}|cancel` },
       ]] });
       await replyPlain(String(input.chatId), `https://apps.apple.com/redeem?code=${encodeURIComponent(operation.code)}`);
     } catch { await reply(String(input.chatId), textFor(locale, "لا يوجد كود متاح لهذا النوع حالياً.", "No code is currently available for this card type.")); }
     return;
   }
-  if (selected[0] === "wp") {
+  if (selected[0] === "wp" || selected[0] === "wf") {
     if (!canOperate(user)) { await reply(String(input.chatId), textFor(locale, "غير مصرح لك بهذه العملية.", "Not authorised.")); return; }
-    const [, operationId, orderId, itemIndex, outcome] = selected;
+    const operationId = selected[1];
+    const { data: boundOperation } = await getSupabaseServiceClient().from("snapchat_operations").select("website_order_id").eq("id",operationId).eq("admin_telegram_user_id",identity.userId).maybeSingle();
+    const orderId = selected[0] === "wp" ? selected[2] : String(boundOperation?.website_order_id ?? "");
+    const itemIndex = selected[0] === "wp" ? selected[3] : "0";
+    const outcome = selected[0] === "wp" ? selected[4] : selected[2];
     try {
       if (outcome === "cancel") {
         await finishSnapchatOperation(operationId, identity.userId, "cancelled");
         await reply(String(input.chatId), textFor(locale, "❌ أُلغيت العملية وأُعيدت البطاقة للمخزون.", "❌ Operation cancelled and the card was returned to stock."));
       } else {
-        await finishSnapchatOperation(operationId, identity.userId, "completed");
-        const token = await issueOrderWarrantyLink({ orderId, itemIndex: Number(itemIndex), coveredDays: 365, markDelivered: true });
+        const { token } = await completeSnapchatSale({ operationId, adminTelegramUserId: identity.userId, websiteOrderId: orderId });
         await audit(identity.userId, "order", orderId, "website_snapchat_order_completed_with_card", { itemIndex, operationId });
         await reply(String(input.chatId), textFor(locale, "✅ اكتمل طلب الموقع. رابط الضمان في الرسالة التالية.", "✅ Website order completed. The warranty link is in the next message."));
-        await reply(String(input.chatId), absoluteUrl(`/warranty/${token}`));
+        await replyPlain(String(input.chatId), absoluteUrl(`/w/${token}`));
       }
     } catch { await reply(String(input.chatId), textFor(locale, "تعذر إكمال عملية طلب الموقع. تحقق من حالة الطلب والبطاقة.", "The website order could not be completed. Check the order and card status.")); }
     return;
@@ -779,22 +787,18 @@ export async function handleTelegramOperationsCallback(input: {
     const adminId = selected[1];
     try {
       await findAdmin(adminId);
-      const summary = await getAdminFinanceSummary(adminId);
-      const amount = selected[2] === "full" ? summary.remainingDzd : Number(selected[2]);
-      if (!Number.isInteger(amount) || amount < 1 || amount > summary.remainingDzd) {
+      const amount = selected[2] === "full" ? null : Number(selected[2]);
+      if (amount !== null && (!Number.isInteger(amount) || amount < 1)) {
         await reply(String(input.chatId), textFor(locale, "لا يمكن أن تتجاوز الدفعة الرصيد المتبقي. ⚠️", "A payment cannot exceed the remaining credit. ⚠️"));
         return;
       }
-      const { error } = await getSupabaseServiceClient().from("admin_payments").insert({
-        admin_telegram_user_id: adminId,
-        amount_dzd: amount,
-        recorded_by_telegram_user_id: identity.userId,
-        note: "Recorded by owner from Telegram.",
-        settles_cycle: selected[2] === "full",
+      const { error } = await getSupabaseServiceClient().rpc("record_admin_payment_atomic", {
+        p_admin: adminId, p_amount: amount, p_actor: identity.userId,
+        p_note: "Recorded by owner from Telegram.", p_key: `telegram:${input.callbackId}`,
       });
       if (error) throw error;
       await audit(identity.userId, "payment", adminId, "admin_payment_recorded", { amountDzd: String(amount) });
-      await reply(String(input.chatId), textFor(locale, `✅ تم تسجيل دفعة ${amount} DA.`, `✅ Payment of ${amount} DA recorded.`));
+      await reply(String(input.chatId), textFor(locale, "✅ تم تسجيل الدفعة.", "✅ Payment recorded."));
       await sendAdminOverview(String(input.chatId), locale, adminId);
     } catch {
       await reply(String(input.chatId), textFor(locale, "تعذر تسجيل الدفعة. ⚠️", "The payment could not be recorded. ⚠️"));
@@ -836,6 +840,8 @@ export async function handleTelegramOperationsCallback(input: {
       await reply(String(input.chatId), textFor(locale, `✅ تم اختيار بطاقة ${cardLabel(cardType, locale)}. رابط التفعيل في الرسالة التالية.`, `✅ ${cardLabel(cardType, locale)} card has been chosen. The activation link is in the next message.`), { inline_keyboard: [[
         { text: textFor(locale, "✅ إكمال", "✅ Complete"), callback_data: `op|${operation.operationId}|complete` },
         { text: textFor(locale, "❌ إلغاء", "❌ Cancel"), callback_data: `op|${operation.operationId}|cancel` },
+      ], [
+        { text: textFor(locale, "🚫 الكود مستعمل", "🚫 Code already used"), callback_data: `op|${operation.operationId}|used` },
         { text: textFor(locale, "✏️ لقب", "✏️ Nickname"), callback_data: `nn|${operation.operationId}` },
       ]] });
       await replyPlain(String(input.chatId), activationLink);
@@ -847,7 +853,15 @@ export async function handleTelegramOperationsCallback(input: {
   if (selected[0] === "op") {
     const [, operationId, outcome] = selected;
     try {
-      if (outcome === "complete") {
+      if (outcome === "used") {
+        const replacement = await quarantineUsedCardAndClaimReplacement(operationId, identity.userId);
+        if (!replacement) { await reply(String(input.chatId), textFor(locale, "🚫 حُذف الكود المستعمل نهائياً، ولا يوجد بديل متاح من نفس النوع حالياً.", "🚫 The used code was permanently removed, but no replacement of this type is available.")); return; }
+        await reply(String(input.chatId), textFor(locale, "✅ حُذف الكود المستعمل نهائياً وتم اختيار بديل. الرابط في الرسالة التالية.", "✅ The used code was permanently removed and a replacement was selected. Its link is in the next message."), { inline_keyboard: [[
+          { text: textFor(locale, "✅ إكمال", "✅ Complete"), callback_data: `op|${replacement.operationId}|complete` },
+          { text: textFor(locale, "❌ إلغاء", "❌ Cancel"), callback_data: `op|${replacement.operationId}|cancel` },
+        ], [{ text: textFor(locale, "🚫 الكود مستعمل", "🚫 Code already used"), callback_data: `op|${replacement.operationId}|used` }]] });
+        await replyPlain(String(input.chatId), `https://apps.apple.com/redeem?code=${encodeURIComponent(replacement.code)}`);
+      } else if (outcome === "complete") {
         const sale = await completeSnapchatSale({ operationId, adminTelegramUserId: identity.userId });
         await reply(String(input.chatId), textFor(locale, `تم إكمال البيع. أرسل رابط الضمان الخاص للعميل:\n${absoluteUrl(`/w/${sale.token}`)}`, `Sale completed. Send this private warranty link to the customer:\n${absoluteUrl(`/w/${sale.token}`)}`));
       } else {
@@ -892,6 +906,8 @@ export async function handleTelegramOperationsMessage(input: {
       await reply(chatId, textFor(locale, `📝 الطلب: ${rawText}\nاللقب مؤقت ويظهر هنا فقط.`, `📝 Order: ${rawText}\nThis nickname is temporary and appears only here.`), { inline_keyboard: [[
         { text: textFor(locale, "✅ إكمال", "✅ Complete"), callback_data: `op|${nicknameOperationId}|complete` },
         { text: textFor(locale, "❌ إلغاء", "❌ Cancel"), callback_data: `op|${nicknameOperationId}|cancel` },
+      ], [
+        { text: textFor(locale, "🚫 الكود مستعمل", "🚫 Code already used"), callback_data: `op|${nicknameOperationId}|used` },
       ]] });
       return;
     }
@@ -1230,13 +1246,29 @@ export async function sendOwnerDailyReport(now = new Date()) {
   if (!getServerEnv().TELEGRAM_BOT_TOKEN) throw new Error("Telegram is not configured.");
   const client = getSupabaseServiceClient();
   const reportRange = rangeFor("yesterday", now);
-  const { data: existing } = await client.from("daily_owner_reports").select("report_date").eq("report_date", reportRange.start).maybeSingle();
-  if (existing) return { sent: false, reason: "already_sent" as const };
   const { data: owner } = await client.from("telegram_users").select("telegram_user_id, interface_locale").eq("role", "owner").maybeSingle();
   if (!owner) throw new Error("Owner is not registered.");
   const report = await getOwnerAnalytics(reportRange);
-  const { error } = await client.from("daily_owner_reports").insert({ report_date: reportRange.start, summary: report });
-  if (error) { if (error.code === "23505") return { sent: false, reason: "already_sent" as const }; throw new Error("Daily report could not be recorded."); }
-  await reply(String(owner.telegram_user_id), formatOwnerAnalytics(owner.interface_locale as TelegramInterfaceLocale, report));
+  const { data: acquired, error } = await client.rpc("lease_daily_report", { p_day: reportRange.start, p_summary: report });
+  if (error) throw new Error("Daily report could not be recorded.");
+  if (!acquired) return { sent: false, reason: "already_sent" as const };
+  try {
+    await reply(String(owner.telegram_user_id), formatOwnerAnalytics(owner.interface_locale as TelegramInterfaceLocale, report));
+    const saved = await client.from("daily_owner_reports").update({sent_at:new Date().toISOString(),leased_until:null}).eq("report_date",reportRange.start);
+    if (saved.error) throw new Error("Daily report acknowledgement failed.");
+  } catch {
+    await client.from("daily_owner_reports").update({leased_until:null}).eq("report_date",reportRange.start);
+    throw new Error("Daily report delivery failed; retry is available.");
+  }
   return { sent: true, reason: "sent" as const };
+}
+
+export async function retryOwnerDailyReports() {
+  const { data, error } = await getSupabaseServiceClient().from("daily_owner_reports").select("report_date").is("sent_at",null).order("report_date").limit(7);
+  if (error) throw new Error("Daily report retry state unavailable.");
+  for (const row of data ?? []) {
+    const nextDay = new Date(`${row.report_date}T12:00:00+01:00`);
+    nextDay.setUTCDate(nextDay.getUTCDate()+1);
+    await sendOwnerDailyReport(nextDay);
+  }
 }

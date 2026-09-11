@@ -3,7 +3,9 @@
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
-import { getOrderById, getProductBySlug, saveOrder } from "@/lib/admin-store";
+import { getOrderById, getProductBySlug } from "@/lib/admin-store";
+import { getLegacyClaim, legacyClaimHash } from "@/lib/legacy-warranty-claim";
+import { getSupabaseServiceClient } from "@/lib/supabase";
 import { directWarrantyClaimSchema } from "@/lib/validation";
 import type { AdminOrder, CartItem, Product, ProductPriceOption } from "@/lib/types";
 import { createWarrantyClaimCookie, directWarrantyOrderId, verifyWarrantyLink, warrantyClaimCookieName } from "@/lib/warranty";
@@ -19,10 +21,12 @@ export async function claimWarrantyCertificateAction(formData: FormData) {
   const token = String(formData.get("token") ?? "");
   const payload = verifyWarrantyLink(token);
   if (!payload) throw new Error("Invalid warranty link.");
+  if (await getLegacyClaim(token)) redirect(`/warranty/${token}`);
   const recipientName = `${String(formData.get("firstName") ?? "").trim()} ${String(formData.get("familyName") ?? "").trim()}`.trim();
   const claim = directWarrantyClaimSchema.parse({ recipientName, phone: formData.get("phone"), email: formData.get("email"), accepted: formData.get("accepted") });
   const phone = normalizeAlgerianPhone(claim.phone);
   if (!phone) throw new Error("A valid Algerian phone number is required.");
+  let directOrder: AdminOrder | null = null;
   if (payload.source === "direct") {
     const product = await getProductBySlug(payload.slug);
     const offer = product ? findOffer(product, payload.optionId) : undefined;
@@ -32,16 +36,20 @@ export async function claimWarrantyCertificateAction(formData: FormData) {
     if (!existingOrder) {
       const item: CartItem = { id: `${product.id}:${offer.id}`, productId: product.id, slug: product.slug, name: product.name, nameAr: product.nameAr, image: product.image, option: offer.label, optionId: offer.id, optionAr: offer.labelAr, duration: offer.duration, durationAr: offer.durationAr, price: payload.amountPaid, quantity: 1 };
       const order: AdminOrder = { id: orderId, customerName: claim.recipientName, phone, email: claim.email, products: [item], paymentMethod: payload.paymentMethod, total: payload.amountPaid, notes: "Off-site sale: warranty certificate issued by customer link.", status: "delivered", createdAt: payload.issuedAt, adminNotes: "Created from a direct warranty link." };
-      await saveOrder(order);
+      directOrder = order;
       revalidatePath("/admin", "layout");
     }
   } else {
     const order = await getOrderById(payload.orderId);
     if (!order || order.status !== "delivered" || !order.products[payload.itemIndex]) throw new Error("Warranty is not available for this order.");
-    await saveOrder({ ...order, customerName: claim.recipientName, phone, email: claim.email });
     revalidatePath("/admin", "layout");
   }
-  (await cookies()).set(warrantyClaimCookieName(token), createWarrantyClaimCookie(payload, recipientName), {
+  const { data: storedName, error } = await getSupabaseServiceClient().rpc("claim_legacy_warranty", {
+    p_hash: legacyClaimHash(token), p_order_id: payload.source === "direct" ? directWarrantyOrderId(payload) : payload.orderId,
+    p_name: claim.recipientName, p_phone: phone, p_email: claim.email, p_direct_order: directOrder,
+  });
+  if (error) throw new Error("Warranty claim could not be saved.");
+  (await cookies()).set(warrantyClaimCookieName(token), createWarrantyClaimCookie(payload, String(storedName)), {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
     sameSite: "lax",

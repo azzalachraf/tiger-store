@@ -1,5 +1,6 @@
 import { getFinanceSettings } from "@/lib/finance";
 import { getSupabaseServiceClient } from "@/lib/supabase";
+import { readAll } from "@/lib/read-all";
 import { buildOwnerAnalytics, type AnalyticsRange, type AnalyticsSale, type AnalyticsSpend } from "@/lib/owner-analytics-core";
 
 export { buildOwnerAnalytics, rangeFor, type AnalyticsRange } from "@/lib/owner-analytics-core";
@@ -7,10 +8,10 @@ export { buildOwnerAnalytics, rangeFor, type AnalyticsRange } from "@/lib/owner-
 export async function getOwnerAnalytics(range: AnalyticsRange) {
   const client = getSupabaseServiceClient();
   const [{ data: sales, error: salesError }, { data: deliveredOrders, error: ordersError }, { data: admins, error: adminsError }, { data: spends, error: spendsError }, { count: inventoryAvailable, error: inventoryError }, settings] = await Promise.all([
-    client.from("finance_sales").select("order_id, admin_telegram_user_id, plan_months, revenue_dzd, commission_dzd, card_cost_dzd, completed_at"),
-    client.from("orders").select("id, total, createdAt").eq("status", "delivered"),
-    client.from("telegram_users").select("telegram_user_id, username, first_name").in("role", ["admin", "owner"]),
-    client.from("advertising_spend").select("id, spend_date, amount_usd_cents, source_id"),
+    readAll(client.from("finance_sales").select("order_id, admin_telegram_user_id, plan_months, revenue_dzd, commission_dzd, card_cost_dzd, completed_at").order("order_id")),
+    readAll(client.from("orders").select("id, total, createdAt").eq("status", "delivered").order("id")),
+    readAll(client.from("telegram_users").select("telegram_user_id, username, first_name").order("telegram_user_id")),
+    readAll(client.from("advertising_spend").select("id, spend_date, amount_dzd, amount_usd_cents, source_id").order("id")),
     client.from("redeem_cards").select("id", { count: "exact", head: true }).eq("status", "available"),
     getFinanceSettings(),
   ]);

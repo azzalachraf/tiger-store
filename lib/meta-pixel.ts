@@ -1,4 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
+import { isPublicTrackingPath } from "@/lib/tracking-policy";
 /**
  * Meta Pixel (client-side) tracking helpers.
  * All functions are safe to call even if the pixel is not loaded.
@@ -39,12 +40,13 @@ export function initPixel(pixelId: string) {
   const s = b.getElementsByTagName("script")[0];
   s?.parentNode?.insertBefore(t, s);
 
+  window.fbq?.("set", "autoConfig", false, pixelId);
   window.fbq?.("init", pixelId);
   initialized = true;
 }
 
 function fbq(...args: any[]) {
-  if (typeof window !== "undefined" && window.fbq) {
+  if (typeof window !== "undefined" && window.fbq && isPublicTrackingPath(window.location.pathname)) {
     window.fbq(...args);
   }
 }
@@ -105,7 +107,7 @@ export function trackInitiateCheckout(total: number, numItems: number) {
 }
 
 export function trackPurchase(orderId: string, total: number, items: { id: string }[]) {
-  const eventId = generateEventId();
+  const eventId = `purchase:${orderId}`;
   fbq("track", "Purchase", {
     content_ids: items.map((i) => i.id),
     content_type: "product",

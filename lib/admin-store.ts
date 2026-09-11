@@ -4,6 +4,7 @@ import { createHash, randomBytes, createCipheriv, createDecipheriv } from "crypt
 import { getSupabaseServiceClient } from "@/lib/supabase";
 import { getEncryptionSecret } from "@/lib/env";
 import { logger } from "@/lib/logger";
+import { readAll } from "@/lib/read-all";
 import { AdminAccount, AdminAccountStatus, AdminOrder, Product, SiteSettings } from "@/lib/types";
 import { adminAccountSchema, adminOrderSchema, productSchema, siteSettingsSchema } from "@/lib/validation";
 import { getCatalogProductById, getCatalogProductBySlug, products as catalogProducts } from "@/data/products";
@@ -115,14 +116,14 @@ export async function getProductById(id: string): Promise<Product | undefined> {
 
   if (error) {
     logger.error("getProductById failed", error, { id });
-    return getCatalogProductById(id);
+    throw new Error("Catalogue unavailable.");
   }
 
-  if (!data) return getCatalogProductById(id);
+  if (!data) return undefined;
   const parsed = productSchema.safeParse(data);
   if (!parsed.success) {
     logger.error("getProductById validation failed", parsed.error, { id });
-    return getCatalogProductById(id);
+    throw new Error("Catalogue product is invalid.");
   }
   return enrichCatalogProduct(parsed.data);
 }
@@ -136,14 +137,14 @@ export async function getProductBySlug(slug: string): Promise<Product | undefine
 
   if (error) {
     logger.error("getProductBySlug failed", error, { slug });
-    return getCatalogProductBySlug(slug);
+    throw new Error("Catalogue unavailable.");
   }
 
-  if (!data) return getCatalogProductBySlug(slug);
+  if (!data) return undefined;
   const parsed = productSchema.safeParse(data);
   if (!parsed.success) {
     logger.error("getProductBySlug validation failed", parsed.error, { slug });
-    return getCatalogProductBySlug(slug);
+    throw new Error("Catalogue product is invalid.");
   }
   return enrichCatalogProduct(parsed.data);
 }
@@ -182,10 +183,10 @@ export async function deleteProduct(id: string) {
 /* ------------------------------------------------------------------ */
 
 export async function getOrders(): Promise<AdminOrder[]> {
-  const { data, error } = await supabase()
+  const { data, error } = await readAll(supabase()
     .from("orders")
     .select("*")
-    .order("createdAt", { ascending: false });
+    .order("createdAt", { ascending: false }).order("id"));
 
   if (error) {
     logger.error("getOrders failed", error);

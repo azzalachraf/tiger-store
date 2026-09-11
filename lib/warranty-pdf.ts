@@ -1,6 +1,7 @@
 import "server-only";
 
-import { PDFDocument, rgb, StandardFonts } from "pdf-lib";
+import { PDFDocument, rgb } from "pdf-lib";
+import { embedCertificateFont, fittedPdfText } from "@/lib/pdf-font";
 import { warrantyCertificateCode, warrantyEndDate, type WarrantyLinkPayload } from "@/lib/warranty";
 
 type CertificatePdfInput = {
@@ -21,8 +22,8 @@ function formatDate(value: Date) {
 
 export async function createWarrantyPdf(input: CertificatePdfInput) {
   const pdf = await PDFDocument.create();
-  const font = await pdf.embedFont(StandardFonts.Helvetica);
-  const bold = await pdf.embedFont(StandardFonts.HelveticaBold);
+  const font = await embedCertificateFont(pdf);
+  const bold = font;
   const page = pdf.addPage([595.28, 841.89]);
   const { width, height } = page.getSize();
   const issuedAt = new Date(input.payload.issuedAt);
@@ -37,7 +38,8 @@ export async function createWarrantyPdf(input: CertificatePdfInput) {
   page.drawText("Couverture pour abonnement numerique", { x: 57, y: height - 140, size: 10, font, color: rgb(0.85, 0.81, 0.76) });
 
   page.drawText("Ce certificat confirme la couverture de garantie de", { x: 57, y: height - 215, size: 13, font, color: MUTED });
-  page.drawText(input.recipientName, { x: 57, y: height - 253, size: 27, font: bold, color: INK });
+  const name = fittedPdfText(bold, input.recipientName, width - 114, 27);
+  page.drawText(name.text, { x: 57, y: height - 253, size: name.size, font: bold, color: INK });
   page.drawLine({ start: { x: 57, y: height - 264 }, end: { x: width - 57, y: height - 264 }, thickness: 0.7, color: rgb(0.84, 0.78, 0.71) });
 
   const rows = [
@@ -52,7 +54,8 @@ export async function createWarrantyPdf(input: CertificatePdfInput) {
   let y = height - 310;
   for (const [label, value] of rows) {
     page.drawText(label, { x: 57, y, size: 8.5, font: bold, color: MUTED });
-    page.drawText(value, { x: 210, y: y - 1, size: 12, font: bold, color: INK, maxWidth: 320 });
+    const fitted = fittedPdfText(bold, value, 320, 12);
+    page.drawText(fitted.text, { x: 210, y: y - 1, size: fitted.size, font: bold, color: INK });
     page.drawLine({ start: { x: 57, y: y - 15 }, end: { x: width - 57, y: y - 15 }, thickness: 0.45, color: rgb(0.86, 0.81, 0.75) });
     y -= 38;
   }

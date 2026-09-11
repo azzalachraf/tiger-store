@@ -21,6 +21,12 @@ const copy = {
     warning: "Snapchat may require available Apple or Google account balance depending on the account country and activity. The balance may be used for Bitmoji, restoring Streaks, or purchases in some games or Snapchat services. Snapchat and the account store decide availability, fees, and eligibility; Tiger Store does not guarantee any feature, purchase, or extra value from that balance. Check your balance and country before continuing.",
     platformOptions: { placeholder: "Choose a platform", instagram: "Instagram", snapchat: "Snapchat", facebook: "Facebook" }, paymentOptions: { placeholder: "Choose a payment method", baridiMob: "BaridiMob", binance: "Binance", redotPay: "RedotPay", flexy: "Flexy" },
   },
+  fr: {
+    title: "Garantie Snapchat", form: "Complétez votre garantie", review: "Vérifiez vos informations : elles ne pourront plus être modifiées après confirmation.", name: "Nom et prénom", user: "Votre nom d’utilisateur Instagram", phone: "Téléphone", email: "E-mail", paymentMethod: "Mode de paiement", confirm: "Confirmer et créer le certificat", ready: "Votre certificat est prêt", download: "Télécharger le certificat PDF", follow: "Suivre Tiger Store sur Telegram", accept: "J’ai compris, continuer", order: "Commande", product: "Produit", plan: "Offre", expiry: "Expiration",
+    warningTitle: "Information sur le solde INR",
+    warning: "Snapchat peut exiger un solde Apple ou Google selon le pays et l’activité du compte. Ce solde peut servir aux Bitmojis, à restaurer des Streaks ou à certains achats dans des jeux et services Snapchat. Leur disponibilité, leurs frais et leurs conditions dépendent de Snapchat et de la boutique du compte. Tiger Store ne garantit aucune fonctionnalité, aucun achat ni valeur supplémentaire de ce solde. Vérifiez votre solde et votre pays avant de continuer.",
+    platformOptions: { placeholder: "Choisir une plateforme", instagram: "Instagram", snapchat: "Snapchat", facebook: "Facebook" }, paymentOptions: { placeholder: "Choisir le mode de paiement", baridiMob: "BaridiMob", binance: "Binance", redotPay: "RedotPay", flexy: "Flexy" },
+  },
 } as const;
 
 export default async function TelegramWarrantyPage({ params }: { params: Promise<{ token: string }> }) {
@@ -28,8 +34,9 @@ export default async function TelegramWarrantyPage({ params }: { params: Promise
   const warranty = await getTelegramWarranty(token);
   if (!warranty) notFound();
   const order = await getOrderById(warranty.order_id);
-  const ar = (await cookies()).get("tiger-store-locale")?.value !== "en";
-  const locale = ar ? "ar" : "en";
+  const savedLocale = (await cookies()).get("tiger-store-locale")?.value;
+  const locale = savedLocale === "fr" || savedLocale === "en" ? savedLocale : "ar";
+  const ar = locale === "ar";
   const c = copy[locale];
   const item = order?.products[0];
   if (!order || !item) notFound();
@@ -42,14 +49,14 @@ export default async function TelegramWarrantyPage({ params }: { params: Promise
         <p><b>{c.order}:</b> <span dir="ltr">{order.id}</span></p>
         <p><b>{c.product}:</b> {ar ? item.nameAr : item.name}</p>
         <p><b>{c.plan}:</b> {ar ? item.optionAr : item.option}</p>
-        <p><b>{c.expiry}:</b> {new Intl.DateTimeFormat(ar ? "ar-DZ" : "en-GB", { dateStyle: "long" }).format(new Date(warranty.ends_at))}</p>
+        <p><b>{c.expiry}:</b> {new Intl.DateTimeFormat(ar ? "ar-DZ" : locale === "fr" ? "fr-FR" : "en-GB", { dateStyle: "long" }).format(new Date(warranty.ends_at))}</p>
         {warranty.balance_warning_required && !warranty.balance_warning_acknowledged_at ? <form action={acknowledgeBalanceAction} className="rounded-2xl border border-orange-300 bg-orange-50 p-4 text-[#532600]">
           <p className="font-black">{c.warningTitle}</p><p className="mt-2 text-sm font-semibold leading-7">{c.warning}</p>
           <input type="hidden" name="token" value={token} />
           <button className="mt-3 min-h-11 rounded-xl bg-[#FF7300] px-4 font-black text-black">{c.accept}</button>
         </form> : <a className="mt-5 flex min-h-12 items-center justify-center rounded-xl bg-[#FF7300] font-black text-black" href={"/w/" + token + "/certificate.pdf"}>{c.download}</a>}
         <a className="flex min-h-12 items-center justify-center rounded-xl border border-[var(--border-color)] px-4 text-center font-black text-[var(--text)]" href="https://t.me/Tigerstoredz" target="_blank" rel="noreferrer">{c.follow}</a>
-      </div> : <div className="mt-6"><WarrantyForm token={token} action={submitTelegramWarrantyAction} copy={{ ...c, back: ar ? "رجوع" : "Back", next: ar ? "مراجعة المعلومات" : "Review details" }} /></div>}
+      </div> : <div className="mt-6"><WarrantyForm token={token} action={submitTelegramWarrantyAction} copy={{ ...c, back: ar ? "رجوع" : locale === "fr" ? "Retour" : "Back", next: ar ? "مراجعة المعلومات" : locale === "fr" ? "Vérifier les informations" : "Review details" }} /></div>}
     </section>
   </main>;
 }
