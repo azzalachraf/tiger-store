@@ -13,7 +13,7 @@ export const metadata = createPageMetadata({
 
 const channels = [
   { title: "WhatsApp", detail: "+213 556 97 45 93", href: "https://wa.me/213556974593", Icon: MessageCircle },
-  { title: "Instagram", detail: "@tigerr_store_dz", href: "https://www.instagram.com/tigerr_store_dz/", Icon: Instagram },
+  { title: "Instagram", detail: "@tiger.store.dz2", href: "https://www.instagram.com/tiger.store.dz2/", Icon: Instagram },
   { title: "Facebook", detail: "Tiger Store", href: "https://www.facebook.com/tigerr.store.dz", Icon: Facebook },
   { title: "Telegram", detail: "@Tigerstoredz", href: "https://t.me/Tigerstoredz", Icon: Send },
 ] as const;
