@@ -26,5 +26,5 @@ alter table public.daily_owner_reports enable row level security;
 revoke all on public.daily_owner_reports from anon, authenticated;
 
 insert into public.business_settings (key, value)
-values ('advertising_sources', '[{"id":"instagram","label":"Instagram @tigerr_store_dz"}]'::jsonb)
+values ('advertising_sources', '[{"id":"instagram","label":"Instagram @tiger.store.dz2"}]'::jsonb)
 on conflict (key) do nothing;

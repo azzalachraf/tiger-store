@@ -54,7 +54,7 @@ export default async function Home() {
   });
   const featured = cards.find((product) => product.slug === "snapchat-plus");
   const instagram =
-    settings.instagramUrl || "https://www.instagram.com/tigerr_store_dz/";
+    settings.instagramUrl || "https://www.instagram.com/tiger.store.dz2/";
   const whatsapp = `https://wa.me/${settings.whatsappNumber.replace(/\D/g, "") || "213556974593"}`;
   return (
     <div

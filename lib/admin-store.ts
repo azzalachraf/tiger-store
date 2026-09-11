@@ -73,7 +73,7 @@ function normalizeStatus(value: unknown): AdminAccountStatus {
 
 const defaultSettings: SiteSettings = {
   whatsappNumber: "+213 556 97 45 93",
-  instagramUrl: "https://www.instagram.com/tigerr_store_dz/",
+  instagramUrl: "https://www.instagram.com/tiger.store.dz2/",
   facebookUrl: "https://www.facebook.com/people/Tiger-Store/61589903873726/",
   domainText: "tiger-storedz.com",
   baridiMobRip: "00799999004414930471",
