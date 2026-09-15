@@ -3,6 +3,7 @@ import { StockWorkspace } from "@/components/admin/StockWorkspace";
 import { decryptRedeemCode, type SnapchatCardType } from "@/lib/snapchat-cards";
 import { requireAdmin } from "@/lib/admin-auth";
 import { getSupabaseServiceClient } from "@/lib/supabase";
+import { readInBatches } from "@/lib/read-all";
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Card stock" };
 
@@ -28,20 +29,22 @@ export default async function CardStockPage() {
   const consumedIds = cards
     .filter((card) => card.status === "consumed")
     .map((card) => card.id);
-  const { data: completedOperations, error: completedOperationsError } =
-    consumedIds.length
-      ? await getSupabaseServiceClient()
-          .from("snapchat_operations")
-          .select("redeem_card_id")
-          .in("redeem_card_id", consumedIds)
-          .eq("status", "completed")
-      : { data: [], error: null };
-  if (completedOperationsError)
-    throw new Error("Card history could not be loaded.");
+  const completedOperations = consumedIds.length
+    ? (
+        await readInBatches<{ id: string; redeem_card_id: string | null }>(
+          consumedIds,
+          (ids) =>
+            getSupabaseServiceClient()
+              .from("snapchat_operations")
+              .select("id, redeem_card_id")
+              .in("redeem_card_id", ids)
+              .eq("status", "completed")
+              .order("id"),
+        )
+      ).data
+    : [];
   const completedCardIds = new Set(
-    (completedOperations ?? []).map((operation) =>
-      String(operation.redeem_card_id),
-    ),
+    completedOperations.map((operation) => String(operation.redeem_card_id)),
   );
 
   return (
