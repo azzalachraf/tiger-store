@@ -1,5 +1,6 @@
 import { strict as assert } from "node:assert";
 import { telegramCallbackDataSchema } from "../lib/validation";
+import { adminFraudReasons, canViewPrivateCardCodes } from "../lib/admin-fraud-alerts";
 
 assert.equal(telegramCallbackDataSchema.safeParse(["own", "admins"]).success, true);
 assert.equal(telegramCallbackDataSchema.safeParse(["own", "upload"]).success, true);
@@ -39,5 +40,17 @@ assert.equal(telegramCallbackDataSchema.safeParse(["pay", "8915644277", "full"])
 assert.equal(telegramCallbackDataSchema.safeParse(["adj", "invalid", "p50"]).success, false);
 assert.equal(telegramCallbackDataSchema.safeParse(["pay", "8915644277", "10000"]).success, false);
 assert.equal(telegramCallbackDataSchema.safeParse(["cc", "try_24", "delete"]).success, false);
+
+assert.deepEqual(
+  adminFraudReasons({ rapidClaims: 2, cancellations24h: 2, unfinishedClaims: 2 }),
+  [],
+);
+assert.deepEqual(
+  adminFraudReasons({ rapidClaims: 3, cancellations24h: 3, unfinishedClaims: 3 }),
+  ["rapid_claims", "frequent_cancellations", "unfinished_claims"],
+);
+assert.equal(canViewPrivateCardCodes("owner"), true);
+assert.equal(canViewPrivateCardCodes("admin"), false);
+assert.equal(canViewPrivateCardCodes("pending"), false);
 
 console.log("Telegram owner-control callback validation passed.");

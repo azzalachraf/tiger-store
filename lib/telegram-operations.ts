@@ -15,6 +15,7 @@ import { formatOwnerAnalytics, getOwnerAnalytics, rangeFor, type AnalyticsRange 
 import { deleteProduct, getOrderById, getOrders, getProductById, saveProduct } from "@/lib/admin-store";
 import { issueOrderWarrantyLink } from "@/lib/order-warranty";
 import { clearCustomCommissionInput, getAdminCompensation, saveAdminCompensation, startCustomCommissionInput, takeCustomCommissionInput } from "@/lib/admin-compensation";
+import { adminFraudReasons, canViewPrivateCardCodes, type AdminFraudReason } from "@/lib/admin-fraud-alerts";
 
 type TelegramIdentity = {
   userId: string;
@@ -239,6 +240,123 @@ async function findAdmin(adminId: string) {
     .maybeSingle();
   if (error || !data) throw new Error("Admin unavailable.");
   return data as TelegramAdminRow;
+}
+
+const fraudAlertCooldownMs: Record<AdminFraudReason, number> = {
+  rapid_claims: 60 * 60 * 1000,
+  frequent_cancellations: 24 * 60 * 60 * 1000,
+  unfinished_claims: 6 * 60 * 60 * 1000,
+};
+
+async function notifyAdminFraudAlerts(adminId: string) {
+  try {
+    const env = getServerEnv();
+    if (!env.TELEGRAM_OWNER_ID || adminId === env.TELEGRAM_OWNER_ID) return;
+    const client = getSupabaseServiceClient();
+    const now = Date.now();
+    const [adminResult, ownerResult, rapidResult, cancelledResult, activeResult] =
+      await Promise.all([
+        client
+          .from("telegram_users")
+          .select("first_name, username")
+          .eq("telegram_user_id", adminId)
+          .eq("role", "admin")
+          .maybeSingle(),
+        client
+          .from("telegram_users")
+          .select("interface_locale")
+          .eq("telegram_user_id", env.TELEGRAM_OWNER_ID)
+          .maybeSingle(),
+        client
+          .from("snapchat_operations")
+          .select("id", { count: "exact", head: true })
+          .eq("admin_telegram_user_id", adminId)
+          .gte("created_at", new Date(now - 10 * 60 * 1000).toISOString()),
+        client
+          .from("snapchat_operations")
+          .select("id", { count: "exact", head: true })
+          .eq("admin_telegram_user_id", adminId)
+          .eq("status", "cancelled")
+          .gte("cancelled_at", new Date(now - 24 * 60 * 60 * 1000).toISOString()),
+        client
+          .from("snapchat_operations")
+          .select("id", { count: "exact", head: true })
+          .eq("admin_telegram_user_id", adminId)
+          .eq("status", "active"),
+      ]);
+    if (
+      adminResult.error ||
+      !adminResult.data ||
+      ownerResult.error ||
+      rapidResult.error ||
+      cancelledResult.error ||
+      activeResult.error
+    ) return;
+
+    const stats = {
+      rapidClaims: rapidResult.count ?? 0,
+      cancellations24h: cancelledResult.count ?? 0,
+      unfinishedClaims: activeResult.count ?? 0,
+    };
+    const reasons = adminFraudReasons(stats);
+    const unsent: AdminFraudReason[] = [];
+    for (const reason of reasons) {
+      const action = `admin_fraud_alert_${reason}`;
+      const { count, error } = await client
+        .from("operation_events")
+        .select("id", { count: "exact", head: true })
+        .eq("actor_telegram_user_id", adminId)
+        .eq("entity_type", "telegram_user")
+        .eq("entity_id", adminId)
+        .eq("action", action)
+        .gte("created_at", new Date(now - fraudAlertCooldownMs[reason]).toISOString());
+      if (!error && (count ?? 0) === 0) unsent.push(reason);
+    }
+    if (!unsent.length) return;
+
+    const locale = (ownerResult.data?.interface_locale ?? "en") as TelegramInterfaceLocale;
+    const adminName = operatorName({
+      first_name: adminResult.data.first_name,
+      username: adminResult.data.username,
+    });
+    const reasonText: Record<AdminFraudReason, string> = {
+      rapid_claims: textFor(
+        locale,
+        `أخذ ${stats.rapidClaims} بطاقات خلال 10 دقائق`,
+        `Claimed ${stats.rapidClaims} cards within 10 minutes`,
+      ),
+      frequent_cancellations: textFor(
+        locale,
+        `ألغى ${stats.cancellations24h} عمليات خلال 24 ساعة`,
+        `Cancelled ${stats.cancellations24h} operations within 24 hours`,
+      ),
+      unfinished_claims: textFor(
+        locale,
+        `لديه ${stats.unfinishedClaims} بطاقات مأخوذة لم تكتمل`,
+        `Has ${stats.unfinishedClaims} claimed cards still unfinished`,
+      ),
+    };
+    await reply(
+      env.TELEGRAM_OWNER_ID,
+      textFor(locale, `⚠️ تنبيه أمان للمشرف: ${adminName}`, `⚠️ Admin security alert: ${adminName}`) +
+        `\n${unsent.map((reason) => `• ${reasonText[reason]}`).join("\n")}`,
+    );
+    for (const reason of unsent) {
+      await audit(
+        adminId,
+        "telegram_user",
+        adminId,
+        `admin_fraud_alert_${reason}`,
+        {
+          rapidClaims: String(stats.rapidClaims),
+          cancellations24h: String(stats.cancellations24h),
+          unfinishedClaims: String(stats.unfinishedClaims),
+        },
+      );
+    }
+  } catch {
+    // Alerts are best-effort and must never hide or interrupt a claimed card.
+  }
 }
 
 async function sendAdminPicker(chatId: string, locale: TelegramInterfaceLocale) {
@@ -538,7 +656,7 @@ export async function handleTelegramOperationsCallback(input: {
     return;
   }
   if (selected[0] === "cv") {
-    if (!ownerOnly(user)) { await reply(String(input.chatId), textFor(locale, "غير مصرح لك بهذه العملية.", "Not authorised.")); return; }
+    if (!canViewPrivateCardCodes(user.role)) { await reply(String(input.chatId), textFor(locale, "غير مصرح لك بهذه العملية.", "Not authorised.")); return; }
     try { await sendOwnerCardCodes(String(input.chatId), locale, selected[1]); } catch { await reply(String(input.chatId), textFor(locale, "تعذر عرض البطاقات حالياً.", "Card codes are unavailable right now.")); }
     return;
   }
@@ -609,6 +727,7 @@ export async function handleTelegramOperationsCallback(input: {
     const [, orderId, itemIndex, plan, cardType] = selected;
     try {
       const operation = await claimSnapchatCard(identity.userId, plan, cardType);
+      await notifyAdminFraudAlerts(identity.userId);
       await reply(String(input.chatId), textFor(locale, `✅ تم اختيار بطاقة ${cardLabel(cardType, locale)}. رابط التفعيل في الرسالة التالية.`, `✅ ${cardLabel(cardType, locale)} card has been chosen. The activation link is in the next message.`), { inline_keyboard: [[
         { text: textFor(locale, "✅ إكمال طلب الموقع", "✅ Complete website order"), callback_data: `wp|${operation.operationId}|${orderId}|${itemIndex}|complete` },
         { text: textFor(locale, "❌ إلغاء", "❌ Cancel"), callback_data: `wp|${operation.operationId}|${orderId}|${itemIndex}|cancel` },
@@ -623,6 +742,7 @@ export async function handleTelegramOperationsCallback(input: {
     try {
       if (outcome === "cancel") {
         await finishSnapchatOperation(operationId, identity.userId, "cancelled");
+        await notifyAdminFraudAlerts(identity.userId);
         await reply(String(input.chatId), textFor(locale, "❌ أُلغيت العملية وأُعيدت البطاقة للمخزون.", "❌ Operation cancelled and the card was returned to stock."));
       } else {
         await finishSnapchatOperation(operationId, identity.userId, "completed");
@@ -668,6 +788,7 @@ export async function handleTelegramOperationsCallback(input: {
     try {
       if (outcome === "cancel") {
         await finishSnapchatOperation(operationId, identity.userId, "cancelled");
+        await notifyAdminFraudAlerts(identity.userId);
         await reply(String(input.chatId), textFor(locale, "❌ أُلغيت العملية وأُعيدت البطاقة للمخزون.", "❌ Operation cancelled and the card was returned to stock."));
       } else {
         const sale = await completeSnapchatSale({ operationId, adminTelegramUserId: identity.userId, totalDzd: Number(saleTotal) });
@@ -832,6 +953,7 @@ export async function handleTelegramOperationsCallback(input: {
     const [, plan, cardType] = selected;
     try {
       const operation = await claimSnapchatCard(identity.userId, plan, cardType);
+      await notifyAdminFraudAlerts(identity.userId);
       const activationLink = `https://apps.apple.com/redeem?code=${encodeURIComponent(operation.code)}`;
       await reply(String(input.chatId), textFor(locale, `✅ تم اختيار بطاقة ${cardLabel(cardType, locale)}. رابط التفعيل في الرسالة التالية.`, `✅ ${cardLabel(cardType, locale)} card has been chosen. The activation link is in the next message.`), { inline_keyboard: [[
         { text: textFor(locale, "✅ إكمال", "✅ Complete"), callback_data: `op|${operation.operationId}|complete` },
@@ -855,6 +977,7 @@ export async function handleTelegramOperationsCallback(input: {
           await reply(String(input.chatId), textFor(locale, "🚫 حُذف الكود المستعمل نهائياً، ولا يوجد بديل متاح من نفس النوع حالياً.", "🚫 The used code was permanently removed, but no replacement of this type is available."));
           return;
         }
+        await notifyAdminFraudAlerts(identity.userId);
         await reply(String(input.chatId), textFor(locale, "✅ حُذف الكود المستعمل نهائياً وتم اختيار بديل. الرابط في الرسالة التالية.", "✅ The used code was permanently removed and a replacement was selected. Its link is in the next message."), { inline_keyboard: [[
           { text: textFor(locale, "✅ إكمال", "✅ Complete"), callback_data: `op|${replacement.operationId}|complete` },
           { text: textFor(locale, "❌ إلغاء", "❌ Cancel"), callback_data: `op|${replacement.operationId}|cancel` },
@@ -865,6 +988,7 @@ export async function handleTelegramOperationsCallback(input: {
         await reply(String(input.chatId), textFor(locale, `تم إكمال البيع. أرسل رابط الضمان الخاص للعميل:\n${absoluteUrl(`/w/${sale.token}`)}`, `Sale completed. Send this private warranty link to the customer:\n${absoluteUrl(`/w/${sale.token}`)}`));
       } else {
         await finishSnapchatOperation(operationId, identity.userId, "cancelled");
+        await notifyAdminFraudAlerts(identity.userId);
         await reply(String(input.chatId), textFor(locale, "تم إلغاء العملية وإرجاع البطاقة للمخزون.", "Operation cancelled and the card is available again."));
       }
     } catch {
@@ -924,6 +1048,7 @@ export async function handleTelegramOperationsMessage(input: {
       const planMonths = Number(reductionReply[1]) as SnapchatPlanMonths;
       const cardType = reductionReply[2] as SnapchatCardType;
       for (let index = 0; index < quantity; index += 1) claimed.push(await claimSnapchatCard(identity.userId, planMonths, cardType));
+      await notifyAdminFraudAlerts(identity.userId);
       const baseAmount = Math.floor(totalDzd / quantity);
       const remainder = totalDzd % quantity;
       await reply(chatId, textFor(locale,
