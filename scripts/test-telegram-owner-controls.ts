@@ -26,6 +26,11 @@ assert.equal(telegramCallbackDataSchema.safeParse(["an", "today"]).success, true
 assert.equal(telegramCallbackDataSchema.safeParse(["an", "yesterday"]).success, true);
 assert.equal(telegramCallbackDataSchema.safeParse(["an", "7d"]).success, true);
 assert.equal(telegramCallbackDataSchema.safeParse(["an", "30d"]).success, true);
+assert.equal(telegramCallbackDataSchema.safeParse(["st", "today"]).success, true);
+assert.equal(telegramCallbackDataSchema.safeParse(["st", "yesterday"]).success, true);
+assert.equal(telegramCallbackDataSchema.safeParse(["st", "30d"]).success, true);
+assert.equal(telegramCallbackDataSchema.safeParse(["st", "all"]).success, true);
+assert.equal(telegramCallbackDataSchema.safeParse(["op", "b964657e-9b61-4e05-b787-b902a2fa1a7c", "used"]).success, false);
 assert.equal(telegramCallbackDataSchema.safeParse(["an", "month"]).success, false);
 assert.equal(telegramCallbackDataSchema.safeParse(["apr", "8915644277"]).success, true);
 assert.equal(telegramCallbackDataSchema.safeParse(["adm", "8915644277", "adjust"]).success, true);

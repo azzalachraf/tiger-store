@@ -6,6 +6,7 @@ import { getOrders } from "@/lib/admin-store";
 import { adminOrderSchema } from "@/lib/validation";
 import { readAll, readInBatches } from "@/lib/read-all";
 import { calculateAdminCycleStatistics, type AdminCycleStatistics } from "@/lib/admin-cycle-statistics";
+import { rangeFor } from "@/lib/owner-analytics-core";
 
 export { calculateAdminCycleStatistics, type AdminCycleStatistics } from "@/lib/admin-cycle-statistics";
 
@@ -58,14 +59,20 @@ export function cardCostDzd(settings: FinanceSettings, cardType: SnapchatCardTyp
 
 export type AdminFinanceSummary = { adminId: string; completedOrders: number; commissionDzd: number; paidDzd: number; adjustmentsDzd: number; remainingDzd: number; nextPaymentDate: string };
 /** Sales and earned credit since the last full settlement, for the admin bot. */
-export async function getAdminCycleStatistics(adminId: string): Promise<AdminCycleStatistics> {
+export type AdminStatisticsPeriod = "today" | "yesterday" | "30d" | "all";
+
+export async function getAdminCycleStatistics(
+  adminId: string,
+  period: AdminStatisticsPeriod = "all",
+): Promise<AdminCycleStatistics> {
   const client = getSupabaseServiceClient();
   const [{ data: sales, error: salesError }, { data: settlements, error: settlementsError }] = await Promise.all([
     readAll(client.from("finance_sales").select("commission_dzd, completed_at").eq("admin_telegram_user_id", adminId).order("order_id")),
     client.from("admin_payments").select("paid_at").eq("admin_telegram_user_id", adminId).eq("settles_cycle", true).order("paid_at", { ascending: false }).limit(1),
   ]);
   if (salesError || settlementsError) throw new Error("Admin cycle statistics could not be read.");
-  return calculateAdminCycleStatistics(sales ?? [], settlements?.[0]?.paid_at ?? null);
+  const range = period === "all" ? null : rangeFor(period);
+  return calculateAdminCycleStatistics(sales ?? [], settlements?.[0]?.paid_at ?? null, range);
 }
 export async function getAdminFinanceSummary(adminId: string): Promise<AdminFinanceSummary> {
   const client = getSupabaseServiceClient();

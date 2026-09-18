@@ -7,11 +7,11 @@ import { getSupabaseServiceClient } from "@/lib/supabase";
 import type { TelegramInterfaceLocale, TelegramRole } from "@/lib/types";
 import { advertisingUsdSchema, productSchema, telegramCallbackDataSchema } from "@/lib/validation";
 import { cardLabel, cardsForPlan, snapchatCardTypes, type SnapchatCardType, type SnapchatPlanMonths } from "@/lib/snapchat-cards";
-import { claimSnapchatCard, clearAvailableRedeemCards, clearTelegramRedeemCardUploadSession, finishSnapchatOperation, getPrivateRedeemCards, getTelegramRedeemCardUploadSession, quarantineUsedCardAndClaimReplacement, restoreManuallyUsedRedeemCard, returnReservedRedeemCardToStock, startTelegramRedeemCardUploadSession, syncRedeemInventory, uploadRedeemCardsFromTelegram } from "@/lib/snapchat-operations";
+import { claimSnapchatCard, clearAvailableRedeemCards, clearTelegramRedeemCardUploadSession, finishSnapchatOperation, getPrivateRedeemCards, getTelegramRedeemCardUploadSession, restoreManuallyUsedRedeemCard, returnReservedRedeemCardToStock, startTelegramRedeemCardUploadSession, syncRedeemInventory, uploadRedeemCardsFromTelegram } from "@/lib/snapchat-operations";
 import { parseTelegramRedeemCardLines } from "@/lib/telegram-card-upload";
 import { completeSnapchatSale, createExternalSnapchatSale } from "@/lib/telegram-warranty";
 import { absoluteUrl } from "@/lib/seo";
-import { getAdminCycleStatistics, getAdminFinanceSummary, getFinanceSettings } from "@/lib/finance";
+import { getAdminCycleStatistics, getAdminFinanceSummary, getFinanceSettings, type AdminStatisticsPeriod } from "@/lib/finance";
 import { formatOwnerAnalytics, getOwnerAnalytics, rangeFor, type AnalyticsRange } from "@/lib/owner-analytics";
 import { deleteProduct, getOrderById, getOrders, getProductById, saveProduct } from "@/lib/admin-store";
 import { issueOrderWarrantyLink } from "@/lib/order-warranty";
@@ -542,6 +542,39 @@ async function sendNetProfitPicker(chatId: string, locale: TelegramInterfaceLoca
   });
 }
 
+async function sendAdminStatisticsPicker(chatId: string, locale: TelegramInterfaceLocale) {
+  await reply(chatId, textFor(locale, "📊 اختر فترة إحصاءاتك.", "📊 Choose your statistics period."), {
+    inline_keyboard: [
+      [
+        { text: textFor(locale, "📅 اليوم", "📅 Today"), callback_data: "st|today" },
+        { text: textFor(locale, "🕘 أمس", "🕘 Yesterday"), callback_data: "st|yesterday" },
+      ],
+      [
+        { text: textFor(locale, "📆 آخر 30 يومًا", "📆 Last 30 days"), callback_data: "st|30d" },
+        { text: textFor(locale, "♾️ الكل", "♾️ All time"), callback_data: "st|all" },
+      ],
+    ],
+  });
+}
+
+async function sendAdminStatistics(
+  chatId: string,
+  locale: TelegramInterfaceLocale,
+  adminId: string,
+  period: AdminStatisticsPeriod,
+) {
+  const summary = await getAdminCycleStatistics(adminId, period);
+  const label = {
+    today: textFor(locale, "اليوم", "Today"),
+    yesterday: textFor(locale, "أمس", "Yesterday"),
+    "30d": textFor(locale, "آخر 30 يومًا", "Last 30 days"),
+    all: textFor(locale, "الكل", "All time"),
+  }[period];
+  await reply(chatId, textFor(locale,
+    `📊 إحصاءاتك — ${label}\n📦 الطلبات المكتملة: ${summary.completedOrders}\n💳 الرصيد المكتسب: ${summary.creditDzd} DA`,
+    `📊 My statistics — ${label}\n📦 Completed orders: ${summary.completedOrders}\n💳 Credit earned: ${summary.creditDzd} DA`));
+}
+
 async function sendAdminOverview(chatId: string, locale: TelegramInterfaceLocale, adminId: string) {
   const admin = await findAdmin(adminId);
   const [summary, compensation] = await Promise.all([getAdminFinanceSummary(adminId), getAdminCompensation(adminId)]);
@@ -614,6 +647,12 @@ export async function handleTelegramOperationsCallback(input: {
   if (selected[0] === "an") {
     if (!ownerOnly(user)) { await reply(String(input.chatId), textFor(locale, "غير مصرح لك بهذه العملية.", "Not authorised.")); return; }
     try { await reply(String(input.chatId), formatOwnerAnalytics(locale, await getOwnerAnalytics(rangeFor(selected[1])))); } catch { await reply(String(input.chatId), textFor(locale, "تعذر إعداد التقرير حالياً.", "The report is unavailable right now.")); }
+    return;
+  }
+  if (selected[0] === "st") {
+    if (!canOperate(user)) { await reply(String(input.chatId), textFor(locale, "غير مصرح لك بهذه العملية.", "Not authorised.")); return; }
+    try { await sendAdminStatistics(String(input.chatId), locale, identity.userId, selected[1]); }
+    catch { await reply(String(input.chatId), textFor(locale, "تعذر عرض الإحصاءات حالياً.", "Statistics are unavailable right now.")); }
     return;
   }
   if (selected[0] === "up") {
@@ -963,7 +1002,6 @@ export async function handleTelegramOperationsCallback(input: {
         { text: textFor(locale, "✅ إكمال", "✅ Complete"), callback_data: `op|${operation.operationId}|complete` },
         { text: textFor(locale, "❌ إلغاء", "❌ Cancel"), callback_data: `op|${operation.operationId}|cancel` },
       ], [
-        { text: textFor(locale, "🚫 الكود مستعمل", "🚫 Code already used"), callback_data: `op|${operation.operationId}|used` },
         { text: textFor(locale, "✏️ لقب", "✏️ Nickname"), callback_data: `nn|${operation.operationId}` },
       ]] });
       await replyPlain(String(input.chatId), activationLink);
@@ -975,16 +1013,7 @@ export async function handleTelegramOperationsCallback(input: {
   if (selected[0] === "op") {
     const [, operationId, outcome] = selected;
     try {
-      if (outcome === "used") {
-        const replacement = await quarantineUsedCardAndClaimReplacement(operationId, identity.userId);
-        if (!replacement) { await reply(String(input.chatId), textFor(locale, "🚫 حُذف الكود المستعمل نهائياً، ولا يوجد بديل متاح من نفس النوع حالياً.", "🚫 The used code was permanently removed, but no replacement of this type is available.")); return; }
-        await notifyAdminFraudAlerts(identity.userId);
-        await reply(String(input.chatId), textFor(locale, "✅ حُذف الكود المستعمل نهائياً وتم اختيار بديل. الرابط في الرسالة التالية.", "✅ The used code was permanently removed and a replacement was selected. Its link is in the next message."), { inline_keyboard: [[
-          { text: textFor(locale, "✅ إكمال", "✅ Complete"), callback_data: `op|${replacement.operationId}|complete` },
-          { text: textFor(locale, "❌ إلغاء", "❌ Cancel"), callback_data: `op|${replacement.operationId}|cancel` },
-        ], [{ text: textFor(locale, "🚫 الكود مستعمل", "🚫 Code already used"), callback_data: `op|${replacement.operationId}|used` }]] });
-        await replyPlain(String(input.chatId), `https://apps.apple.com/redeem?code=${encodeURIComponent(replacement.code)}`);
-      } else if (outcome === "complete") {
+      if (outcome === "complete") {
         const sale = await completeSnapchatSale({ operationId, adminTelegramUserId: identity.userId });
         await reply(String(input.chatId), textFor(locale, `تم إكمال البيع. أرسل رابط الضمان الخاص للعميل:\n${absoluteUrl(`/w/${sale.token}`)}`, `Sale completed. Send this private warranty link to the customer:\n${absoluteUrl(`/w/${sale.token}`)}`));
       } else {
@@ -1030,8 +1059,6 @@ export async function handleTelegramOperationsMessage(input: {
       await reply(chatId, textFor(locale, `📝 الطلب: ${rawText}\nاللقب مؤقت ويظهر هنا فقط.`, `📝 Order: ${rawText}\nThis nickname is temporary and appears only here.`), { inline_keyboard: [[
         { text: textFor(locale, "✅ إكمال", "✅ Complete"), callback_data: `op|${nicknameOperationId}|complete` },
         { text: textFor(locale, "❌ إلغاء", "❌ Cancel"), callback_data: `op|${nicknameOperationId}|cancel` },
-      ], [
-        { text: textFor(locale, "🚫 الكود مستعمل", "🚫 Code already used"), callback_data: `op|${nicknameOperationId}|used` },
       ]] });
       return;
     }
@@ -1342,12 +1369,7 @@ export async function handleTelegramOperationsMessage(input: {
 
   if (action === "/stats") {
     if (user.role !== "admin" && user.role !== "owner") { await reply(chatId, textFor(locale, "غير مصرح لك بهذه العملية.", "Not authorised.")); return; }
-    try {
-      const summary = await getAdminCycleStatistics(identity.userId);
-      await reply(chatId, textFor(locale,
-        `📊 إحصاءاتك\n📦 الطلبات المكتملة: ${summary.completedOrders}\n💳 الرصيد المكتسب: ${summary.creditDzd} DA`,
-        `📊 My statistics\n📦 Completed orders: ${summary.completedOrders}\n💳 Credit earned: ${summary.creditDzd} DA`));
-    } catch { await reply(chatId, textFor(locale, "تعذر عرض الإحصاءات حالياً.", "Statistics are unavailable right now.")); }
+    await sendAdminStatisticsPicker(chatId, locale);
     return;
   }
 
