@@ -2,7 +2,8 @@
 
 import { cookies, headers } from "next/headers";
 import { redirect } from "next/navigation";
-import { canAttemptAdminLogin, createAdminSession, normalizeClientIp, recordFailedAdminLogin, safeAdminDestination, verifyAdminCredentials } from "@/lib/admin-auth";
+import { canAttemptAdminLogin, normalizeClientIp, recordFailedAdminLogin, safeAdminDestination, verifyAdminCredentials } from "@/lib/admin-auth";
+import { createAdminSession } from "@/lib/admin-session";
 import { ADMIN_SESSION_COOKIE } from "@/lib/admin-constants";
 import { adminLoginInputSchema } from "@/lib/validation";
 

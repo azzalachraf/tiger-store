@@ -1,5 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { ADMIN_SESSION_COOKIE } from "@/lib/admin-constants";
+import { isValidAdminSession } from "@/lib/admin-session";
 
 export function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
@@ -9,7 +10,7 @@ export function proxy(request: NextRequest) {
   }
 
   const session = request.cookies.get(ADMIN_SESSION_COOKIE)?.value;
-  if (!session) {
+  if (!isValidAdminSession(session)) {
     const loginUrl = new URL("/admin/login", request.url);
     loginUrl.searchParams.set("next", pathname);
     return NextResponse.redirect(loginUrl);

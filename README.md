@@ -38,6 +38,7 @@ Create `.env.local` locally from `.env.local.example`:
 ```env
 ADMIN_EMAIL=your-admin-email@example.com
 ADMIN_PASSWORD=change-this-password
+SESSION_SECRET=generate-a-dedicated-random-secret-of-at-least-32-characters
 ```
 
 Do not commit real credentials.
@@ -54,7 +55,7 @@ Admin routes:
 - `/admin/payment-methods`
 - `/admin/banners`
 
-Authentication uses `ADMIN_EMAIL` and `ADMIN_PASSWORD`, then sets a secure httpOnly cookie session.
+Authentication uses `ADMIN_EMAIL` and `ADMIN_PASSWORD`. `SESSION_SECRET` signs an expiring, secure httpOnly cookie. `ADMIN_PASSWORD_HASH` is unused and should be removed from Vercel.
 
 ## Product Images
 
@@ -121,6 +122,7 @@ If `oldPrice` is missing or lower than/equal to `price`, no discount badge appea
 3. Add environment variables:
    - `ADMIN_EMAIL`
    - `ADMIN_PASSWORD`
+   - `SESSION_SECRET`
 4. Build command:
    - `npm run build`
 5. Start command:
