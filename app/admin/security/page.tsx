@@ -1,16 +1,19 @@
-import { Ban, Clock3, KeyRound, LockKeyhole, MonitorSmartphone, Network, ShieldCheck, UserPlus } from "lucide-react";
+import { Activity, Ban, Clock3, Globe2, KeyRound, LockKeyhole, MonitorSmartphone, Network, ShieldCheck, UserPlus, UsersRound } from "lucide-react";
 import { AdminShell } from "@/components/admin/AdminShell";
 import { Button } from "@/components/ui/button";
 import { requireAdmin } from "@/lib/admin-auth";
 import { getAdminSecurityOverview, isAdminSecurityUnlocked } from "@/lib/admin-security";
+import { getSiteVisitorOverview } from "@/lib/site-visitors";
 import {
   banAdminSessionIpAction,
+  banSiteVisitorIpAction,
   changeAdminSecurityPinAction,
   createAdminUserAction,
   lockAdminSecurityAction,
   revokeAdminSessionAction,
   setAdminUserActiveAction,
   unbanAdminIpAction,
+  unbanSiteVisitorIpAction,
   unlockAdminSecurityAction,
 } from "./actions";
 
@@ -53,7 +56,10 @@ export default async function AdminSecurityPage({ searchParams }: { searchParams
     );
   }
 
-  const overview = await getAdminSecurityOverview(current.sessionId);
+  const [overview, siteVisitors] = await Promise.all([
+    getAdminSecurityOverview(current.sessionId),
+    getSiteVisitorOverview(),
+  ]);
   const sessionsByAccount = Array.from(overview.sessions.reduce((groups, session) => {
     const sessions = groups.get(session.email) ?? [];
     sessions.push(session);
@@ -88,6 +94,24 @@ export default async function AdminSecurityPage({ searchParams }: { searchParams
           <input name="password" required type="password" minLength={12} maxLength={512} autoComplete="new-password" placeholder="Temporary password (12+ characters)" className="min-h-12 rounded-xl border border-white/10 bg-black px-4 text-white" />
           <Button type="submit" className="md:col-span-3 md:w-fit"><UserPlus size={17} /> Create administrator</Button>
         </form>
+      </section>
+
+      <section className="admin-panel mt-5 overflow-hidden">
+        <div className="border-b border-white/10 p-5">
+          <div className="flex flex-wrap items-center justify-between gap-3"><div><h2 className="flex items-center gap-2 text-lg font-black text-white"><UsersRound className="text-tiger-ember" /> Site visitors</h2><p className="mt-1 text-sm text-white/55">Anonymous devices that visited the public store, newest activity first. Active means seen in the last 15 minutes.</p></div><span className="rounded-full border border-white/10 bg-white/5 px-3 py-1 text-sm font-bold text-white/70">{siteVisitors.devices.length} recent devices</span></div>
+        </div>
+        <div className="grid gap-3 p-4 xl:grid-cols-2 sm:p-5">
+          {siteVisitors.devices.map((visitor) => {
+            return <article key={visitor.id} className="rounded-2xl border border-white/10 bg-black/20 p-4">
+              <div className="flex flex-wrap items-start justify-between gap-3"><div className="flex min-w-0 items-center gap-3"><span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-white/5"><MonitorSmartphone size={19} className="text-tiger-ember" /></span><div className="min-w-0"><strong className="block truncate text-white">{deviceName(visitor.userAgent)}</strong><p className="mt-0.5 font-mono text-xs text-white/55">{visitor.ip}</p></div></div><div className="flex gap-2">{visitor.isActive ? <span className="rounded-full bg-emerald-500/15 px-2 py-1 text-xs font-bold text-emerald-200">Active now</span> : null}{visitor.isBanned ? <span className="rounded-full bg-red-500/15 px-2 py-1 text-xs font-bold text-red-200">Banned</span> : null}</div></div>
+              <div className="mt-4 grid gap-2 text-xs text-white/50 sm:grid-cols-2"><p className="flex items-center gap-2"><Globe2 size={14} /> Last page <span className="truncate text-white/75">{visitor.lastPage}</span></p><p className="flex items-center gap-2"><Activity size={14} /> {visitor.pageViews} page views</p><p>First seen {dateTime(visitor.firstSeenAt)}</p><p>Last seen {dateTime(visitor.lastSeenAt)}</p></div>
+              <p className="mt-2 truncate text-[11px] text-white/30" title={visitor.userAgent}>{visitor.userAgent || "Browser details unavailable"}</p>
+              {!visitor.isBanned ? <form action={banSiteVisitorIpAction} className="mt-4 flex flex-wrap gap-2"><input type="hidden" name="id" value={visitor.id} /><input name="reason" maxLength={300} placeholder="Ban reason" className="min-h-10 min-w-0 flex-1 rounded-lg border border-white/10 bg-black px-3 text-sm text-white" /><button className="admin-btn border-red-500/30 text-red-200"><Ban size={15} /> Ban visitor IP</button></form> : null}
+            </article>;
+          })}
+          {!siteVisitors.devices.length ? <div className="rounded-2xl border border-dashed border-white/10 p-8 text-center xl:col-span-2"><UsersRound className="mx-auto mb-3 text-white/25" /><p className="text-sm text-white/55">Visitor devices will appear after their next page view.</p></div> : null}
+        </div>
+        {siteVisitors.bans.length ? <div className="border-t border-white/10"><h3 className="px-5 pt-5 text-sm font-black uppercase tracking-wider text-white/60">Blocked visitor IPs</h3><div className="divide-y divide-white/10">{siteVisitors.bans.map((ban) => <div key={ban.ipHash} className="grid gap-3 p-4 sm:grid-cols-[1fr_auto] sm:items-center"><div><strong className="font-mono text-white">{ban.ip}</strong><p className="text-sm text-white/55">{ban.reason || "No reason provided"} · blocked {dateTime(ban.bannedAt)} by {ban.createdByEmail}</p></div><form action={unbanSiteVisitorIpAction}><input type="hidden" name="ipHash" value={ban.ipHash} /><button className="admin-btn">Unban visitor</button></form></div>)}</div></div> : null}
       </section>
 
       <section className="admin-panel mt-5 overflow-hidden">

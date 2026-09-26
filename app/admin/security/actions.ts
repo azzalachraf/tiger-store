@@ -12,7 +12,7 @@ import { getAdminSecurityPinState, requireAdminSecurityAction, verifyAdminSecuri
 import { ADMIN_SECURITY_TTL_SECONDS, createAdminSecurityToken } from "@/lib/admin-session";
 import { getServerEnv } from "@/lib/env";
 import { getSupabaseServiceClient } from "@/lib/supabase";
-import { adminIpHashSchema, adminSecurityPinChangeSchema, adminSecurityPinSchema, adminSessionIdSchema, adminUserCreateSchema, adminUserIdSchema } from "@/lib/validation";
+import { adminIpHashSchema, adminSecurityPinChangeSchema, adminSecurityPinSchema, adminSessionIdSchema, adminUserCreateSchema, adminUserIdSchema, siteVisitorIdSchema } from "@/lib/validation";
 
 const PIN_WINDOW_SECONDS = 15 * 60;
 const MAX_PIN_ATTEMPTS = 5;
@@ -125,5 +125,28 @@ export async function unbanAdminIpAction(formData: FormData) {
   const ipHash = adminIpHashSchema.parse(formData.get("ipHash"));
   const { error } = await getSupabaseServiceClient().from("admin_ip_bans").delete().eq("ip_hash", ipHash);
   if (error) throw new Error("IP address could not be unbanned.");
+  revalidatePath("/admin/security");
+}
+
+export async function banSiteVisitorIpAction(formData: FormData) {
+  const current = await requireAdminSecurityAction();
+  const id = siteVisitorIdSchema.parse(formData.get("id"));
+  const reason = String(formData.get("reason") ?? "").trim().slice(0, 300);
+  const client = getSupabaseServiceClient();
+  const { data: visitor, error } = await client.from("site_visitor_devices").select("ip_hash, ip_encrypted").eq("id", id).maybeSingle<{ ip_hash: string; ip_encrypted: string }>();
+  if (error || !visitor) throw new Error("Visitor device could not be found.");
+  const { error: banError } = await client.from("site_ip_bans").upsert({
+    ip_hash: visitor.ip_hash, ip_encrypted: visitor.ip_encrypted, reason,
+    created_by_email: current.identity.email, banned_at: new Date().toISOString(),
+  });
+  if (banError) throw new Error("Visitor IP could not be banned.");
+  revalidatePath("/admin/security");
+}
+
+export async function unbanSiteVisitorIpAction(formData: FormData) {
+  await requireAdminSecurityAction();
+  const ipHash = adminIpHashSchema.parse(formData.get("ipHash"));
+  const { error } = await getSupabaseServiceClient().from("site_ip_bans").delete().eq("ip_hash", ipHash);
+  if (error) throw new Error("Visitor IP could not be unbanned.");
   revalidatePath("/admin/security");
 }

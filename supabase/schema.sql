@@ -191,6 +191,18 @@ create table if not exists public.admin_security_settings (
   id text primary key check (id = 'main'), pin_hash text not null,
   pin_version uuid not null default gen_random_uuid(), updated_at timestamptz not null default now()
 );
+create table if not exists public.site_visitor_devices (
+  id uuid primary key, session_id uuid not null, ip_hash text not null, ip_encrypted text not null,
+  user_agent text not null default '', first_seen_at timestamptz not null default now(),
+  last_seen_at timestamptz not null default now(), last_page text not null default '/',
+  page_views integer not null default 1 check (page_views > 0)
+);
+create index if not exists site_visitor_devices_last_seen_idx on public.site_visitor_devices (last_seen_at desc);
+create index if not exists site_visitor_devices_ip_idx on public.site_visitor_devices (ip_hash, last_seen_at desc);
+create table if not exists public.site_ip_bans (
+  ip_hash text primary key, ip_encrypted text not null, reason text not null default '',
+  created_by_email text not null, banned_at timestamptz not null default now()
+);
 
 alter table public.products enable row level security;
 alter table public.product_options enable row level security;
@@ -206,11 +218,14 @@ alter table public.admin_sessions enable row level security;
 alter table public.admin_ip_bans enable row level security;
 alter table public.admin_security_pin_attempts enable row level security;
 alter table public.admin_security_settings enable row level security;
+alter table public.site_visitor_devices enable row level security;
+alter table public.site_ip_bans enable row level security;
 -- No anon/authenticated policies: private data is reachable only with the
 -- server-only service role. Do not add public catalog policies without an owner decision.
 revoke all on public.products, public.product_options, public.settings, public.stock_alerts, public.orders, public.accounts, public.page_events, public.marketing_config from anon, authenticated;
 revoke all on public.admin_login_attempts from anon, authenticated;
 revoke all on public.admin_users, public.admin_sessions, public.admin_ip_bans, public.admin_security_pin_attempts, public.admin_security_settings from anon, authenticated;
+revoke all on public.site_visitor_devices, public.site_ip_bans from anon, authenticated;
 
 drop trigger if exists products_set_updated_at on public.products;
 create trigger products_set_updated_at before update on public.products for each row execute function public.set_updated_at();

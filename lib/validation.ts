@@ -104,6 +104,7 @@ export const adminUserCreateSchema = z.object({
 export const adminUserIdSchema = z.string().uuid();
 export const adminSessionIdSchema = z.string().uuid();
 export const adminIpHashSchema = z.string().regex(/^[a-f0-9]{64}$/);
+export const siteVisitorIdSchema = z.string().uuid();
 export const orderStatusSchema = z.enum(["pending", "paid", "delivered", "cancelled", "refunded"]);
 export const warrantyIssueSchema = z.object({
   orderId: z.string().trim().min(1).max(160),
@@ -346,6 +347,7 @@ export const pageEventInputSchema = z.object({
   page_url: optionalTextSchema,
   product_id: optionalTextSchema,
   session_id: optionalTextSchema,
+  visitor_id: z.string().uuid().optional(),
   utm_source: optionalTextSchema,
   utm_medium: optionalTextSchema,
   utm_campaign: optionalTextSchema,

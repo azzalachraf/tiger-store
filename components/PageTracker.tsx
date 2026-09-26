@@ -1,10 +1,11 @@
 "use client";
 
 import { useEffect, useRef } from "react";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 
 const UTM_STORAGE_KEY = "tiger-store-utm";
 const SESSION_KEY = "tiger-store-session";
+const VISITOR_KEY = "tiger-store-visitor";
 
 /** Read UTM params from localStorage. */
 export function readStoredUtm(): Record<string, string> {
@@ -27,6 +28,16 @@ export function getTrackingSessionId(): string {
   return sid;
 }
 
+function getTrackingVisitorId(): string {
+  if (typeof window === "undefined") return "";
+  let id = localStorage.getItem(VISITOR_KEY);
+  if (!id) {
+    id = crypto.randomUUID();
+    localStorage.setItem(VISITOR_KEY, id);
+  }
+  return id;
+}
+
 /**
  * Lightweight page tracker.
  * - Captures UTM params from the URL on first visit and stores them in localStorage
@@ -34,6 +45,7 @@ export function getTrackingSessionId(): string {
  */
 export function PageTracker() {
   const pathname = usePathname();
+  const router = useRouter();
   const prevPath = useRef("");
 
   // Capture UTM params on mount
@@ -61,7 +73,7 @@ export function PageTracker() {
     prevPath.current = pathname;
 
     // Don't track admin pages
-    if (pathname.startsWith("/admin")) return;
+    if (pathname.startsWith("/admin") || pathname === "/access-denied") return;
 
     const utm = readStoredUtm();
     const sessionId = getTrackingSessionId();
@@ -73,11 +85,14 @@ export function PageTracker() {
         event_type: "page_view",
         page_url: pathname,
         session_id: sessionId,
+        visitor_id: getTrackingVisitorId(),
         referrer: typeof document !== "undefined" ? document.referrer : undefined,
         ...utm,
       }),
+    }).then((response) => {
+      if (response.status === 403) router.replace("/access-denied");
     }).catch(() => {});
-  }, [pathname]);
+  }, [pathname, router]);
 
   return null;
 }
