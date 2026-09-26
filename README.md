@@ -38,6 +38,7 @@ Create `.env.local` locally from `.env.local.example`:
 ```env
 ADMIN_EMAIL=your-admin-email@example.com
 ADMIN_PASSWORD=change-this-password
+ADMIN_SECURITY_PIN=choose-a-private-pin
 SESSION_SECRET=generate-a-dedicated-random-secret-of-at-least-32-characters
 ```
 
@@ -56,6 +57,8 @@ Admin routes:
 - `/admin/banners`
 
 Authentication uses `ADMIN_EMAIL` and `ADMIN_PASSWORD`. `SESSION_SECRET` signs an expiring, secure httpOnly cookie. `ADMIN_PASSWORD_HASH` is unused and should be removed from Vercel.
+
+The `/admin/security` workspace uses `ADMIN_SECURITY_PIN` for a second, short-lived unlock. Additional administrators and revocable sessions are stored in Supabase; IP addresses are encrypted at rest with `ENCRYPTION_KEY`.
 
 ## Product Images
 
@@ -122,6 +125,7 @@ If `oldPrice` is missing or lower than/equal to `price`, no discount badge appea
 3. Add environment variables:
    - `ADMIN_EMAIL`
    - `ADMIN_PASSWORD`
+   - `ADMIN_SECURITY_PIN`
    - `SESSION_SECRET`
 4. Build command:
    - `npm run build`

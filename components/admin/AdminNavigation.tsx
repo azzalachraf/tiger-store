@@ -16,6 +16,7 @@ import {
   Target,
   Menu,
   X,
+  ShieldCheck,
 } from "lucide-react";
 const groups = [
   {
@@ -45,6 +46,7 @@ const groups = [
       ["/admin/payment-methods", "Payment methods", CreditCard],
       ["/admin/marketing/attribution", "Attribution", Target],
       ["/admin/marketing/meta", "Meta integration", Target],
+      ["/admin/security", "Admin security", ShieldCheck],
     ],
   },
 ] as const;

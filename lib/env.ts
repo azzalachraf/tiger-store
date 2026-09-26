@@ -5,6 +5,7 @@ import { z } from "zod";
 const serverEnvSchema = z.object({
   ADMIN_EMAIL: z.string().email("ADMIN_EMAIL must be a valid email address"),
   ADMIN_PASSWORD: z.string().min(1, "ADMIN_PASSWORD is required"),
+  ADMIN_SECURITY_PIN: z.string().regex(/^\d{4,12}$/, "ADMIN_SECURITY_PIN must contain 4 to 12 digits"),
   SESSION_SECRET: z.string().min(32, "SESSION_SECRET must be at least 32 characters"),
   ENCRYPTION_KEY: z.string().min(32, "ENCRYPTION_KEY must be at least 32 characters"),
   NEXT_PUBLIC_SUPABASE_URL: z.string().url("NEXT_PUBLIC_SUPABASE_URL must be a valid URL"),
