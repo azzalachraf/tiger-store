@@ -1,6 +1,6 @@
 "use server";
 
-import { createHash, timingSafeEqual } from "node:crypto";
+import { randomUUID } from "node:crypto";
 import { cookies, headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
@@ -8,18 +8,14 @@ import { ADMIN_SECURITY_COOKIE, ADMIN_SESSION_COOKIE } from "@/lib/admin-constan
 import { requireAdminAction } from "@/lib/admin-auth";
 import { hashAdminIp, normalizeClientIp } from "@/lib/admin-network";
 import { hashAdminPassword } from "@/lib/admin-password";
-import { requireAdminSecurityAction } from "@/lib/admin-security";
+import { getAdminSecurityPinState, requireAdminSecurityAction, verifyAdminSecurityPin } from "@/lib/admin-security";
 import { ADMIN_SECURITY_TTL_SECONDS, createAdminSecurityToken } from "@/lib/admin-session";
 import { getServerEnv } from "@/lib/env";
 import { getSupabaseServiceClient } from "@/lib/supabase";
-import { adminIpHashSchema, adminSecurityPinSchema, adminSessionIdSchema, adminUserCreateSchema, adminUserIdSchema } from "@/lib/validation";
+import { adminIpHashSchema, adminSecurityPinChangeSchema, adminSecurityPinSchema, adminSessionIdSchema, adminUserCreateSchema, adminUserIdSchema } from "@/lib/validation";
 
 const PIN_WINDOW_SECONDS = 15 * 60;
 const MAX_PIN_ATTEMPTS = 5;
-
-function constantTimeEqual(a: string, b: string) {
-  return timingSafeEqual(createHash("sha256").update(a).digest(), createHash("sha256").update(b).digest());
-}
 
 export async function unlockAdminSecurityAction(formData: FormData) {
   await requireAdminAction();
@@ -30,14 +26,36 @@ export async function unlockAdminSecurityAction(formData: FormData) {
   const { count, error } = await client.from("admin_security_pin_attempts").select("id", { count: "exact", head: true })
     .eq("ip_hash", ipHash).gte("attempted_at", new Date(Date.now() - PIN_WINDOW_SECONDS * 1000).toISOString());
   if (error) throw new Error("PIN security store unavailable.");
-  if ((count ?? 0) >= MAX_PIN_ATTEMPTS || !parsed.success || !constantTimeEqual(parsed.data, getServerEnv().ADMIN_SECURITY_PIN)) {
+  const pinState = await getAdminSecurityPinState();
+  if ((count ?? 0) >= MAX_PIN_ATTEMPTS || !parsed.success || !verifyAdminSecurityPin(parsed.data, pinState.pinHash)) {
     await client.from("admin_security_pin_attempts").insert({ ip_hash: ipHash });
     redirect("/admin/security?error=invalid-pin");
   }
-  (await cookies()).set(ADMIN_SECURITY_COOKIE, createAdminSecurityToken(), {
+  (await cookies()).set(ADMIN_SECURITY_COOKIE, createAdminSecurityToken(pinState.pinVersion), {
     httpOnly: true, sameSite: "strict", secure: process.env.NODE_ENV === "production", path: "/admin/security", maxAge: ADMIN_SECURITY_TTL_SECONDS,
   });
   redirect("/admin/security");
+}
+
+export async function changeAdminSecurityPinAction(formData: FormData) {
+  const current = await requireAdminSecurityAction();
+  if (!current.identity.isOwner) throw new Error("Only the owner can change the security PIN.");
+  const parsed = adminSecurityPinChangeSchema.safeParse({
+    currentPin: formData.get("currentPin"), newPin: formData.get("newPin"), confirmPin: formData.get("confirmPin"),
+  });
+  if (!parsed.success) redirect("/admin/security?pinStatus=invalid");
+  const currentState = await getAdminSecurityPinState();
+  if (!verifyAdminSecurityPin(parsed.data.currentPin, currentState.pinHash)) redirect("/admin/security?pinStatus=incorrect");
+  const pinVersion = randomUUID();
+  const { error } = await getSupabaseServiceClient().from("admin_security_settings").upsert({
+    id: "main", pin_hash: hashAdminPassword(parsed.data.newPin), pin_version: pinVersion,
+    updated_at: new Date().toISOString(),
+  });
+  if (error) throw new Error("Security PIN could not be changed.");
+  (await cookies()).set(ADMIN_SECURITY_COOKIE, createAdminSecurityToken(pinVersion), {
+    httpOnly: true, sameSite: "strict", secure: process.env.NODE_ENV === "production", path: "/admin/security", maxAge: ADMIN_SECURITY_TTL_SECONDS,
+  });
+  redirect("/admin/security?pinStatus=changed");
 }
 
 export async function lockAdminSecurityAction() {

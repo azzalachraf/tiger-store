@@ -187,6 +187,10 @@ create table if not exists public.admin_security_pin_attempts (
   attempted_at timestamptz not null default now()
 );
 create index if not exists admin_security_pin_attempts_window_idx on public.admin_security_pin_attempts (ip_hash, attempted_at desc);
+create table if not exists public.admin_security_settings (
+  id text primary key check (id = 'main'), pin_hash text not null,
+  pin_version uuid not null default gen_random_uuid(), updated_at timestamptz not null default now()
+);
 
 alter table public.products enable row level security;
 alter table public.product_options enable row level security;
@@ -201,11 +205,12 @@ alter table public.admin_users enable row level security;
 alter table public.admin_sessions enable row level security;
 alter table public.admin_ip_bans enable row level security;
 alter table public.admin_security_pin_attempts enable row level security;
+alter table public.admin_security_settings enable row level security;
 -- No anon/authenticated policies: private data is reachable only with the
 -- server-only service role. Do not add public catalog policies without an owner decision.
 revoke all on public.products, public.product_options, public.settings, public.stock_alerts, public.orders, public.accounts, public.page_events, public.marketing_config from anon, authenticated;
 revoke all on public.admin_login_attempts from anon, authenticated;
-revoke all on public.admin_users, public.admin_sessions, public.admin_ip_bans, public.admin_security_pin_attempts from anon, authenticated;
+revoke all on public.admin_users, public.admin_sessions, public.admin_ip_bans, public.admin_security_pin_attempts, public.admin_security_settings from anon, authenticated;
 
 drop trigger if exists products_set_updated_at on public.products;
 create trigger products_set_updated_at before update on public.products for each row execute function public.set_updated_at();

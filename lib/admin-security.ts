@@ -1,15 +1,32 @@
 import "server-only";
 
+import { createHash, timingSafeEqual } from "node:crypto";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { ADMIN_SECURITY_COOKIE } from "@/lib/admin-constants";
 import { requireAdmin, requireAdminAction } from "@/lib/admin-auth";
 import { decryptAdminIp } from "@/lib/admin-network";
+import { verifyAdminPassword } from "@/lib/admin-password";
 import { isValidAdminSecurityToken } from "@/lib/admin-session";
+import { getServerEnv } from "@/lib/env";
 import { getSupabaseServiceClient } from "@/lib/supabase";
 
+export async function getAdminSecurityPinState() {
+  const { data, error } = await getSupabaseServiceClient().from("admin_security_settings")
+    .select("pin_hash, pin_version").eq("id", "main").maybeSingle<{ pin_hash: string; pin_version: string }>();
+  if (error) throw new Error("PIN security settings are unavailable.");
+  return data ? { pinHash: data.pin_hash, pinVersion: data.pin_version } : { pinHash: null, pinVersion: "environment" };
+}
+
+export function verifyAdminSecurityPin(pin: string, pinHash: string | null) {
+  if (pinHash) return verifyAdminPassword(pin, pinHash);
+  const expected = getServerEnv().ADMIN_SECURITY_PIN;
+  return timingSafeEqual(createHash("sha256").update(pin).digest(), createHash("sha256").update(expected).digest());
+}
+
 export async function isAdminSecurityUnlocked() {
-  return isValidAdminSecurityToken((await cookies()).get(ADMIN_SECURITY_COOKIE)?.value);
+  const state = await getAdminSecurityPinState();
+  return isValidAdminSecurityToken((await cookies()).get(ADMIN_SECURITY_COOKIE)?.value, state.pinVersion);
 }
 
 export async function requireAdminSecurity() {

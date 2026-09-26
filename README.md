@@ -58,7 +58,7 @@ Admin routes:
 
 Authentication uses `ADMIN_EMAIL` and `ADMIN_PASSWORD`. `SESSION_SECRET` signs an expiring, secure httpOnly cookie. `ADMIN_PASSWORD_HASH` is unused and should be removed from Vercel.
 
-The `/admin/security` workspace uses `ADMIN_SECURITY_PIN` for a second, short-lived unlock. Additional administrators and revocable sessions are stored in Supabase; IP addresses are encrypted at rest with `ENCRYPTION_KEY`.
+The `/admin/security` workspace uses `ADMIN_SECURITY_PIN` as its bootstrap PIN for a second, short-lived unlock. The owner can replace it in the dashboard; replacements are stored in Supabase only as salted scrypt hashes. Additional administrators and revocable sessions are stored in Supabase; IP addresses are encrypted at rest with `ENCRYPTION_KEY`.
 
 ## Product Images
 

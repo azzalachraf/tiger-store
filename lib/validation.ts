@@ -85,6 +85,17 @@ export const adminOrderIdSchema = z.string().trim().min(1).max(160).regex(/^[A-Z
 export const storedPaymentMethodSchema = z.enum(["BaridiMob", "Binance", "RedotPay", "Flexy", "CCP", "Telegram"]);
 export const adminLoginInputSchema = z.object({ email: z.string().trim().email().max(180), password: z.string().min(1).max(512), next: z.string().trim().max(512).optional() });
 export const adminSecurityPinSchema = z.string().trim().regex(/^\d{4,12}$/);
+export const adminSecurityPinChangeSchema = z.object({
+  currentPin: adminSecurityPinSchema,
+  newPin: adminSecurityPinSchema,
+  confirmPin: adminSecurityPinSchema,
+}).refine((value) => value.newPin === value.confirmPin, {
+  message: "The new PIN confirmation does not match.",
+  path: ["confirmPin"],
+}).refine((value) => value.currentPin !== value.newPin, {
+  message: "Choose a PIN different from the current PIN.",
+  path: ["newPin"],
+});
 export const adminUserCreateSchema = z.object({
   displayName: z.string().trim().min(2).max(80),
   email: z.string().trim().toLowerCase().email().max(180),

@@ -36,23 +36,17 @@ export function isValidAdminSession(cookieToken: string | undefined) {
   return parseAdminSession(cookieToken) !== null;
 }
 
-export function createAdminSecurityToken(expiresAt = Math.floor(Date.now() / 1000) + ADMIN_SECURITY_TTL_SECONDS) {
-  const payload = String(expiresAt);
-  const pinBoundSecret = createHmac("sha256", getServerEnv().SESSION_SECRET)
-    .update(getServerEnv().ADMIN_SECURITY_PIN)
-    .digest("hex");
-  const signature = createHmac("sha256", pinBoundSecret).update(payload).digest("hex");
-  return `v1.${payload}.${signature}`;
+export function createAdminSecurityToken(pinVersion: string, expiresAt = Math.floor(Date.now() / 1000) + ADMIN_SECURITY_TTL_SECONDS) {
+  const payload = `${expiresAt}.${pinVersion}`;
+  return `v2.${payload}.${sign("admin-security", payload)}`;
 }
 
-export function isValidAdminSecurityToken(cookieToken: string | undefined) {
+export function isValidAdminSecurityToken(cookieToken: string | undefined, pinVersion: string) {
   if (!cookieToken) return false;
-  const [version, expiresAt, suppliedSignature, extra] = cookieToken.split(".");
-  if (extra || version !== "v1" || !/^\d{10}$/.test(expiresAt ?? "") || !suppliedSignature) return false;
+  const [version, expiresAt, tokenPinVersion, suppliedSignature, extra] = cookieToken.split(".");
+  if (extra || version !== "v2" || !/^\d{10}$/.test(expiresAt ?? "") || !/^[a-zA-Z0-9_-]{1,64}$/.test(tokenPinVersion ?? "") || !suppliedSignature) return false;
   if (Number(expiresAt) <= Math.floor(Date.now() / 1000)) return false;
-  const pinBoundSecret = createHmac("sha256", getServerEnv().SESSION_SECRET)
-    .update(getServerEnv().ADMIN_SECURITY_PIN)
-    .digest("hex");
-  const expected = createHmac("sha256", pinBoundSecret).update(expiresAt).digest("hex");
+  if (tokenPinVersion !== pinVersion) return false;
+  const expected = sign("admin-security", `${expiresAt}.${tokenPinVersion}`);
   return matchesSignature(suppliedSignature, expected);
 }
