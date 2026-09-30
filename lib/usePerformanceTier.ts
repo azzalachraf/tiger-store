@@ -6,6 +6,10 @@ export type PerformanceTier = "low" | "standard" | "premium";
 
 type NavigatorWithDeviceMemory = Navigator & {
   deviceMemory?: number;
+  connection?: {
+    effectiveType?: string;
+    saveData?: boolean;
+  };
 };
 
 function isMetaInAppBrowser(userAgent: string) {
@@ -19,9 +23,19 @@ function detectTier(): PerformanceTier {
   const navigatorInfo = window.navigator as NavigatorWithDeviceMemory;
   const cores = navigatorInfo.hardwareConcurrency ?? 4;
   const memory = navigatorInfo.deviceMemory ?? 4;
+  const connection = navigatorInfo.connection;
   const ua = navigatorInfo.userAgent;
 
-  if (reducedMotion || isMetaInAppBrowser(ua) || cores <= 4 || memory <= 4) {
+  if (
+    reducedMotion ||
+    isMetaInAppBrowser(ua) ||
+    connection?.saveData ||
+    connection?.effectiveType === "slow-2g" ||
+    connection?.effectiveType === "2g" ||
+    connection?.effectiveType === "3g" ||
+    cores <= 4 ||
+    memory <= 4
+  ) {
     return "low";
   }
 

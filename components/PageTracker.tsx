@@ -75,23 +75,32 @@ export function PageTracker() {
     // Don't track admin pages
     if (pathname.startsWith("/admin") || pathname === "/access-denied") return;
 
-    const utm = readStoredUtm();
-    const sessionId = getTrackingSessionId();
+    const send = () => {
+      const utm = readStoredUtm();
+      const sessionId = getTrackingSessionId();
 
-    fetch("/api/track", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        event_type: "page_view",
-        page_url: pathname,
-        session_id: sessionId,
-        visitor_id: getTrackingVisitorId(),
-        referrer: typeof document !== "undefined" ? document.referrer : undefined,
-        ...utm,
-      }),
-    }).then((response) => {
-      if (response.status === 403) router.replace("/access-denied");
-    }).catch(() => {});
+      fetch("/api/track", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          event_type: "page_view",
+          page_url: pathname,
+          session_id: sessionId,
+          visitor_id: getTrackingVisitorId(),
+          referrer: document.referrer || undefined,
+          ...utm,
+        }),
+      }).then((response) => {
+        if (response.status === 403) router.replace("/access-denied");
+      }).catch(() => {});
+    };
+
+    if ("requestIdleCallback" in window) {
+      const idleId = window.requestIdleCallback(send, { timeout: 1800 });
+      return () => window.cancelIdleCallback(idleId);
+    }
+    const timer = setTimeout(send, 900);
+    return () => clearTimeout(timer);
   }, [pathname, router]);
 
   return null;

@@ -12,13 +12,36 @@ declare global {
 }
 
 let initialized = false;
+let scriptScheduled = false;
+
+function schedulePixelScript() {
+  if (scriptScheduled || typeof window === "undefined") return;
+  scriptScheduled = true;
+
+  const insertScript = () => {
+    if (document.querySelector('script[src*="connect.facebook.net"]')) return;
+    const script = document.createElement("script");
+    script.async = true;
+    script.src = "https://connect.facebook.net/en_US/fbevents.js";
+    document.head.appendChild(script);
+  };
+  const scheduleWhenIdle = () => {
+    if ("requestIdleCallback" in window) {
+      window.requestIdleCallback(insertScript, { timeout: 2500 });
+    } else {
+      setTimeout(insertScript, 1200);
+    }
+  };
+
+  if (document.readyState === "complete") scheduleWhenIdle();
+  else window.addEventListener("load", scheduleWhenIdle, { once: true });
+}
 
 /** Inject the Meta Pixel base code and initialise with the given Pixel ID. */
 export function initPixel(pixelId: string) {
   if (initialized || !pixelId || typeof window === "undefined") return;
 
   const f = window;
-  const b = document;
   if (f.fbq) return;
 
   const n: any = (f.fbq = (function (...args: any[]) {
@@ -33,14 +56,9 @@ export function initPixel(pixelId: string) {
   n.loaded = true;
   n.version = "2.0";
   n.queue = [];
-  const t = b.createElement("script");
-  t.async = true;
-  t.src = "https://connect.facebook.net/en_US/fbevents.js";
-  const s = b.getElementsByTagName("script")[0];
-  s?.parentNode?.insertBefore(t, s);
-
   window.fbq?.("init", pixelId);
   initialized = true;
+  schedulePixelScript();
 }
 
 function fbq(...args: any[]) {

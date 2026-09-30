@@ -65,6 +65,26 @@ export default async function Home() {
       <Header />
       <main id="home-main">
         <section className={`${styles.container} ${styles.minimalHero}`} aria-labelledby="hero-title">
+          <Image
+            src="/products/04_Canva_Pro.webp"
+            alt=""
+            width={72}
+            height={72}
+            sizes="72px"
+            loading="lazy"
+            aria-hidden="true"
+            className={`${styles.ambientProduct} ${styles.ambientProductStart}`}
+          />
+          <Image
+            src="/products/11_Gemini_Pro.webp"
+            alt=""
+            width={64}
+            height={64}
+            sizes="64px"
+            loading="lazy"
+            aria-hidden="true"
+            className={`${styles.ambientProduct} ${styles.ambientProductEnd}`}
+          />
           <p className={styles.eyebrow}>TIGER STORE · DIGITAL SUBSCRIPTIONS</p>
           <h1 id="hero-title">{locale === "ar" ? <>اشتراكات تحبّها،<br /><span>وخدمة تقدر توثق فيها.</span></> : locale === "fr" ? <>Vos abonnements préférés.<br /><span>Votre boutique de confiance.</span></> : <>Subscriptions you love.<br /><span>A store you can trust.</span></>}</h1>
           <a href="#subscriptions" className={styles.quietLink}>{c.browse}<ArrowUpRight size={18} aria-hidden="true" /></a>

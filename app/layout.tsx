@@ -51,8 +51,8 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
       <body className={arabic.variable}>
         <LocaleProvider locale={locale}>
         <PerformanceProvider>
-          {children}
           <MetaPixelProvider />
+          {children}
           <PageTracker />
         </PerformanceProvider>
         </LocaleProvider>

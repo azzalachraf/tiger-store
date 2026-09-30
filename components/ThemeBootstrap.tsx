@@ -1,4 +1,4 @@
 export function ThemeBootstrap() {
-  const script = `(()=>{try{const p=localStorage.getItem('tiger-store-theme');const dark=p==='dark'||(p!=='light'&&matchMedia('(prefers-color-scheme: dark)').matches);document.documentElement.dataset.theme=dark?'dark':'light';document.documentElement.classList.toggle('dark',dark);}catch{}})();`;
+  const script = `(()=>{try{const p=localStorage.getItem('tiger-store-theme');const dark=p==='dark'||(p!=='light'&&matchMedia('(prefers-color-scheme: dark)').matches);const n=navigator,c=n.connection;const low=matchMedia('(prefers-reduced-motion: reduce)').matches||/FBAN|FBAV|FB_IAB|Instagram|Messenger|FB4A|FBIOS/i.test(n.userAgent)||c?.saveData||['slow-2g','2g','3g'].includes(c?.effectiveType)||(n.hardwareConcurrency??4)<=4||(n.deviceMemory??4)<=4;document.documentElement.dataset.theme=dark?'dark':'light';document.documentElement.dataset.motion=low?'reduced':'enhanced';document.documentElement.dataset.performanceTier=low?'low':'standard';document.documentElement.classList.toggle('dark',dark);}catch{}})();`;
   return <script dangerouslySetInnerHTML={{ __html: script }} />;
 }

@@ -1,10 +1,8 @@
-"use client";
-import { useState } from "react";
-import Image from "next/image";
 import Link from "next/link";
 import { ArrowUpRight, Search, ChevronDown } from "lucide-react";
 import type { Locale } from "@/lib/types";
 import type { HomeProduct } from "./products";
+import { CatalogCard } from "./CatalogCard";
 import { homeCopy } from "./copy";
 import styles from "./landing.module.css";
 
@@ -15,7 +13,6 @@ export function HomeCatalog({
   products: HomeProduct[];
   locale: Locale;
 }) {
-  const [expanded, setExpanded] = useState(false);
   const c = homeCopy[locale];
   const filtered = [...products].sort(
       (a, b) =>
@@ -24,7 +21,8 @@ export function HomeCatalog({
           Number(a.slug === "snapchat-plus") ||
         a.startingPrice - b.startingPrice,
     );
-  const shown = expanded ? filtered : filtered.slice(0, 8);
+  const shown = filtered.slice(0, 8);
+  const remaining = filtered.slice(8);
   return (
     <section
       id="subscriptions"
@@ -54,55 +52,27 @@ export function HomeCatalog({
       </div>
       <div className={styles.productGrid}>
         {shown.map((product) => (
-          <article key={product.id} className={styles.productCard}>
-            <Link
-              href={product.href}
-              prefetch={false}
-              className={styles.productImage}
-              aria-label={product.name}
-            >
-              <Image
-                src={product.image}
-                alt={product.name}
-                fill
-                sizes="(min-width: 1200px) 260px, (min-width: 768px) 30vw, 45vw"
-                className={styles.artwork}
-              />
-            </Link>
-            <div className={styles.productInfo}>
-              <h3>
-                <Link href={product.href} prefetch={false} dir="auto">
-                  {product.name}
-                </Link>
-              </h3>
-              <p className={styles.duration}>{product.duration}</p>
-              <p className={styles.price} dir="ltr">
-                {product.price}
-              </p>
-              {!product.available && <span className={styles.unavailable}>{c.unavailable}</span>}
-              <Link href={product.href} prefetch={false} className={styles.cardCta}>
-                {locale === "ar" ? "اطلب الآن" : locale === "fr" ? "Commander" : "Shop now"}
-                <ArrowUpRight size={14} aria-hidden="true" />
-              </Link>
-            </div>
-          </article>
+          <CatalogCard key={product.id} product={product} locale={locale} />
         ))}
       </div>
       {!shown.length && <p className={styles.empty}>{c.empty}</p>}
+      {remaining.length > 0 && (
+        <details className={styles.moreProducts}>
+          <summary className={styles.secondary}>
+            {c.more}
+            <ChevronDown size={18} aria-hidden="true" />
+          </summary>
+          <div className={`${styles.productGrid} ${styles.extraGrid}`}>
+            {remaining.map((product) => (
+              <CatalogCard key={product.id} product={product} locale={locale} />
+            ))}
+          </div>
+        </details>
+      )}
       <div className={styles.catalogBottom}>
         <p aria-live="polite">
           {shown.length} / {filtered.length} {c.showing}
         </p>
-        {filtered.length > shown.length && (
-          <button
-            type="button"
-            className={styles.secondary}
-            onClick={() => setExpanded(true)}
-          >
-            {c.more}
-            <ChevronDown size={18} aria-hidden="true" />
-          </button>
-        )}
         <Link href="/shop" className={styles.quietLink}>
           {c.catalogLink}
           <ArrowUpRight size={16} aria-hidden="true" />
