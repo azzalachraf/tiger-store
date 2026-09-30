@@ -65,6 +65,13 @@ export default async function Home() {
       <Header />
       <main id="home-main">
         <section className={`${styles.container} ${styles.minimalHero}`} aria-labelledby="hero-title">
+          <div className={styles.heroSparkles} aria-hidden="true">
+            <span />
+            <span />
+            <span />
+            <span />
+            <span />
+          </div>
           <Image
             src="/products/04_Canva_Pro.webp"
             alt=""
