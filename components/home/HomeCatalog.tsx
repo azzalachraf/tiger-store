@@ -2,6 +2,7 @@ import Link from "next/link";
 import { ArrowUpRight, Search } from "lucide-react";
 import type { Locale } from "@/lib/types";
 import type { HomeProduct } from "./products";
+import { CategoryRail } from "./HomeMotionRails";
 import { CatalogCard } from "./CatalogCard";
 import { homeCopy } from "./copy";
 import styles from "./landing.module.css";
@@ -48,6 +49,7 @@ export function HomeCatalog({
           </button>
         </form>
       </div>
+      <CategoryRail products={products} locale={locale} />
       <div className={styles.productGrid}>
         {filtered.map((product) => (
           <CatalogCard key={product.id} product={product} locale={locale} />

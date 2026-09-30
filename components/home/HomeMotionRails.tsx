@@ -7,21 +7,21 @@ import styles from "./landing.module.css";
 
 const featureCopy = {
   ar: [
-    ["دفع موثوق", ShieldCheck],
+    ["طلب بدون حساب", ShieldCheck],
     ["أسعار واضحة بالدينار", BadgeCheck],
-    ["تفعيل من 15 دقيقة إلى 12 ساعة", Clock3],
+    ["تفعيل بعد التحقق من الدفع", Clock3],
     ["دعم مباشر قبل وبعد الطلب", Headphones],
   ],
   fr: [
-    ["Paiement fiable", ShieldCheck],
+    ["Commande sans compte", ShieldCheck],
     ["Prix clairs en dinars", BadgeCheck],
-    ["Activation de 15 min à 12 h", Clock3],
+    ["Activation après vérification", Clock3],
     ["Assistance avant et après l’achat", Headphones],
   ],
   en: [
-    ["Trusted payment", ShieldCheck],
+    ["No account needed", ShieldCheck],
     ["Clear prices in dinars", BadgeCheck],
-    ["Activation in 15 minutes–12 hours", Clock3],
+    ["Activation after payment verification", Clock3],
     ["Support before and after ordering", Headphones],
   ],
 } as const;
@@ -39,27 +39,10 @@ function FeatureItems({ locale, hidden = false }: { locale: Locale; hidden?: boo
   );
 }
 
-function ProductItems({ products, hidden = false }: { products: HomeProduct[]; hidden?: boolean }) {
-  return (
-    <div className={styles.marqueeSet} aria-hidden={hidden || undefined}>
-      {products.map((product) => (
-        <Link href={product.href} prefetch={false} className={styles.movingProduct} key={product.id} tabIndex={hidden ? -1 : undefined}>
-          <span className={styles.movingProductImage}>
-            <Image src={product.image} alt="" fill sizes="64px" loading="lazy" className={styles.artwork} />
-          </span>
-          <span className={styles.movingProductCopy} dir="auto">
-            <strong>{product.name}</strong>
-            <small dir="ltr">{product.price}</small>
-          </span>
-        </Link>
-      ))}
-    </div>
-  );
-}
-
 export function FeatureStrip({ locale }: { locale: Locale }) {
   return (
     <aside className={styles.featureStrip} aria-label={locale === "ar" ? "مميزات المتجر" : locale === "fr" ? "Avantages de la boutique" : "Store features"}>
+      <label className={styles.motionControl}><input type="checkbox" />{locale === "ar" ? "إيقاف الحركة" : locale === "fr" ? "Pause" : "Pause motion"}</label>
       <div className={`${styles.marqueeTrack} ${styles.featureTrack}`}>
         <FeatureItems locale={locale} />
         <FeatureItems locale={locale} hidden />
@@ -68,20 +51,19 @@ export function FeatureStrip({ locale }: { locale: Locale }) {
   );
 }
 
-export function MovingCatalog({ products, locale }: { products: HomeProduct[]; locale: Locale }) {
+export function CategoryRail({ products, locale }: { products: HomeProduct[]; locale: Locale }) {
   const categories = Array.from(
     products.reduce((items, product) => {
       if (!items.has(product.categoryId)) items.set(product.categoryId, product);
       return items;
     }, new Map<string, HomeProduct>()),
   ).map(([, product]) => product);
-  const movingProducts = products.filter((product) => product.available).slice(0, 10);
 
   return (
-    <section className={styles.motionShowcase} aria-label={locale === "ar" ? "استكشف المنتجات والتصنيفات" : locale === "fr" ? "Découvrir les produits et catégories" : "Explore products and categories"}>
+    <section className={styles.catalogCategories} aria-label={locale === "ar" ? "استكشف المنتجات والتصنيفات" : locale === "fr" ? "Découvrir les produits et catégories" : "Explore products and categories"}>
       <div className={styles.categoryRail}>
         <div className={`${styles.marqueeTrack} ${styles.categoryTrack}`}>
-          {[false, true].map((hidden) => (
+          {[false].map((hidden) => (
             <div className={styles.marqueeSet} aria-hidden={hidden || undefined} key={String(hidden)}>
               {categories.map((category) => (
                 <Link
@@ -99,12 +81,6 @@ export function MovingCatalog({ products, locale }: { products: HomeProduct[]; l
               ))}
             </div>
           ))}
-        </div>
-      </div>
-      <div className={styles.productRail}>
-        <div className={`${styles.marqueeTrack} ${styles.productTrack}`}>
-          <ProductItems products={movingProducts} />
-          <ProductItems products={movingProducts} hidden />
         </div>
       </div>
     </section>
