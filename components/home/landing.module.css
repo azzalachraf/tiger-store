@@ -225,3 +225,12 @@
 }
 :global(html[data-motion="reduced"]) .home *,:global(html[data-motion="reduced"]) .home *::before,:global(html[data-motion="reduced"]) .home *::after{animation:none!important}
 @media(prefers-reduced-motion:reduce){.home *,.home *::before,.home *::after{animation:none!important;transition:none!important}}
+
+/* Keep the original message prominent within the redesigned product stage. */
+.heroCopy h1{margin-bottom:24px}
+.heroOfferCopy .offerPrice{margin-bottom:8px}
+.offerWarranty{font-size:12px;line-height:1.7;color:#e3d4c3;margin:0 0 8px}
+.offerAvailability{display:inline-flex;align-items:center;font-size:11px;color:#d4c9bd;margin-bottom:10px}
+.heroOffer{background:radial-gradient(ellipse at 50% 18%,#ff79003b,transparent 68%),linear-gradient(145deg,#292019,#131211)}
+.heroStage::before{content:"";position:absolute;inset:18px 15%;background:radial-gradient(ellipse,#ffb35620,transparent 70%);pointer-events:none}
+@media(max-width:767px){.heroCopy h1{margin-bottom:20px}.offerWarranty{font-size:10px;margin-bottom:5px}.offerAvailability{font-size:10px;margin-bottom:8px}.heroOfferCopy .offerPrice{font-size:21px}.heroOfferCopy h2{font-size:24px}}

@@ -7,21 +7,21 @@ import styles from "./landing.module.css";
 
 const featureCopy = {
   ar: [
-    ["طلب بدون حساب", ShieldCheck],
+    ["دفع موثوق", ShieldCheck],
     ["أسعار واضحة بالدينار", BadgeCheck],
-    ["تفعيل بعد التحقق من الدفع", Clock3],
+    ["تفعيل من 15 دقيقة إلى 12 ساعة", Clock3],
     ["دعم مباشر قبل وبعد الطلب", Headphones],
   ],
   fr: [
-    ["Commande sans compte", ShieldCheck],
+    ["Paiement fiable", ShieldCheck],
     ["Prix clairs en dinars", BadgeCheck],
-    ["Activation après vérification", Clock3],
+    ["Activation de 15 min à 12 h", Clock3],
     ["Assistance avant et après l’achat", Headphones],
   ],
   en: [
-    ["No account needed", ShieldCheck],
+    ["Trusted payment", ShieldCheck],
     ["Clear prices in dinars", BadgeCheck],
-    ["Activation after payment verification", Clock3],
+    ["Activation in 15 minutes–12 hours", Clock3],
     ["Support before and after ordering", Headphones],
   ],
 } as const;
