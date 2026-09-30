@@ -25,7 +25,7 @@ export async function AdminShell({
       <header className="admin-topbar">
         <Link href="/admin" className="admin-brand">
           <Image
-            src="/logo/tiger-store-ui.png"
+            src="/logo/tiger-store-ui.webp"
             alt="Tiger Store"
             width={40}
             height={40}

@@ -12,7 +12,7 @@ export const metadata = createPageMetadata({
 });
 
 const methodMeta = [
-  { name: "BaridiMob", logo: "/logos/payments/baridimob.png", helper: { ar: "الدفع عبر تطبيق BaridiMob", fr: "Virement mobile via BaridiMob", en: "Mobile transfer through BaridiMob" } },
+  { name: "BaridiMob", logo: "/logos/payments/baridimob.webp", helper: { ar: "الدفع عبر تطبيق BaridiMob", fr: "Virement mobile via BaridiMob", en: "Mobile transfer through BaridiMob" } },
   { name: "Binance", logo: "/logos/payments/binance.svg", helper: { ar: "تحويل رقمي عبر Binance", fr: "Transfert numérique via Binance", en: "Digital transfer through Binance" } },
   { name: "RedotPay", logo: "/logos/payments/redotpay.svg", helper: { ar: "دفع رقمي", fr: "Transfert numérique", en: "Digital transfer" } },
 ] as const;

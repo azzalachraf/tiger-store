@@ -20,7 +20,7 @@ export function Header() {
 
   return <header className="sticky top-0 z-50 border-b border-[var(--border-color)] bg-[var(--surface)] text-[var(--text)] shadow-sm">
     <div className="mx-auto flex min-h-16 max-w-[1180px] items-center gap-2 px-4 sm:px-6 lg:min-h-[72px] lg:px-8">
-      <Link href="/" className="relative h-10 w-24 shrink-0 sm:w-28" aria-label="Tiger Store"><Image src="/logo/tiger-store-ui.png" alt="Tiger Store" fill sizes="112px" className="object-contain object-start" loading="eager" /></Link>
+      <Link href="/" className="relative h-10 w-24 shrink-0 sm:w-28" aria-label="Tiger Store"><Image src="/logo/tiger-store-ui.webp" alt="Tiger Store" fill sizes="112px" className="object-contain object-start" loading="eager" /></Link>
       <nav className="hidden flex-1 items-center justify-center gap-1 lg:flex" aria-label={t(locale, "menu")}>{links.map(([href, key]) => <Link key={href} href={href} className="rounded-full px-3 py-2 text-sm font-bold hover:bg-[#FFF2E6] hover:text-[#C54E00]">{t(locale, key)}</Link>)}</nav>
       <form action="/shop" className="relative hidden w-44 lg:block xl:w-56"><Search className="pointer-events-none absolute start-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--muted-text)]" /><input name="q" type="search" placeholder={t(locale, "search")} className="h-10 w-full rounded-full border border-[var(--border-color)] bg-[var(--page)] py-2 ps-9 pe-3 text-xs font-semibold text-[var(--text)] placeholder:text-[var(--muted-text)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#FF7300]" /></form>
       <div className="ms-auto flex items-center gap-1">

@@ -233,7 +233,7 @@ export default async function Home() {
         <div className={styles.footerTop}>
           <Link href="/" className={styles.logo}>
             <Image
-              src="/logo/tiger-store-ui.png"
+              src="/logo/tiger-store-ui.webp"
               alt="Tiger Store"
               width={42}
               height={42}

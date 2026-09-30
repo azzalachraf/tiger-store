@@ -27,7 +27,7 @@ export function HomeNavigation() {
       <div className={`${styles.container} ${styles.headerRow}`}>
         <Link href="/" className={styles.logo} aria-label="Tiger Store">
           <Image
-            src="/logo/tiger-store-ui.png"
+            src="/logo/tiger-store-ui.webp"
             alt="Tiger Store"
             width={42}
             height={42}

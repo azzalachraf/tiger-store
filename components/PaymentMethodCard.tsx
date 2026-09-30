@@ -6,13 +6,13 @@ type PaymentMethodCardProps = {
 };
 
 const paymentLogos: Record<string, string> = {
-  BaridiMob: "/logos/payments/baridimob.png",
+  BaridiMob: "/logos/payments/baridimob.webp",
   Binance: "/logos/payments/binance.svg",
   RedotPay: "/logos/payments/redotpay.svg",
 };
 
 export function PaymentMethodCard({ method }: PaymentMethodCardProps) {
-  const logo = paymentLogos[method.name] ?? "/logo/tiger-store-ui.png";
+  const logo = paymentLogos[method.name] ?? "/logo/tiger-store-ui.webp";
 
   return (
     <div className="rounded-2xl border border-white/10 bg-white/[0.045] p-5">

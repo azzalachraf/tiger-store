@@ -1,6 +1,14 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  async redirects() {
+    return [
+      { source: "/products/:path*.png", destination: "/products/:path*.webp", permanent: true },
+      { source: "/hero/:path*.png", destination: "/hero/:path*.webp", permanent: true },
+      { source: "/logo/:path*.png", destination: "/logo/:path*.webp", permanent: true },
+      { source: "/logos/:path*.png", destination: "/logos/:path*.webp", permanent: true },
+    ];
+  },
   reactStrictMode: true,
   devIndicators: false,
   outputFileTracingRoot: process.cwd(),

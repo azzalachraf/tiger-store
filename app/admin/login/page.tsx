@@ -22,7 +22,7 @@ export default async function AdminLoginPage({
       <main className="mx-auto flex min-h-screen max-w-xl items-center px-3 py-10 sm:px-5">
         <section className="admin-panel w-full p-6 sm:p-8">
           <Image
-            src="/logo/tiger-store-ui.png"
+            src="/logo/tiger-store-ui.webp"
             alt="Tiger Store"
             width={72}
             height={72}
