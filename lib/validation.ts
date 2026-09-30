@@ -149,6 +149,30 @@ export const adminFinanceAdjustmentSchema = z.object({ adminId: z.string().regex
 export const adminPaymentSchema = z.object({ adminId: z.string().regex(/^[1-9][0-9]{0,18}$/), amountDzd: z.coerce.number().int().min(1).max(10_000_000), note: z.string().trim().max(500) });
 export const adminPaymentScheduleSchema = z.object({ adminId: z.string().regex(/^[1-9][0-9]{0,18}$/), workStartedAt: z.string().date(), nextPaymentDate: z.string().date() });
 export const advertisingSpendSchema = z.object({ spentOn: z.string().date(), platform: z.enum(["meta", "instagram", "facebook", "other"]), campaign: z.string().trim().max(160), amountDzd: z.coerce.number().int().min(0).max(10_000_000), note: z.string().trim().max(500) });
+export const accountingSaleSchema = z.object({
+  customerName: z.string().trim().min(1).max(160),
+  amountDzd: z.coerce.number().int().positive().max(10_000_000),
+  accountId: z.string().uuid(),
+  occurredOn: z.string().date(),
+  reference: z.string().trim().max(240),
+  note: z.string().trim().max(1200),
+});
+export const accountingMovementSchema = z.object({
+  kind: z.enum(["sale", "expense", "transfer", "opening_balance"]),
+  amountDzd: z.coerce.number().int().min(-10_000_000).max(10_000_000).refine((value) => value !== 0),
+  occurredOn: z.string().date(),
+  accountId: z.string().uuid(),
+  transferAccountId: z.preprocess((value) => value === "" ? undefined : value, z.string().uuid().optional()),
+  orderId: z.string().trim().max(160).optional(),
+  reference: z.string().trim().max(240),
+  note: z.string().trim().max(1200),
+}).superRefine((value, context) => {
+  if (value.kind !== "opening_balance" && value.amountDzd < 1) context.addIssue({ code: "custom", path: ["amountDzd"], message: "Amount must be positive." });
+  if (value.kind === "sale" && !value.orderId) context.addIssue({ code: "custom", path: ["orderId"], message: "Choose an order." });
+  if (value.kind !== "sale" && value.orderId) context.addIssue({ code: "custom", path: ["orderId"], message: "Only sale records can link orders." });
+  if (value.kind === "transfer" && (!value.transferAccountId || value.transferAccountId === value.accountId)) context.addIssue({ code: "custom", path: ["transferAccountId"], message: "Choose a different destination account." });
+  if (value.kind !== "transfer" && value.transferAccountId) context.addIssue({ code: "custom", path: ["transferAccountId"], message: "Destination is only used for transfers." });
+});
 export const accountStatusSchema = z.enum(["Available", "Sold", "Expired", "Problem"]);
 export const stockAlertInputSchema = z.object({
   productSlug: z.string().trim().min(1).max(160).regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/),

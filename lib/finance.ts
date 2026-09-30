@@ -75,11 +75,21 @@ export async function getAdminCycleStatistics(
 }
 export async function getAdminFinanceSummary(adminId: string): Promise<AdminFinanceSummary> {
   const client = getSupabaseServiceClient();
+  const { data: latestReset, error: resetError } = await client
+    .from("admin_balance_resets")
+    .select("effective_at")
+    .eq("admin_telegram_user_id", adminId)
+    .order("effective_at", { ascending: false })
+    .limit(1)
+    .maybeSingle<{ effective_at: string }>();
+  if (resetError) throw new Error("Admin balance reset could not be read.");
+  const sinceReset = <T extends { gte: (column: string, value: string) => T }>(query: T, column: string): T =>
+    latestReset ? query.gte(column, latestReset.effective_at) : query;
   const [{ data: user, error: userError }, { data: sales, error: salesError }, { data: payments, error: paymentsError }, { data: adjustments, error: adjustmentsError }, settings] = await Promise.all([
     client.from("telegram_users").select("work_started_at, next_payment_date").eq("telegram_user_id", adminId).maybeSingle(),
-    client.from("finance_sales").select("commission_dzd").eq("admin_telegram_user_id", adminId),
-    client.from("admin_payments").select("amount_dzd").eq("admin_telegram_user_id", adminId),
-    client.from("financial_adjustments").select("amount_dzd").eq("recipient_telegram_user_id", adminId),
+    sinceReset(client.from("finance_sales").select("commission_dzd").eq("admin_telegram_user_id", adminId), "completed_at"),
+    sinceReset(client.from("admin_payments").select("amount_dzd").eq("admin_telegram_user_id", adminId), "paid_at"),
+    sinceReset(client.from("financial_adjustments").select("amount_dzd").eq("recipient_telegram_user_id", adminId), "created_at"),
     getFinanceSettings(),
   ]);
   if (userError || salesError || paymentsError || adjustmentsError) throw new Error("Admin finance summary could not be read.");
