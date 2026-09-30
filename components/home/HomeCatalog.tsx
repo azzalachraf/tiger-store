@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ArrowUpRight, Search, ChevronDown } from "lucide-react";
+import { ArrowUpRight, Search } from "lucide-react";
 import type { Locale } from "@/lib/types";
 import type { HomeProduct } from "./products";
 import { CatalogCard } from "./CatalogCard";
@@ -21,8 +21,6 @@ export function HomeCatalog({
           Number(a.slug === "snapchat-plus") ||
         a.startingPrice - b.startingPrice,
     );
-  const shown = filtered.slice(0, 8);
-  const remaining = filtered.slice(8);
   return (
     <section
       id="subscriptions"
@@ -51,27 +49,14 @@ export function HomeCatalog({
         </form>
       </div>
       <div className={styles.productGrid}>
-        {shown.map((product) => (
+        {filtered.map((product) => (
           <CatalogCard key={product.id} product={product} locale={locale} />
         ))}
       </div>
-      {!shown.length && <p className={styles.empty}>{c.empty}</p>}
-      {remaining.length > 0 && (
-        <details className={styles.moreProducts}>
-          <summary className={styles.secondary}>
-            {c.more}
-            <ChevronDown size={18} aria-hidden="true" />
-          </summary>
-          <div className={`${styles.productGrid} ${styles.extraGrid}`}>
-            {remaining.map((product) => (
-              <CatalogCard key={product.id} product={product} locale={locale} />
-            ))}
-          </div>
-        </details>
-      )}
+      {!filtered.length && <p className={styles.empty}>{c.empty}</p>}
       <div className={styles.catalogBottom}>
         <p aria-live="polite">
-          {shown.length} / {filtered.length} {c.showing}
+          {filtered.length} {c.showing}
         </p>
         <Link href="/shop" className={styles.quietLink}>
           {c.catalogLink}

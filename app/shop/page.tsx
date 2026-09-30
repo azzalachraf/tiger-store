@@ -6,6 +6,7 @@ import { findCatalogProducts } from "@/lib/catalog-search";
 import { createPageMetadata } from "@/lib/seo";
 import { redirect } from "next/navigation";
 import { cookies } from "next/headers";
+import { productCategories } from "@/lib/product-localization";
 
 export const metadata = createPageMetadata({
   title: "Shop Digital Subscriptions",
@@ -20,10 +21,14 @@ type ShopPageProps = {
 };
 
 export default async function ShopPage({ searchParams }: ShopPageProps) {
-  const { q } = await searchParams;
+  const { q, category } = await searchParams;
   const products = await getProducts();
   const query = q?.trim().slice(0, 80) ?? "";
-  const matches = query ? findCatalogProducts(products, query) : products;
+  const selectedCategory = productCategories.find((entry) => entry.id === category);
+  const categoryProducts = selectedCategory && selectedCategory.id !== "all"
+    ? products.filter((product) => (selectedCategory.matches as readonly string[]).includes(product.category))
+    : products;
+  const matches = query ? findCatalogProducts(categoryProducts, query) : categoryProducts;
   const savedLocale = (await cookies()).get("tiger-store-locale")?.value;
   const locale = savedLocale === "en" || savedLocale === "fr" ? savedLocale : "ar";
 
@@ -37,6 +42,7 @@ export default async function ShopPage({ searchParams }: ShopPageProps) {
           products={matches}
           initialQuery={query}
           locale={locale}
+          categoryLabel={selectedCategory?.[locale]}
         />
       </main>
       <Footer />

@@ -12,6 +12,7 @@ import { getProducts, getSettings } from "@/lib/admin-store";
 import { createPageMetadata } from "@/lib/seo";
 import { Header } from "@/components/Header";
 import { HomeCatalog } from "@/components/home/HomeCatalog";
+import { FeatureStrip, MovingCatalog } from "@/components/home/HomeMotionRails";
 import { homeCopy } from "@/components/home/copy";
 import { homeProduct } from "@/components/home/products";
 import styles from "@/components/home/landing.module.css";
@@ -63,15 +64,9 @@ export default async function Home() {
       lang={locale}
     >
       <Header />
+      <FeatureStrip locale={locale} />
       <main id="home-main">
         <section className={`${styles.container} ${styles.minimalHero}`} aria-labelledby="hero-title">
-          <div className={styles.heroSparkles} aria-hidden="true">
-            <span />
-            <span />
-            <span />
-            <span />
-            <span />
-          </div>
           <Image
             src="/products/04_Canva_Pro.webp"
             alt=""
@@ -96,6 +91,7 @@ export default async function Home() {
           <h1 id="hero-title">{locale === "ar" ? <>اشتراكات تحبّها،<br /><span>وخدمة تقدر توثق فيها.</span></> : locale === "fr" ? <>Vos abonnements préférés.<br /><span>Votre boutique de confiance.</span></> : <>Subscriptions you love.<br /><span>A store you can trust.</span></>}</h1>
           <a href="#subscriptions" className={styles.quietLink}>{c.browse}<ArrowUpRight size={18} aria-hidden="true" /></a>
         </section>
+        <MovingCatalog products={cards} locale={locale} />
         <section className={`${styles.container} ${styles.featuredSection}`} aria-labelledby="featured-title">
           {featured && (
             <article
