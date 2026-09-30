@@ -9,6 +9,7 @@ import {
   Users,
   BarChart3,
   WalletCards,
+  Landmark,
   TicketCheck,
   ClipboardCopy,
   CreditCard,
@@ -38,6 +39,7 @@ const groups = [
       ["/admin/team", "Team", Users],
       ["/admin/tiger-new-sheet", "Tiger New Sheet", ClipboardCopy],
       ["/admin/finance", "Finance", WalletCards],
+      ["/admin/accounting", "Accounting", Landmark],
     ],
   },
   {
