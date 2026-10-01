@@ -1,9 +1,8 @@
-import Image from "next/image";
-import Link from "next/link";
-import { ArrowDown, ArrowUpRight } from "lucide-react";
+import { ArrowDown } from "lucide-react";
 import type { HomeProduct } from "./products";
 import type { Locale } from "@/lib/types";
 import { homeCopy } from "./copy";
+import { ProductShowcase, type ShowcaseProduct } from "./ProductShowcase";
 import styles from "./landing.module.css";
 
 const copy = {
@@ -14,9 +13,18 @@ const copy = {
 export function ShoppingHero({ products, locale }: { products: HomeProduct[]; locale: Locale }) {
   const c = copy[locale];
   const original = homeCopy[locale];
-  const featured = products.find(p => p.slug === "snapchat-plus" && p.available) ?? products.find(p => p.available) ?? products[0];
-  const isSnapchat = featured?.slug === "snapchat-plus";
-  const satellites = products.filter(p => p.available && p.id !== featured?.id).slice(0, 2);
+  const preferred = ["snapchat-plus", "canva-pro", "autodesk"];
+  const showcase: ShowcaseProduct[] = ["snapchat-plus", "canva-pro", ...products.filter(p => !preferred.includes(p.slug)).map(p => p.slug), "autodesk"].flatMap(slug => {
+    const product = products.find(p => p.slug === slug);
+    if (!product) return [];
+    const snap = slug === "snapchat-plus";
+    return [{ ...product, artwork: product.image,
+      displayName: snap ? "Snapchat+" : product.name,
+      caption: snap ? c.spotlight : original.spotlight,
+      duration: snap ? c.duration : product.duration,
+      price: snap ? "2,300 DA" : product.price,
+      warranty: snap ? original.snapDescription : undefined }];
+  });
   return <section className={styles.shoppingHero} aria-labelledby="hero-title">
     <div className={styles.heroCopy}>
       <p className={styles.eyebrow}>TIGER STORE · DIGITAL SUBSCRIPTIONS</p>
@@ -24,21 +32,6 @@ export function ShoppingHero({ products, locale }: { products: HomeProduct[]; lo
 
       <a href="#subscriptions" className={styles.heroBrowse}>{original.browse}<ArrowDown size={18} aria-hidden="true" /></a>
     </div>
-    {featured && <article className={styles.heroOffer}>
-      <div className={styles.heroStage} aria-hidden="true">
-        <span className={styles.stageOrbit} />
-        {satellites.map((p, i) => <div className={i === 0 ? styles.stageLeft : styles.stageRight} key={p.id}><Image src={p.image} alt="" fill sizes="80px" className={styles.artwork} /></div>)}
-        <div className={styles.stageMain}><Image src={featured.image} alt="" fill priority sizes="(min-width:768px) 220px, 125px" className={styles.artwork} /></div>
-      </div>
-      <div className={styles.heroOfferCopy}>
-        <p className={styles.offerKicker}>{isSnapchat ? c.spotlight : original.spotlight}</p>
-        <h2 dir="auto">{isSnapchat ? "Snapchat+" : featured.name}</h2>
-        <p className={styles.offerDuration}>{isSnapchat ? c.duration : featured.duration}</p>
-        <strong className={styles.offerPrice} dir="ltr">{isSnapchat ? "2,300 DA" : featured.price}</strong>
-        {isSnapchat && <p className={styles.offerWarranty}>{original.snapDescription}</p>}
-        <span className={styles.offerAvailability}>{featured.available ? original.available : original.unavailable}</span>
-        <Link href={featured.href} prefetch={false} className={styles.offerButton}>{original.viewOffers}<ArrowUpRight size={16} aria-hidden="true" /></Link>
-      </div>
-    </article>}
+    <ProductShowcase products={showcase} locale={locale} labels={{ offers: original.viewOffers, available: original.available, unavailable: original.unavailable }} />
   </section>;
 }

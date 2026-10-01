@@ -4,6 +4,13 @@ import { productCategories, optionValue } from "@/lib/product-localization";
 import type { Locale, Product, ProductPriceOption } from "@/lib/types";
 import { homeCopy } from "./copy";
 
+const floatingCards = new Set(["snapchat-plus", "canva-pro", "autodesk", "capcut-pro", "chatgpt-plus", "claude-pro", "coursera", "cursor-pro", "elevenlabs-creator", "gamma-pro", "gemini-ai-pro", "higgsfield-pro", "lovable-pro", "manus-pro", "n8n-starter", "perplexity-pro", "replit-core"]);
+
+function cardArtwork(image: string) {
+  const name = image.match(/^\/products\/([^/]+)\.webp$/)?.[1];
+  return name && floatingCards.has(name) ? `/products/floating/${name}.webp` : image;
+}
+
 export type HomeProduct = {
   id: string;
   slug: string;
@@ -103,7 +110,7 @@ export function homeProduct(product: Product, locale: Locale): HomeProduct {
     slug: product.slug,
     href: `/products/${product.slug}`,
     name: locale === "ar" ? product.nameAr || product.name : product.name,
-    image: product.image,
+    image: cardArtwork(product.image),
     available: product.available && availableOffers.length > 0,
     category:
       category?.[locale] ??

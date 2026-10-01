@@ -1,6 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
-import { BadgeCheck, Clock3, Headphones, ShieldCheck } from "lucide-react";
+import { Clock3, Headphones, ShieldCheck } from "lucide-react";
 import type { Locale } from "@/lib/types";
 import type { HomeProduct } from "./products";
 import styles from "./landing.module.css";
@@ -8,19 +8,16 @@ import styles from "./landing.module.css";
 const featureCopy = {
   ar: [
     ["دفع موثوق", ShieldCheck],
-    ["أسعار واضحة بالدينار", BadgeCheck],
     ["تفعيل من 15 دقيقة إلى 12 ساعة", Clock3],
     ["دعم مباشر قبل وبعد الطلب", Headphones],
   ],
   fr: [
     ["Paiement fiable", ShieldCheck],
-    ["Prix clairs en dinars", BadgeCheck],
     ["Activation de 15 min à 12 h", Clock3],
     ["Assistance avant et après l’achat", Headphones],
   ],
   en: [
     ["Trusted payment", ShieldCheck],
-    ["Clear prices in dinars", BadgeCheck],
     ["Activation in 15 minutes–12 hours", Clock3],
     ["Support before and after ordering", Headphones],
   ],

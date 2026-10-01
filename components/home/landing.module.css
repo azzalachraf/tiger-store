@@ -234,3 +234,65 @@
 .heroOffer{background:radial-gradient(ellipse at 50% 18%,#ff79003b,transparent 68%),linear-gradient(145deg,#292019,#131211)}
 .heroStage::before{content:"";position:absolute;inset:18px 15%;background:radial-gradient(ellipse,#ffb35620,transparent 70%);pointer-events:none}
 @media(max-width:767px){.heroCopy h1{margin-bottom:20px}.offerWarranty{font-size:10px;margin-bottom:5px}.offerAvailability{font-size:10px;margin-bottom:8px}.heroOfferCopy .offerPrice{font-size:21px}.heroOfferCopy h2{font-size:24px}}
+
+/* Floating product gallery: the artwork is the stage, with no enclosing panel. */
+.home{background:radial-gradient(ellipse at 85% 3%,#ffd5ab4d,transparent 32%),radial-gradient(ellipse at 8% 24%,#f7d5ba33,transparent 27%),#faf8f5}
+:global(html.dark) .home{background:radial-gradient(ellipse at 85% 3%,#bf68251f,transparent 32%),radial-gradient(ellipse at 8% 24%,#72452717,transparent 27%),#121110}
+.shoppingHero{gap:28px 65px;padding-block:18px 8px;align-items:center}
+.heroCopy h1{font-size:clamp(32px,4.5vw,58px);line-height:1.28}
+.heroCopy h1 span{color:#ab480f}
+:global(html.dark) .heroCopy h1 span{color:#ffac70}
+.heroBrowse{background:linear-gradient(135deg,#ff982a,#ff7900);box-shadow:0 10px 24px -14px #c3541f;border:1px solid #ffb565;border-radius:16px}
+.floatingShowcase{min-width:0;background:transparent;border:0;box-shadow:none;isolation:isolate}
+.swipeStage{height:300px;position:relative;direction:ltr;touch-action:pan-y;user-select:none;cursor:grab}
+.swipeStage:active{cursor:grabbing}
+.floatingSlot{position:absolute;width:220px;height:285px;left:50%;top:0;margin-left:-110px;transition:transform .55s cubic-bezier(.22,.75,.25,1),opacity .45s;pointer-events:none}
+.floatingSlot[data-position=center]{transform:translate3d(0,0,0) rotate(-3deg);z-index:3;opacity:1}
+.floatingSlot[data-position=left]{transform:translate3d(-145px,20px,0) scale(.58) rotate(-14deg);z-index:1;opacity:.82}
+.floatingSlot[data-position=right]{transform:translate3d(145px,20px,0) scale(.58) rotate(14deg);z-index:1;opacity:.82}
+.floatingCard{position:relative;width:100%;height:100%;filter:drop-shadow(0 17px 12px #49352228);animation:cardLevitate 6s ease-in-out infinite}
+.floatingSlot[data-position=left] .floatingCard{animation-delay:-2s}
+.floatingSlot[data-position=right] .floatingCard{animation-delay:-4s}
+.showcaseArrow{position:absolute;top:50%;margin-top:-20px;width:40px;height:40px;display:grid;place-items:center;border:1px solid var(--border-color);border-radius:50%;background:var(--surface);color:var(--text);z-index:4;box-shadow:0 4px 16px #4935220d;cursor:pointer;transition:background .2s,transform .2s}
+.showcaseArrow[data-side=left]{left:0}.showcaseArrow[data-side=right]{right:0}
+.showcaseArrow:hover{background:var(--tint);transform:scale(1.05)}
+.showcaseArrow:active{transform:scale(.95)}
+.showcaseDetails{text-align:center;max-width:350px;margin-inline:auto;padding-inline:12px}
+.showcaseDetails .offerKicker{color:var(--accent);font-size:11px;margin-bottom:5px}
+.showcaseDetails h2{font-size:30px;font-weight:850;letter-spacing:-.04em;margin:0 0 7px;line-height:1.2}
+.showcaseDetails .offerDuration{color:var(--muted);min-height:18px}
+.showcaseDetails .offerPrice{color:var(--accent);font-size:26px;line-height:1.2;margin-bottom:6px}
+.showcaseDetails .offerWarranty{color:var(--muted);min-height:21px;margin:0 0 4px}
+.showcaseDetails .offerAvailability{color:var(--muted);font-size:11px;margin-bottom:12px}
+.showcaseDetails .offerButton{background:var(--text);color:var(--surface);border:1px solid var(--text);min-height:48px;border-radius:14px}
+.showcaseDetails .offerButton:hover{background:var(--accent);border-color:var(--accent);color:#fff}
+.showcaseDots{display:flex;justify-content:center;direction:ltr;gap:0;margin-top:5px}
+.showcaseDots button{width:32px;height:32px;display:grid;place-items:center;background:transparent;border:0;cursor:pointer}
+.showcaseDots span{width:6px;height:6px;border-radius:99px;background:var(--muted);opacity:.4;transition:width .2s,opacity .2s}
+.showcaseDots button[aria-pressed=true] span{width:18px;background:var(--accent);opacity:1}
+.showcaseDots .slideCount{width:auto;height:auto;background:none;opacity:1;border-radius:0;font-size:11px;color:var(--muted);padding:8px;font-variant-numeric:tabular-nums}
+.productCard{border-radius:22px;border-color:color-mix(in srgb,var(--border-color) 72%,transparent);box-shadow:0 12px 32px -28px #40271545}
+.productImage{background:color-mix(in srgb,var(--page) 78%,var(--surface));border:0;border-radius:16px}
+.catalogCategories .categoryPill{border-radius:14px}
+.search{border-radius:16px}
+.finalCta{background:linear-gradient(120deg,#211914,#121110);border:1px solid #493526}
+@keyframes cardLevitate{0%,100%{transform:translate3d(0,0,0)}50%{transform:translate3d(0,-8px,0)}}
+@media(max-width:767px){
+.shoppingHero{gap:12px;padding-block:0;margin-top:24px;margin-bottom:24px}
+.heroCopy h1{font-size:32px;margin-bottom:18px}
+.floatingShowcase{padding-top:12px}
+.swipeStage{height:218px}
+.floatingSlot{width:155px;height:207px;margin-left:-77.5px}
+.floatingSlot[data-position=left]{transform:translate3d(-95px,12px,0) scale(.55) rotate(-14deg)}
+.floatingSlot[data-position=right]{transform:translate3d(95px,12px,0) scale(.55) rotate(14deg)}
+.showcaseArrow{width:36px;height:44px;margin-top:-22px}
+.showcaseDetails{max-width:320px}
+.showcaseDetails h2{font-size:25px}
+.showcaseDetails .offerPrice{font-size:23px}
+.showcaseDetails .offerWarranty{font-size:11px}
+.showcaseDetails .offerDuration{font-size:11px}
+.showcaseDetails .offerButton{min-height:46px;font-size:13px}
+}
+:global(html[data-motion="reduced"]) .home .floatingCard{animation:none!important}
+:global(html[data-motion="reduced"]) .home .floatingSlot{transition:none!important}
+@media(prefers-reduced-motion:reduce){.floatingCard{animation:none!important}.floatingSlot{transition:none!important}}
