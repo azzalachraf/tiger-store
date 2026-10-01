@@ -65,8 +65,10 @@ export function ProductShowcase({ products, locale, labels }: { products: Showca
     <div className={styles.showcaseDetails} aria-live="polite" aria-atomic="true">
       <p className={styles.offerKicker}>{featured.caption}</p>
       <h2 dir="auto">{featured.displayName}</h2>
-      <p className={styles.offerDuration}>{featured.duration}</p>
-      <strong className={styles.offerPrice} dir="ltr">{featured.price}</strong>
+      <div className={styles.offerSummary}>
+        <p className={styles.offerDuration}>{featured.duration}</p>
+        <strong className={styles.offerPrice} dir="ltr">{featured.price}</strong>
+      </div>
       <p className={styles.offerWarranty}>{featured.warranty || "\u00a0"}</p>
       <span className={styles.offerAvailability}>{featured.available ? labels.available : labels.unavailable}</span>
       <Link href={featured.href} prefetch={false} className={styles.offerButton}>{labels.offers}<ArrowUpRight size={16} aria-hidden="true" /></Link>
