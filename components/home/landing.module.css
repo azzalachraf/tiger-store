@@ -244,7 +244,7 @@
 :global(html.dark) .heroCopy h1 span{color:#ffac70}
 .heroBrowse{background:linear-gradient(135deg,#ff982a,#ff7900);box-shadow:0 10px 24px -14px #c3541f;border:1px solid #ffb565;border-radius:16px}
 .floatingShowcase{min-width:0;background:transparent;border:0;box-shadow:none;isolation:isolate}
-.swipeStage{height:300px;position:relative;direction:ltr;touch-action:pan-y;user-select:none;cursor:grab}
+.swipeStage{height:345px;position:relative;direction:ltr;touch-action:pan-y;user-select:none;cursor:grab}
 .swipeStage:active{cursor:grabbing}
 .floatingSlot{position:absolute;width:220px;height:285px;left:50%;top:0;margin-left:-110px;transition:transform .55s cubic-bezier(.22,.75,.25,1),opacity .45s;pointer-events:none}
 .floatingSlot[data-position=center]{transform:translate3d(0,0,0) rotate(-3deg);z-index:3;opacity:1}
@@ -281,7 +281,7 @@
 .shoppingHero{gap:12px;padding-block:0;margin-top:24px;margin-bottom:24px}
 .heroCopy h1{font-size:32px;margin-bottom:18px}
 .floatingShowcase{padding-top:12px}
-.swipeStage{height:218px}
+.swipeStage{height:252px}
 .floatingSlot{width:155px;height:207px;margin-left:-77.5px}
 .floatingSlot[data-position=left]{transform:translate3d(-95px,12px,0) scale(.55) rotate(-14deg)}
 .floatingSlot[data-position=right]{transform:translate3d(95px,12px,0) scale(.55) rotate(14deg)}
@@ -296,3 +296,15 @@
 :global(html[data-motion="reduced"]) .home .floatingCard{animation:none!important}
 :global(html[data-motion="reduced"]) .home .floatingSlot{transition:none!important}
 @media(prefers-reduced-motion:reduce){.floatingCard{animation:none!important}.floatingSlot{transition:none!important}}
+
+/* Snapchat remains the visual anchor of the initial showcase. */
+.floatingShowcase[data-featured="snapchat-plus"] .floatingSlot[data-position=center]{transform:translate3d(0,24px,0) scale(1.2) rotate(-3deg)}
+.floatingShowcase[data-featured="snapchat-plus"] .floatingSlot:not([data-position=center]){opacity:.6}
+.floatingShowcase[data-featured="snapchat-plus"] .showcaseDetails h2{font-size:36px}
+.floatingShowcase[data-featured="snapchat-plus"] .offerKicker{display:inline-block;background:#ffef75;color:#302600;border-radius:99px;padding:5px 12px;font-weight:800}
+.floatingShowcase[data-featured="snapchat-plus"] .offerButton{background:#ffed00;border-color:#e4ce00;color:#171400;box-shadow:0 8px 20px -12px #bda500}
+.floatingShowcase[data-featured="snapchat-plus"] .offerButton:hover{background:#ffe500;border-color:#cbb900}
+@media(max-width:767px){
+  .floatingShowcase[data-featured="snapchat-plus"] .floatingSlot[data-position=center]{transform:translate3d(0,17px,0) scale(1.2) rotate(-3deg)}
+  .floatingShowcase[data-featured="snapchat-plus"] .showcaseDetails h2{font-size:30px}
+}

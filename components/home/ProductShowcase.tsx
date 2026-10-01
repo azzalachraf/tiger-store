@@ -38,7 +38,7 @@ export function ProductShowcase({ products, locale, labels }: { products: Showca
     if (Math.abs(dx) > 35 && Math.abs(dx) > Math.abs(dy) * 1.3) move((dx < 0 ? 1 : -1) * (rtl ? -1 : 1));
   };
 
-  return <article className={styles.floatingShowcase} aria-label={controls.region} aria-roledescription="carousel">
+  return <article className={styles.floatingShowcase} data-featured={featured.slug} aria-label={controls.region} aria-roledescription="carousel">
     <div className={styles.swipeStage} tabIndex={0} role="group" aria-label={controls.region}
       onPointerDown={onPointerDown} onPointerUp={onPointerUp} onPointerCancel={() => { pointer.current = null; }}
       onKeyDown={event => {
@@ -53,7 +53,7 @@ export function ProductShowcase({ products, locale, labels }: { products: Showca
         const side = relative === 0 ? "center" : relative === 1 ? (rtl ? "left" : "right") : (rtl ? "right" : "left");
         return <div key={product.id} className={styles.floatingSlot} data-position={side}>
           <div className={styles.floatingCard}>
-            <Image src={product.artwork} alt={product.name} fill sizes="(min-width:768px) 240px, 180px" priority={position === 0} draggable={false} className={styles.artwork} />
+            <Image src={product.artwork} alt={product.name} fill sizes="(min-width:768px) 280px, 200px" priority={position === 0} draggable={false} className={styles.artwork} />
           </div>
         </div>;
       })}
