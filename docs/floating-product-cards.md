@@ -24,4 +24,4 @@ background output and this instruction:
 
 Outputs are resized to at most 720 pixels tall and encoded as WebP at quality 88
 with alpha quality 100. Next Image supplies responsive sizes in the storefront.
-The floating animation respects reduced motion and the existing pause control.
+The floating animation respects the device's reduced-motion preference.

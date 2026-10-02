@@ -39,7 +39,6 @@ function FeatureItems({ locale, hidden = false }: { locale: Locale; hidden?: boo
 export function FeatureStrip({ locale }: { locale: Locale }) {
   return (
     <aside className={styles.featureStrip} aria-label={locale === "ar" ? "مميزات المتجر" : locale === "fr" ? "Avantages de la boutique" : "Store features"}>
-      <label className={styles.motionControl}><input type="checkbox" />{locale === "ar" ? "إيقاف الحركة" : locale === "fr" ? "Pause" : "Pause motion"}</label>
       <div className={`${styles.marqueeTrack} ${styles.featureTrack}`}>
         <FeatureItems locale={locale} />
         <FeatureItems locale={locale} hidden />
