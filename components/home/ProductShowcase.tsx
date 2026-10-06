@@ -53,7 +53,7 @@ export function ProductShowcase({ products, locale, labels }: { products: Showca
         const side = relative === 0 ? "center" : relative === 1 ? (rtl ? "left" : "right") : (rtl ? "right" : "left");
         return <div key={product.id} className={styles.floatingSlot} data-position={side}>
           <div className={styles.floatingCard}>
-            <Image src={product.artwork} alt={product.name} fill sizes={product.slug === "snapchat-plus" ? "(min-width:768px) 540px, 380px" : "(min-width:768px) 280px, 200px"} priority={position === 0} draggable={false} className={styles.artwork} />
+            <Image src={product.artwork} alt={product.name} fill sizes={product.slug === "snapchat-plus" ? "(min-width:768px) 405px, 285px" : "(min-width:768px) 280px, 200px"} priority={position === 0} draggable={false} className={styles.artwork} />
           </div>
         </div>;
       })}

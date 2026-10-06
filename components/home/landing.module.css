@@ -285,7 +285,7 @@
 .floatingSlot{width:155px;height:207px;margin-left:-77.5px}
 .floatingSlot[data-position=left]{transform:translate3d(-95px,12px,0) scale(.55) rotate(-14deg)}
 .floatingSlot[data-position=right]{transform:translate3d(95px,12px,0) scale(.55) rotate(14deg)}
-.showcaseArrow{width:36px;height:44px;margin-top:-22px}
+.showcaseArrow{width:44px;height:44px;margin-top:-22px}
 .showcaseDetails{max-width:320px}
 .showcaseDetails h2{font-size:25px}
 .showcaseDetails .offerPrice{font-size:23px}
@@ -312,9 +312,9 @@
 .showcaseDetails .offerAvailability{margin-bottom:10px}
 .showcaseDetails .offerButton{min-height:50px;font-weight:800;transition:background .2s,box-shadow .2s,transform .2s}
 .showcaseDetails .offerButton:active{transform:translateY(1px)}
-.floatingShowcase[data-featured="snapchat-plus"] .swipeStage{height:720px;overflow:clip}
-.floatingShowcase[data-featured="snapchat-plus"] .floatingSlot[data-position=center]{transform-origin:top center;transform:translate3d(0,15px,0) scale(2.4) rotate(-2deg)}
-.floatingShowcase[data-featured="snapchat-plus"] .floatingSlot:not([data-position=center]){top:200px}
+.floatingShowcase[data-featured="snapchat-plus"] .swipeStage{height:540px;overflow:clip}
+.floatingShowcase[data-featured="snapchat-plus"] .floatingSlot[data-position=center]{transform-origin:top center;transform:translate3d(0,15px,0) scale(1.8) rotate(-2deg)}
+.floatingShowcase[data-featured="snapchat-plus"] .floatingSlot:not([data-position=center]){top:150px}
 .floatingShowcase[data-featured="snapchat-plus"] .floatingSlot:not([data-position=center]){opacity:.6}
 .floatingShowcase[data-featured="snapchat-plus"] .showcaseDetails h2{font-size:36px}
 .floatingShowcase[data-featured="snapchat-plus"] .offerKicker{display:inline-block;background:#ffef75;color:#302600;border-radius:99px;padding:5px 12px;font-weight:800}
@@ -329,9 +329,9 @@
   .showcaseDetails .offerSummary .offerDuration{font-size:12px}
   .showcaseDetails .offerSummary .offerPrice{font-size:25px}
   .showcaseDetails .offerButton{min-height:48px}
-  .floatingShowcase[data-featured="snapchat-plus"] .swipeStage{height:520px}
-  .floatingShowcase[data-featured="snapchat-plus"] .floatingSlot:not([data-position=center]){top:140px}
-  .floatingShowcase[data-featured="snapchat-plus"] .floatingSlot[data-position=center]{transform:translate3d(0,15px,0) scale(2.4) rotate(-2deg)}
+  .floatingShowcase[data-featured="snapchat-plus"] .swipeStage{height:390px}
+  .floatingShowcase[data-featured="snapchat-plus"] .floatingSlot:not([data-position=center]){top:105px}
+  .floatingShowcase[data-featured="snapchat-plus"] .floatingSlot[data-position=center]{transform:translate3d(0,15px,0) scale(1.8) rotate(-2deg)}
   .floatingShowcase[data-featured="snapchat-plus"] .showcaseDetails h2{font-size:30px}
 }
 .productCard[data-product="snapchat-plus"]{border-color:#dcc52c;box-shadow:0 12px 28px -18px #d2b90065;animation:snapCatalogFloat 5s ease-in-out infinite}

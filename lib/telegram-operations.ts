@@ -69,7 +69,9 @@ function menuKeyboard(_locale: TelegramInterfaceLocale, role: TelegramRole): Rep
   const rows = [[labels.snapchat, labels.stats]];
   if (role === "owner") rows.push([labels.profit, labels.cards], [labels.approval], [labels.trial], ["👥 Approve admin"]);
   if (role === "owner" || role === "admin") rows.push([labels.externalOrder, labels.cardStock]);
-  return { keyboard: rows.map((row) => row.map((text) => ({ text }))), resize_keyboard: true, is_persistent: true };
+  const buttons = rows.flat();
+  const keyboard = Array.from({ length: Math.ceil(buttons.length / 3) }, (_, index) => buttons.slice(index * 3, index * 3 + 3).map(text => ({ text })));
+  return { keyboard, resize_keyboard: true, is_persistent: true };
 }
 
 function routeMenuButton(value: string | undefined) {
