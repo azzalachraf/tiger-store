@@ -54,8 +54,8 @@ export default async function Home() {
     return card;
   });
   const instagram =
-    settings.instagramUrl || "https://www.instagram.com/tiger.store.dz2/";
-  const whatsapp = `https://wa.me/${settings.whatsappNumber.replace(/\D/g, "") || "213556974593"}`;
+    settings.instagramUrl || "https://www.instagram.com/tiger.store.snap/";
+  const whatsapp = `https://wa.me/${settings.whatsappNumber.replace(/\D/g, "") || "213560934917"}`;
   return (
     <div
       className={styles.home}

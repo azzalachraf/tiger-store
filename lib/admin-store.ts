@@ -71,9 +71,9 @@ function normalizeStatus(value: unknown): AdminAccountStatus {
 /* ------------------------------------------------------------------ */
 
 const defaultSettings: SiteSettings = {
-  whatsappNumber: "+213 556 97 45 93",
-  instagramUrl: "https://www.instagram.com/tiger.store.dz2/",
-  facebookUrl: "https://www.facebook.com/people/Tiger-Store/61589903873726/",
+  whatsappNumber: "+213 560 93 49 17",
+  instagramUrl: "https://www.instagram.com/tiger.store.snap/",
+  facebookUrl: "https://www.facebook.com/profile.php?id=61595077796629",
   domainText: "tiger-storedz.com",
   baridiMobRip: "00799999004414930471",
   ccpDetails: "Binance ID: 1238309429",
@@ -318,7 +318,12 @@ export async function getSettings(): Promise<SiteSettings> {
 
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const { id: _id, ...rest } = data;
-  return siteSettingsSchema.catch(defaultSettings).parse({ ...defaultSettings, ...rest });
+  const settings = siteSettingsSchema.catch(defaultSettings).parse({ ...defaultSettings, ...rest });
+  // Retire the previous public contacts, including values saved before this update.
+  if (!settings.whatsappNumber || settings.whatsappNumber.replace(/\D/g, "") === "213556974593") settings.whatsappNumber = defaultSettings.whatsappNumber;
+  if (!settings.instagramUrl || settings.instagramUrl.includes("tiger.store.dz2")) settings.instagramUrl = defaultSettings.instagramUrl;
+  if (!settings.facebookUrl || settings.facebookUrl.includes("61589903873726") || settings.facebookUrl.includes("tigerr.store.dz")) settings.facebookUrl = defaultSettings.facebookUrl;
+  return settings;
 }
 
 export async function saveSettings(settings: SiteSettings) {
