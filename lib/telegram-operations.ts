@@ -66,12 +66,10 @@ type ReplyMarkup = InlineKeyboard | ReplyKeyboard | { force_reply: true; input_f
 
 function menuKeyboard(_locale: TelegramInterfaceLocale, role: TelegramRole): ReplyKeyboard {
   const labels = { snapchat: "🛒 Snapchat sale", stats: "📊 My stats", profit: "💰 Net profit", cards: "⬆️ Upload cards", externalOrder: "📝 External order", cardStock: "📦 Card stock", approval: "👥 Manage admins", trial: "🎓 Free trial" };
-  const rows = [[labels.snapchat, labels.stats]];
-  if (role === "owner") rows.push([labels.profit, labels.cards], [labels.approval], [labels.trial], ["👥 Approve admin"]);
-  if (role === "owner" || role === "admin") rows.push([labels.externalOrder, labels.cardStock]);
-  const buttons = rows.flat();
-  const keyboard = Array.from({ length: Math.ceil(buttons.length / 3) }, (_, index) => buttons.slice(index * 3, index * 3 + 3).map(text => ({ text })));
-  return { keyboard, resize_keyboard: true, is_persistent: true };
+  const rows = role === "owner"
+    ? [[labels.snapchat, labels.profit], [labels.stats, labels.trial], [labels.cardStock, labels.cards], [labels.approval, labels.externalOrder]]
+    : role === "admin" ? [[labels.snapchat, labels.stats], [labels.cardStock, labels.externalOrder]] : [[labels.snapchat, labels.stats]];
+  return { keyboard: rows.map(row => row.map(text => ({ text }))), resize_keyboard: true, is_persistent: true };
 }
 
 function routeMenuButton(value: string | undefined) {
@@ -352,12 +350,8 @@ async function notifyAdminFraudAlerts(adminId: string) {
 
 async function sendAdminPicker(chatId: string, locale: TelegramInterfaceLocale) {
   const admins = await listOperators("admin");
-  if (!admins.length) {
-    await reply(chatId, textFor(locale, "لا يوجد مشرفون معتمدون بعد. 👥", "There are no approved admins yet. 👥"));
-    return;
-  }
   await reply(chatId, textFor(locale, "👥 اختر المشرف لإدارة عمولته ومدفوعاته.", "👥 Choose an admin to manage commission and payments."), {
-    inline_keyboard: admins.map((admin) => [{ text: `👤 ${operatorName(admin)}`.slice(0, 60), callback_data: `adm|${admin.telegram_user_id}|open` }]),
+    inline_keyboard: [...admins.map((admin) => [{ text: `👤 ${operatorName(admin)}`.slice(0, 60), callback_data: `adm|${admin.telegram_user_id}|open` }]), [{ text: "✅ Approve admin", callback_data: "own|pending" }]],
   });
 }
 

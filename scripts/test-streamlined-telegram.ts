@@ -49,7 +49,7 @@ async function main() {
   await message("/menu");
   const adminMenu = JSON.stringify(messages.at(-1));
   const menuRows = () => (messages.at(-1)?.reply_markup as { keyboard: { text: string }[][] }).keyboard;
-  assert.deepEqual(menuRows().map(row => row.length), [3, 1]);
+  assert.deepEqual(menuRows().map(row => row.length), [2, 2]);
   for (const removed of ["Free trial", "Website orders", "Owner controls", "English", "العربية"]) assert.equal(adminMenu.includes(removed), false);
   await message("/trial"); assert.match(lastText(), /Not authorised/);
   await callback("tr|12"); assert.match(lastText(), /owner-only/);
@@ -66,8 +66,9 @@ async function main() {
   await callback(`ds|${operationId}|1000|complete`); assert.equal(saleAmount, 1000);
   role = "owner";
   await message("/menu"); assert.match(JSON.stringify(messages.at(-1)), /Free trial/);
-  assert.deepEqual(menuRows().map(row => row.length), [3, 3, 3]);
+  assert.deepEqual(menuRows().map(row => row.length), [2, 2, 2, 2]);
   await message("/manage_admins"); assert.match(JSON.stringify(messages.at(-1)), /adm\|100\|open/);
+  assert.match(JSON.stringify(messages.at(-1)), /own\|pending/);
   const compensationExports = { exports: {} };
   vm.runInNewContext(ts.transpileModule(readFileSync("lib/admin-compensation.ts", "utf8"), { compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 } }).outputText, {
     module: compensationExports, exports: compensationExports.exports, require: (name: string) => dependencies[name] ?? {}, Date,

@@ -62,7 +62,7 @@ export function ProductShowcase({ products, locale, labels }: { products: Showca
         <button className={styles.showcaseArrow} data-side="right" type="button" onClick={() => move(rtl ? -1 : 1)} aria-label={rtl ? controls.previous : controls.next}><ChevronRight size={18} /></button>
       </>}
     </div>
-    <div className={styles.showcaseDetails} aria-live="polite" aria-atomic="true">
+    <div key={featured.id} className={styles.showcaseDetails} aria-live="polite" aria-atomic="true">
       <p className={styles.offerKicker}>{featured.caption}</p>
       <h2 dir="auto">{featured.displayName}</h2>
       <div className={styles.offerSummary}>
