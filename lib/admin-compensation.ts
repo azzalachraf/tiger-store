@@ -1,6 +1,7 @@
 import "server-only";
 
 import { getSupabaseServiceClient } from "@/lib/supabase";
+import { getServerEnv } from "@/lib/env";
 
 export type AdminCompensation = {
   mode: "salary" | "commission";
@@ -25,6 +26,10 @@ function parseCompensation(value: unknown): AdminCompensation {
 }
 
 export async function getAdminCompensation(adminId: string): Promise<AdminCompensation> {
+  if (adminId === getServerEnv().TELEGRAM_OWNER_ID) return { mode: "salary", commissionDzd: 0 };
+  const { data: user, error: userError } = await getSupabaseServiceClient().from("telegram_users").select("role").eq("telegram_user_id", adminId).maybeSingle();
+  if (userError) throw new Error("Administrator role could not be read.");
+  if (user?.role === "owner") return { mode: "salary", commissionDzd: 0 };
   const { data, error } = await getSupabaseServiceClient().from("business_settings").select("value").eq("key", keyFor(adminId)).maybeSingle();
   if (error) throw new Error("Administrator compensation could not be read.");
   return parseCompensation(data?.value);

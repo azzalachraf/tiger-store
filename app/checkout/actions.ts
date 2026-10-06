@@ -6,9 +6,9 @@ import { normalizeAlgerianPhone } from "@/lib/stock-alerts";
 import { receiptOrderInputSchema } from "@/lib/validation";
 import { getSupabaseServiceClient } from "@/lib/supabase";
 import type { AdminOrder, CartItem, Product, ProductPriceOption } from "@/lib/types";
-import { notifyTelegramOfOrder } from "@/lib/telegram-notifications";
 import { notifyOwnerOfReceipt } from "@/lib/whatsapp-notifications";
 import { logger } from "@/lib/logger";
+import { getProductOffers } from "@/lib/cart";
 
 const MAX_RECEIPT_BYTES = 5 * 1024 * 1024;
 const receiptTypes = new Map<string, string>([["image/jpeg", "jpg"], ["image/png", "png"], ["image/webp", "webp"]]);
@@ -20,7 +20,7 @@ function hasReceiptMagic(bytes: Uint8Array, type: string) {
 }
 
 function offerFor(product: Product, optionId: string): ProductPriceOption | undefined {
-  if (product.priceOptions?.length) return product.priceOptions.find((option) => option.id === optionId);
+  if (product.priceOptions?.length) return getProductOffers(product).find((option) => option.id === optionId);
   const defaultOffer: ProductPriceOption = { id: `${product.id}:default`, label: product.duration, labelAr: product.durationAr, duration: product.duration, durationAr: product.durationAr, price: product.price, oldPrice: product.oldPrice, available: product.available };
   return optionId === defaultOffer.id ? defaultOffer : undefined;
 }
@@ -68,7 +68,6 @@ async function createReceiptOrder(formData: FormData) {
     throw new Error("Unable to save the order. Please try again.");
   }
   await notifyOwnerOfReceipt(order);
-  await notifyTelegramOfOrder(order);
   revalidatePath("/admin", "layout");
   return { id: order.id, total: order.total };
 }

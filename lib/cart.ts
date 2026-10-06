@@ -5,7 +5,9 @@ export const ORDERS_STORAGE_KEY = "tiger-store-orders";
 
 export function getProductOffers(product: Product): ProductPriceOption[] {
   if (product.priceOptions?.length) {
-    return product.priceOptions;
+    return product.slug === "snapchat-plus"
+      ? product.priceOptions.filter(offer => !/(^|\D)(3|6)\s*(months?|أشهر|mois)\b/i.test(`${offer.duration} ${offer.label}`))
+      : product.priceOptions;
   }
 
   return [

@@ -7,12 +7,14 @@ import { logger } from "@/lib/logger";
 import { AdminAccount, AdminAccountStatus, AdminOrder, Product, SiteSettings } from "@/lib/types";
 import { adminAccountSchema, adminOrderSchema, productSchema, siteSettingsSchema } from "@/lib/validation";
 import { getCatalogProductById, getCatalogProductBySlug, products as catalogProducts } from "@/data/products";
+import { getProductOffers } from "@/lib/cart";
 
 function supabase() {
   return getSupabaseServiceClient();
 }
 
 function enrichCatalogProduct(product: Product): Product {
+  if (product.slug === "snapchat-plus" && product.priceOptions?.length) product = { ...product, priceOptions: getProductOffers(product) };
   const catalogProduct = getCatalogProductById(product.id) ?? getCatalogProductBySlug(product.slug);
   const stableOptions = product.priceOptions?.map((option, index) => ({
     ...option,

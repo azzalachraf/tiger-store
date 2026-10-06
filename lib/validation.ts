@@ -38,6 +38,8 @@ export const snapchatPlanSchema = z.union([z.literal(1), z.literal(2), z.literal
 export const snapchatCardTypeSchema = z.enum(["try_24", "try_48", "inr_100", "try_115", "try_229", "inr_199", "inr_298"]);
 const telegramCallbackUserIdSchema = z.string().regex(/^[1-9][0-9]{0,18}$/);
 export const telegramCallbackDataSchema = z.union([
+  z.tuple([z.literal("ed")]),
+  z.tuple([z.literal("rp"), snapchatPlanSchema, snapchatCardTypeSchema, z.string().regex(/^[1-9][0-9]{0,7}$/)]),
   z.tuple([z.literal("sc"), snapchatPlanSchema]),
   z.tuple([z.literal("sc"), snapchatPlanSchema, snapchatCardTypeSchema]),
   z.tuple([z.literal("tr"), snapchatPlanSchema]),
