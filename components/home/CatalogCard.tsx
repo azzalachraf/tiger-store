@@ -27,7 +27,7 @@ export function CatalogCard({
         : "Unavailable";
 
   return (
-    <article className={`${styles.productCard} ${styles.catalogCardScope}`}>
+    <article className={`${styles.productCard} ${styles.catalogCardScope}`} data-product={product.slug}>
       <Link
         href={product.href}
         prefetch={false}

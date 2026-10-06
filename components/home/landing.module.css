@@ -312,7 +312,9 @@
 .showcaseDetails .offerAvailability{margin-bottom:10px}
 .showcaseDetails .offerButton{min-height:50px;font-weight:800;transition:background .2s,box-shadow .2s,transform .2s}
 .showcaseDetails .offerButton:active{transform:translateY(1px)}
-.floatingShowcase[data-featured="snapchat-plus"] .floatingSlot[data-position=center]{transform:translate3d(0,24px,0) scale(1.2) rotate(-3deg)}
+.floatingShowcase[data-featured="snapchat-plus"] .swipeStage{height:720px;overflow:clip}
+.floatingShowcase[data-featured="snapchat-plus"] .floatingSlot[data-position=center]{transform-origin:top center;transform:translate3d(0,15px,0) scale(2.4) rotate(-2deg)}
+.floatingShowcase[data-featured="snapchat-plus"] .floatingSlot:not([data-position=center]){top:200px}
 .floatingShowcase[data-featured="snapchat-plus"] .floatingSlot:not([data-position=center]){opacity:.6}
 .floatingShowcase[data-featured="snapchat-plus"] .showcaseDetails h2{font-size:36px}
 .floatingShowcase[data-featured="snapchat-plus"] .offerKicker{display:inline-block;background:#ffef75;color:#302600;border-radius:99px;padding:5px 12px;font-weight:800}
@@ -327,6 +329,13 @@
   .showcaseDetails .offerSummary .offerDuration{font-size:12px}
   .showcaseDetails .offerSummary .offerPrice{font-size:25px}
   .showcaseDetails .offerButton{min-height:48px}
-  .floatingShowcase[data-featured="snapchat-plus"] .floatingSlot[data-position=center]{transform:translate3d(0,17px,0) scale(1.2) rotate(-3deg)}
+  .floatingShowcase[data-featured="snapchat-plus"] .swipeStage{height:520px}
+  .floatingShowcase[data-featured="snapchat-plus"] .floatingSlot:not([data-position=center]){top:140px}
+  .floatingShowcase[data-featured="snapchat-plus"] .floatingSlot[data-position=center]{transform:translate3d(0,15px,0) scale(2.4) rotate(-2deg)}
   .floatingShowcase[data-featured="snapchat-plus"] .showcaseDetails h2{font-size:30px}
 }
+.productCard[data-product="snapchat-plus"]{border-color:#dcc52c;box-shadow:0 12px 28px -18px #d2b90065;animation:snapCatalogFloat 5s ease-in-out infinite}
+.productCard[data-product="snapchat-plus"] .productImage{background:radial-gradient(ellipse at center,#fff07735,transparent 75%)}
+.productCard[data-product="snapchat-plus"]:hover,.productCard[data-product="snapchat-plus"]:focus-within{animation-play-state:paused}
+@keyframes snapCatalogFloat{0%,100%{transform:translate3d(0,0,0)}50%{transform:translate3d(0,-6px,0)}}
+@media(prefers-reduced-motion:reduce){.productCard[data-product="snapchat-plus"]{animation:none}}
