@@ -91,8 +91,8 @@ export const homeCopy = {
     ],
     contactTitle: "حاب تتأكد قبل ما تطلب؟",
     contactBody:
-      "تعرّف علينا عبر Instagram أو تواصل معنا للاستفسار عن الاشتراك المناسب لك.",
-    instagram: "تواصل معنا على Instagram",
+      "تعرّف علينا عبر WhatsApp أو تواصل معنا للاستفسار عن الاشتراك المناسب لك.",
+    instagram: "تواصل معنا على WhatsApp",
     finalTitle: "جاهز تختار اشتراكك؟",
     finalBody: "السعر، المدة والتفاصيل أمامك. ابدأ بالعرض الذي يناسبك.",
     footerNav: "روابط المتجر",
@@ -197,8 +197,8 @@ export const homeCopy = {
     ],
     contactTitle: "Une question avant de choisir ?",
     contactBody:
-      "Découvrez Tiger Store sur Instagram ou contactez-nous pour vous renseigner sur votre abonnement.",
-    instagram: "Nous contacter sur Instagram",
+      "Découvrez Tiger Store sur WhatsApp ou contactez-nous pour vous renseigner sur votre abonnement.",
+    instagram: "Nous contacter sur WhatsApp",
     finalTitle: "Votre prochain abonnement ?",
     finalBody: "Le prix, la durée et les détails. Tout pour faire votre choix.",
     footerNav: "Liens de la boutique",
@@ -303,8 +303,8 @@ export const homeCopy = {
     ],
     contactTitle: "Want to check before you buy?",
     contactBody:
-      "Get to know Tiger Store on Instagram or contact us with a question about your subscription.",
-    instagram: "Contact us on Instagram",
+      "Get to know Tiger Store on WhatsApp or contact us with a question about your subscription.",
+    instagram: "Contact us on WhatsApp",
     finalTitle: "Ready to find your subscription?",
     finalBody:
       "The price, the duration and the details. Start with the plan that fits.",

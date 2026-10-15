@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Facebook, Instagram, MessageCircle, Send } from "lucide-react";
+import { MessageCircle, Send } from "lucide-react";
 import { Footer } from "@/components/Footer";
 import { Header } from "@/components/Header";
 import { LocalizedText } from "@/components/LocalizedText";
@@ -13,8 +13,6 @@ export const metadata = createPageMetadata({
 
 const channels = [
   { title: "WhatsApp", detail: "+213 560 93 49 17", href: "https://wa.me/213560934917", Icon: MessageCircle },
-  { title: "Instagram", detail: "@tiger.store.snap", href: "https://www.instagram.com/tiger.store.snap/", Icon: Instagram },
-  { title: "Facebook", detail: "Tiger Store", href: "https://www.facebook.com/profile.php?id=61595077796629", Icon: Facebook },
   { title: "Telegram", detail: "@Tigerstoredz", href: "https://t.me/Tigerstoredz", Icon: Send },
 ] as const;
 

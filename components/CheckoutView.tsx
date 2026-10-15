@@ -217,6 +217,7 @@ export function CheckoutView({
             : fr
               ? "Flexy sélectionné. Ajoutez votre justificatif après le paiement."
               : "Flexy selected. Attach your receipt after payment.";
+  const whatsappUrl = `https://wa.me/${settings.whatsappNumber.replace(/\D/g, "") || "213560934917"}`;
   const lines = items.map(({ slug, optionId, quantity }) => ({
     slug,
     optionId,
@@ -224,13 +225,13 @@ export function CheckoutView({
   }));
 
   useEffect(() => {
-    if (step !== "complete" || !orderCode || !settings.instagramUrl) return;
+    if (step !== "complete" || !orderCode || !whatsappUrl) return;
     const timer = window.setTimeout(
-      () => window.location.assign(settings.instagramUrl),
+      () => window.location.assign(whatsappUrl),
       2500,
     );
     return () => window.clearTimeout(timer);
-  }, [orderCode, settings.instagramUrl, step]);
+  }, [orderCode, whatsappUrl, step]);
 
   useEffect(() => {
     if (step !== "complete" || !orderCode) return;
@@ -360,22 +361,22 @@ export function CheckoutView({
           home: "Return home",
           support: "Contact support",
         };
-    const instagramCopy = ar
+    const whatsappCopy = ar
       ? {
-          title: "تابع طلبك على Instagram",
-          body: "أرسل صورة وصل الدفع ورمز الطلب في رسالة على Instagram لمتابعة التفعيل.",
-          button: "إرسال الوصل على Instagram",
+          title: "تابع طلبك على WhatsApp",
+          body: "أرسل صورة وصل الدفع ورمز الطلب في رسالة على WhatsApp لمتابعة التفعيل.",
+          button: "إرسال الوصل على WhatsApp",
         }
       : fr
         ? {
-            title: "Continuez sur Instagram",
-            body: "Envoyez votre justificatif et votre numéro de commande par message Instagram pour poursuivre l’activation.",
-            button: "Envoyer le justificatif sur Instagram",
+            title: "Continuez sur WhatsApp",
+            body: "Envoyez votre justificatif et votre numéro de commande par message WhatsApp pour poursuivre l’activation.",
+            button: "Envoyer le justificatif sur WhatsApp",
           }
         : {
-          title: "Continue on Instagram",
-          body: "Send your payment receipt and order code in an Instagram message to continue activation.",
-          button: "Send receipt on Instagram",
+          title: "Continue on WhatsApp",
+          body: "Send your payment receipt and order code in a WhatsApp message to continue activation.",
+          button: "Send receipt on WhatsApp",
         };
     return (
       <main className="store-shell min-h-screen px-4 py-10 sm:px-6">
@@ -430,21 +431,21 @@ export function CheckoutView({
                 </ol>
               </div>
             </div>
-            {settings.instagramUrl ? (
+            {whatsappUrl ? (
               <div className="mx-5 mb-5 rounded-2xl border border-[#FF7300]/30 bg-[#FFF1E6] p-4 sm:mx-7 sm:mb-7">
                 <h2 className="font-black text-[#17120F]">
-                  {instagramCopy.title}
+                  {whatsappCopy.title}
                 </h2>
                 <p className="mt-2 text-sm font-semibold leading-6 text-[#5D4B40]">
-                  {instagramCopy.body}
+                  {whatsappCopy.body}
                 </p>
                 <a
-                  href={settings.instagramUrl}
+                  href={whatsappUrl}
                   target="_blank"
                   rel="noreferrer"
                   className="mt-4 inline-flex min-h-11 items-center rounded-xl bg-[#FF7300] px-4 text-sm font-black text-[#17120F]"
                 >
-                  {instagramCopy.button}
+                  {whatsappCopy.button}
                 </a>
               </div>
             ) : null}

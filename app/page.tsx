@@ -4,7 +4,6 @@ import { cookies } from "next/headers";
 import {
   ArrowUpRight,
   FileCheck2,
-  Instagram,
   MessageCircle,
   Plus,
 } from "lucide-react";
@@ -53,8 +52,6 @@ export default async function Home() {
     const card = homeProduct(product, locale);
     return card;
   });
-  const instagram =
-    settings.instagramUrl || "https://www.instagram.com/tiger.store.snap/";
   const whatsapp = `https://wa.me/${settings.whatsappNumber.replace(/\D/g, "") || "213560934917"}`;
   return (
     <div
@@ -109,17 +106,8 @@ export default async function Home() {
               </Link>
             </div>
             <div className={styles.contactCard}>
-              <Instagram size={24} aria-hidden="true" />
+              <MessageCircle size={24} aria-hidden="true" />
               <h3>{c.contactTitle}</h3>
-              <a
-                href={instagram}
-                target="_blank"
-                rel="noreferrer"
-                className={styles.quietLink}
-              >
-                {c.instagram}
-                <ArrowUpRight size={17} aria-hidden="true" />
-              </a>
               <a
                 href={whatsapp}
                 target="_blank"
