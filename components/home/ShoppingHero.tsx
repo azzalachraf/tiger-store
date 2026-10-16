@@ -22,7 +22,7 @@ export function ShoppingHero({ products, locale }: { products: HomeProduct[]; lo
       displayName: snap ? "Snapchat+" : product.name,
       caption: snap ? c.spotlight : original.spotlight,
       duration: snap ? c.duration : product.duration,
-      price: snap ? "2,300 DA" : product.price,
+      price: snap ? "2,500 DA" : product.price,
       warranty: snap ? original.snapDescription : undefined }];
   });
   return <section className={styles.shoppingHero} aria-labelledby="hero-title">

@@ -14,7 +14,7 @@ export type FinanceSettings = { usdDzdRate: number; plans: Record<SnapchatPlanMo
 
 export const financeDefaults: FinanceSettings = {
   usdDzdRate: 250,
-  plans: { 1: { priceDzd: 600, commissionDzd: 100 }, 2: { priceDzd: 800, commissionDzd: 100 }, 3: { priceDzd: 1600, commissionDzd: 100 }, 6: { priceDzd: 2000, commissionDzd: 100 }, 12: { priceDzd: 2300, commissionDzd: 100 } },
+  plans: { 1: { priceDzd: 600, commissionDzd: 100 }, 2: { priceDzd: 800, commissionDzd: 100 }, 3: { priceDzd: 1600, commissionDzd: 100 }, 6: { priceDzd: 2000, commissionDzd: 100 }, 12: { priceDzd: 2500, commissionDzd: 100 } },
   cardCostsUsdCents: { try_24: 54, try_48: 108, inr_100: 115, try_115: 260, inr_199: 215, try_229: 500, inr_298: 335 },
   paymentDay: 1,
   reportingSheetId: "",

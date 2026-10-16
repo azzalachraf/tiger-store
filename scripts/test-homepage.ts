@@ -14,7 +14,7 @@ for (const locale of locales) {
   assert.ok(cards.every((card) => card.href === `/products/${card.slug}`));
   assert.ok(cards.every((card) => card.name && card.category && card.duration));
   assert.ok(cards.every((card) => !/NaN|Infinity|undefined/.test(card.price)));
-  assert.equal(homeProduct(snapchat, locale).price, "600 DA – 2,300 DA");
+  assert.equal(homeProduct(snapchat, locale).price, "600 DA – 2,500 DA");
   assert.equal(homeProduct({ ...snapchat, available: false }, locale).available, false);
   assert.deepEqual(Object.keys(homeCopy[locale]), Object.keys(homeCopy.ar));
   assert.equal(homeCopy[locale].steps.length, 3);
@@ -31,13 +31,13 @@ const unavailableOffers: Product = {
   priceOptions: snapchat.priceOptions!.map((offer) => ({ ...offer, available: false })),
 };
 assert.equal(homeProduct(unavailableOffers, "en").available, false);
-assert.equal(homeProduct(unavailableOffers, "en").price, "600 DA – 2,300 DA");
+assert.equal(homeProduct(unavailableOffers, "en").price, "600 DA – 2,500 DA");
 const singleOffer = {
   ...snapchat,
   priceOptions: snapchat.priceOptions!.map((offer, index) => ({ ...offer, available: index === 1 })),
 };
-assert.equal(homeProduct(singleOffer, "en").price, "1,600 DA");
-assert.equal(homeProduct(singleOffer, "fr").duration, "3 mois");
+assert.equal(homeProduct(singleOffer, "en").price, "2,500 DA");
+assert.equal(homeProduct(singleOffer, "fr").duration, "12 mois");
 assert.equal(homeProduct({ ...snapchat, priceOptions: [], price: 0 }, "en").available, false);
 assert.equal(homeProduct({ ...snapchat, priceOptions: [], price: 0 }, "en").price, "—");
 assert.equal(homeProduct({ ...snapchat, priceOptions: [], duration: "2 months" }, "ar").duration, "شهران");
